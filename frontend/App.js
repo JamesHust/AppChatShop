@@ -1,6 +1,16 @@
 import React from "react";
-import Providers from "./navigation";
-import { useFonts } from 'expo-font';
+import ProviderCustom from "./navigation";
+import { Provider } from 'react-redux';
+import { useFonts } from "expo-font";
+import { createStore, combineReducers, applyMiddleware } from "redux";
+import customerReducer from './redux/reducers/customer';
+import ReduxThunk from 'redux-thunk';
+
+const rootReducer = combineReducers({
+  customer: customerReducer,
+});
+
+const store = createStore(rootReducer, applyMiddleware(ReduxThunk));
 
 //Componnet khởi đầu/cha
 const App = () => {
@@ -13,7 +23,7 @@ const App = () => {
   if (!loaded) {
     return null;
   }
-  return <Providers />; //Component trong file index.js
+  return <Provider store={store}><ProviderCustom/></Provider>; //Component trong file index.js
 };
 
 export default App;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import InputIcon from "../components/InputIcon";
 import Button from "../components/Button";
+import { useDispatch } from 'react-redux';
+import * as customersActions from '../redux/actions/customers';
 
 // Trang đăng nhập
 const LoginScreen = ({ navigation }) => {
@@ -61,6 +63,11 @@ const LoginScreen = ({ navigation }) => {
     //   }
     // }
   };
+
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(customersActions.fetchCustomers());
+  }, [dispatch]);
 
   return (
     <View style={styles.container}>

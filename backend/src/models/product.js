@@ -14,7 +14,7 @@ module.exports = class Product {
     rating, //đánh giá
     sale, //giảm giá
     shopId, //id cửa hàng
-    cateId //id loại sản phẩm
+    categoryId //id loại sản phẩm
   ) {
     this.productId = productId;
     this.productCode = productCode;
@@ -29,6 +29,6 @@ module.exports = class Product {
     this.rating = rating;
     this.sale = sale;
     this.shopId = shopId;
-    this.cateId = cateId;
+    this.categoryId = categoryId;
   }
 };

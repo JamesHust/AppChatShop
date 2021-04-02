@@ -1,8 +1,6 @@
 //file đọc file config.json và cấu hình môi trường phát triển
 const _ = require('lodash');
- 
-// environment variables
-process.env.NODE_ENV = 'development';
+const util = require('util');
 
 // khai báo các biến config
 const config = require('./config.json');

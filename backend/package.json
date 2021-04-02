@@ -4,13 +4,15 @@
   "description": "The server where the business logic is handled - the project's backend",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon src/app.js",
+    "start": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "mthung",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.17.1",
+    "js-guid": "^1.0.0",
     "lodash": "^4.17.21",
     "mysql2": "^2.2.5"
   },

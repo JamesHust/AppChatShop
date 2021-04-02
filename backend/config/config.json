@@ -8,7 +8,7 @@
         "database": {
             "host": "localhost",
             "user": "root",
-            "database": "app_shop",
+            "name": "app_shop",
             "password": "123456"
         },
         "dir_images": "./images/"

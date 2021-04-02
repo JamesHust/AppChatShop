@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";//thư vi�
 import OnboardingScreen from "../screens/OnboardingScreen";
 import LoginScreen from "../screens/LoginScreen";
 import HomeScreen from "../screens/HomeScreen";
+import MainTab from "./MainTab";
 
 // Tạo đường dẫn cho các screen
 const Stack = createStackNavigator();
@@ -32,7 +33,7 @@ const AuthStack = () => {
   } else if (isFirstLaunch === true) {
     routeName = "Onboarding";
   } else {
-    routeName = "Onboarding";
+    routeName = "Login";
   }
 
   return (
@@ -53,7 +54,7 @@ const AuthStack = () => {
       {/* Màn hình trang chủ */}
       <Stack.Screen
         name="Home"
-        component={HomeScreen}
+        component={MainTab}
         options={{ header: () => null }}
       />
     </Stack.Navigator>

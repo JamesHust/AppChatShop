@@ -1,6 +1,7 @@
 import React from "react";
 import ProviderCustom from "./navigation";
 import { Provider } from "react-redux";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import { createStore, combineReducers, applyMiddleware } from "redux";
 import customerReducer from "./redux/reducers/customer";
@@ -23,10 +24,13 @@ const App = () => {
   if (!loaded) {
     return null;
   }
+
   return (
-    <Provider store={store}>
-      <ProviderCustom />
-    </Provider>
+    <SafeAreaProvider>
+      <Provider store={store}>
+        <ProviderCustom />
+      </Provider>
+    </SafeAreaProvider>
   ); //Component trong file index.js
 };
 

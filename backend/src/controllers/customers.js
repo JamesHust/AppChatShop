@@ -1,6 +1,7 @@
 const db = require("../util/database");
 const Customer = require("../models/customer");
 const Response = require("../models/response");
+const bcrypt = require("bcrypt");
 const { Guid } = require("js-guid");
 const {
   generateNewCode,
@@ -185,9 +186,12 @@ const createNewCustomer = async (req, res, next) => {
     password &&
     chatId
   ) {
+    //Mã hóa mật khẩu
+    var passEncryption = bcrypt.hashSync(password, 8);
+
     //thực hiện insert database
     db.execute(
-      `insert into ${tableName} (CustomerId, CustomerCode, CustomerName, PhoneNumber, OtherPhoneNumber, Address, Email, Password, ChatId) values ('${customerId}', '${customerCode}', '${customerName}', '${phoneNumber}', '${otherPhoneNumber}', '${address}', '${email}', '${password}', '${chatId}')`
+      `insert into ${tableName} (CustomerId, CustomerCode, CustomerName, PhoneNumber, OtherPhoneNumber, Address, Email, Password, ChatId) values ('${customerId}', '${customerCode}', '${customerName}', '${phoneNumber}', '${otherPhoneNumber}', '${address}', '${email}', '${passEncryption}', '${chatId}')`
     )
       .then((result) => {
         res.send(
@@ -248,6 +252,10 @@ const updateInfoCustomer = async (req, res, next) => {
   if (customerId) {
     try {
       const existCustomer = await checkExist(primaryKeyTable, customerId);
+
+      //Mã hóa mật khẩu
+      var passEncryption = bcrypt.hashSync(password, 8);
+
       //check tồn tại khách hàng có id tương ứng
       if (existCustomer) {
         customerName =
@@ -262,7 +270,11 @@ const updateInfoCustomer = async (req, res, next) => {
             : otherPhoneNumber;
         address = address === undefined ? existCustomer.Address : address;
         email = email === undefined ? existCustomer.Email : email;
-        password = password === undefined ? existCustomer.Password : password;
+        password =
+          password === undefined ||
+          bcrypt.compareSync(password, existCustomer.Password)
+            ? existCustomer.Password
+            : passEncryption;
         //cập nhật database
         const result = await db.execute(
           `update ${tableName} set CustomerName = "${customerName}", PhoneNumber = "${phoneNumber}", OtherPhoneNumber = "${otherPhoneNumber}", Address = "${address}", Email = "${email}", Password = "${password}" where ${primaryKeyTable} = "${customerId}"`
@@ -366,6 +378,32 @@ const deleteAccountCustomer = async (req, res, next) => {
 };
 //#endregion
 
+//#region Private Funtion
+/**
+ * Lấy thông tin customer theo email hoặc số điện thoại
+ * @param {*} userName tên đăng nhập
+ */
+const getCustomerByEmailOrPhone = async (userName) => {
+  let result = null;
+  const sql = `select * from ${tableName} where PhoneNumber = "${userName}" OR Email = "${userName}";`;
+  const customer = await db.execute(sql);
+  if (customer[0][0]) {
+    result = new Customer(
+      customer[0][0].CustomerId,
+      customer[0][0].CustomerCode,
+      customer[0][0].CustomerName,
+      customer[0][0].PhoneNumber,
+      customer[0][0].OtherPhoneNumber,
+      customer[0][0].Address,
+      customer[0][0].Email,
+      customer[0][0].Password,
+      customer[0][0].ChatId
+    );
+  }
+  return result;
+};
+//#endregion
+
 //export controller
 module.exports = {
   getCustomers,
@@ -373,4 +411,5 @@ module.exports = {
   createNewCustomer,
   updateInfoCustomer,
   deleteAccountCustomer,
+  getCustomerByEmailOrPhone,
 };

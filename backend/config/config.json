@@ -11,7 +11,13 @@
             "name": "app_shop",
             "password": "123456"
         },
-        "dir_images": "./images/"
+        "dir_images": "./images/",
+        "env": {
+            "ACCESS_TOKEN_SECRET": "goFAST_0812",
+            "ACCESS_TOKEN_LIFE": "6h",
+            "REFRESH_TOKEN_LIFE": "365d",
+            "REFRESH_TOKEN_SECRET": "mthung-goFAST-refresh"
+        }
     },
     "testing": {
         "config_id": "testing",

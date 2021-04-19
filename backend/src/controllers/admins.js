@@ -2,6 +2,7 @@ const db = require("../util/database");
 const Admin = require("../models/admin");
 const Response = require("../models/response");
 const { Guid } = require("js-guid");
+const bcrypt = require("bcrypt");
 const {
   generateNewCode,
   getMaxCode,
@@ -278,9 +279,12 @@ const addNewAccountAdmin = async (req, res, next) => {
     chatId &&
     shopId
   ) {
+    //Mã hóa mật khẩu
+    var passEncryption = bcrypt.hashSync(password, 8);
+
     //thực hiện insert database
     db.execute(
-      `insert into ${tableName} (AdminId, AdminCode, AdminName, PhoneNumber, Email, Address, Password, ChatId, ShopId) values ('${adminId}', '${adminCode}', '${adminName}', '${phoneNumber}', '${email}', '${address}', '${password}', '${chatId}', '${shopId}')`
+      `insert into ${tableName} (AdminId, AdminCode, AdminName, PhoneNumber, Email, Address, Password, ChatId, ShopId) values ('${adminId}', '${adminCode}', '${adminName}', '${phoneNumber}', '${email}', '${address}', '${passEncryption}', '${chatId}', '${shopId}')`
     )
       .then((result) => {
         res.send(
@@ -339,6 +343,10 @@ const updateInfoAccountAdmin = async (req, res, next) => {
   if (adminId) {
     try {
       const existAccountAdmin = await checkExist(primaryKeyTable, adminId);
+
+      //Mã hóa mật khẩu
+      var passEncryption = bcrypt.hashSync(password, 8);
+
       //check tồn tại account admin có id tương ứng
       if (existAccountAdmin) {
         adminName =
@@ -350,7 +358,10 @@ const updateInfoAccountAdmin = async (req, res, next) => {
         email = email === undefined ? existAccountAdmin.Email : email;
         address = address === undefined ? existAccountAdmin.Address : address;
         password =
-          password === undefined ? existAccountAdmin.Password : password;
+          password === undefined ||
+          bcrypt.compareSync(password, existAccountAdmin.Password)
+            ? existAccountAdmin.Password
+            : passEncryption;
         //cập nhật database
         const result = await db.execute(
           `update ${tableName} set AdminName = "${adminName}", PhoneNumber = "${phoneNumber}", Email = "${email}", Address = "${address}", Password = "${password}" where ${primaryKeyTable} = "${adminId}"`
@@ -453,7 +464,30 @@ const deleteAccountAdmin = async (req, res, next) => {
 };
 //#endregion
 
-//#region Private Function
+//#region Private Funtion
+/**
+ * Lấy thông tin admin theo email hoặc số điện thoại
+ * @param {*} userName tên đăng nhập
+ */
+const getAdminByEmailOrPhone = async (userName) => {
+  let result = null;
+  const sql = `select * from ${tableName} where PhoneNumber = "${userName}" OR Email = "${userName}";`;
+  const admin = await db.execute(sql);
+  if (admin) {
+    result = new Admin(
+      admin[0][0].AdminId,
+      admin[0][0].AdminCode,
+      admin[0][0].AdminName,
+      admin[0][0].PhoneNumber,
+      admin[0][0].Email,
+      admin[0][0].Address,
+      admin[0][0].Password,
+      admin[0][0].ChatId,
+      admin[0][0].ShopId
+    );
+  }
+  return result;
+};
 //#endregion
 
 //export controller
@@ -464,4 +498,5 @@ module.exports = {
   addNewAccountAdmin,
   updateInfoAccountAdmin,
   deleteAccountAdmin,
+  getAdminByEmailOrPhone,
 };

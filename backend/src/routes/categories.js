@@ -5,6 +5,7 @@ const {
   addNewCategory,
   deleteCategory,
 } = require("../controllers/categories");
+const { isAuth } = require("../middlewares/auth");
 
 //create router for object: product
 const router = express.Router();
@@ -14,8 +15,8 @@ router.get("/categories", getCategories);
 //Lấy thông tin chi tiết Loại sản phẩm theo id
 router.get("/categories/:categoryId", getCategoryById);
 //Thêm Loại sản phẩm mới
-router.post("/categories", addNewCategory);
+router.post("/categories", isAuth, addNewCategory);
 //Xóa Loại sản phẩm
-router.delete("/categories/:categoryId", deleteCategory);
+router.delete("/categories/:categoryId", isAuth, deleteCategory);
 
 module.exports = router;

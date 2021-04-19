@@ -6,8 +6,9 @@ const {
   searchProduct,
   addNewProduct,
   updateInfoProduct,
-  deleteProduct
+  deleteProduct,
 } = require("../controllers/products");
+const { isAuth } = require("../middlewares/auth");
 
 //create router for object: product
 const router = express.Router();
@@ -21,10 +22,10 @@ router.get("/products/:productId", getProductById);
 //Tìm kiếm sản phẩm theo tên hoặc theo mã sản phẩm
 router.get("/search/products", searchProduct);
 //Thêm sản phẩm mới
-router.post("/products", addNewProduct);
+router.post("/products", isAuth, addNewProduct);
 //Cập nhật thông tin sản phẩm
-router.put("/products/:productId", updateInfoProduct);
+router.put("/products/:productId", isAuth, updateInfoProduct);
 //Xóa sản phẩm
-router.delete("/products/:productId", deleteProduct);
+router.delete("/products/:productId", isAuth, deleteProduct);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   SafeAreaView,
@@ -16,13 +16,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { FontAwesome5 } from "@expo/vector-icons";
 import COLORS from "../constants/color";
 import myaccount from "../data/myaccount";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import Share from "react-native-share";
 
 const ProfileScreen = ({ navigation }) => {
+  const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
   const dispatch = useDispatch(); //khởi tạo dispatch
 
+  // xử lý chia sẻ profile
   const myCustomShare = async () => {
     const shareOptions = {
       message:
@@ -49,7 +51,6 @@ const ProfileScreen = ({ navigation }) => {
     try {
       dispatch(authActions.logout());
       navigation.navigate("LoginScreen");
-
     } catch (err) {
       Alert.alert("goFAST", `Có lỗi không mong muốn: ${e}`, [
         {
@@ -59,6 +60,20 @@ const ProfileScreen = ({ navigation }) => {
       ]);
     }
   };
+  
+  const customer = useSelector(state => state.authReducer.customer);
+
+  // Check trường hợp đang tải dữ liệu
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Header />
+        <View style={styles.containerCenter}>
+          <ActivityIndicator size="large" color={COLORS.red_13} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -75,7 +90,7 @@ const ProfileScreen = ({ navigation }) => {
             {/* Ảnh avatar */}
             <Image
               source={{
-                uri: myaccount.avatar,
+                uri: customer.avatar,
               }}
               style={styles.avatar}
             />
@@ -90,7 +105,7 @@ const ProfileScreen = ({ navigation }) => {
                   },
                 ]}
               >
-                {myaccount.name}
+                {customer.customerName}
               </Title>
               <Caption style={styles.caption}>@admin</Caption>
             </View>
@@ -118,7 +133,7 @@ const ProfileScreen = ({ navigation }) => {
               ellipsizeMode="tail"
               style={{ color: COLORS.light, marginLeft: 20, width: 250 }}
             >
-              {myaccount.address}
+              {customer.address}
             </Text>
           </View>
           {/* Số điện thoại */}
@@ -129,7 +144,7 @@ const ProfileScreen = ({ navigation }) => {
               size={20}
             />
             <Text style={{ color: COLORS.light, marginLeft: 20 }}>
-              {myaccount.phone}
+              {customer.phoneNumber}
             </Text>
           </View>
           {/* Email */}
@@ -140,7 +155,7 @@ const ProfileScreen = ({ navigation }) => {
               size={20}
             />
             <Text style={{ color: COLORS.light, marginLeft: 20 }}>
-              {myaccount.email}
+              {customer.email}
             </Text>
           </View>
         </View>
@@ -245,6 +260,11 @@ export default ProfileScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  containerCenter: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   userInfoSection: {
     paddingHorizontal: 15,

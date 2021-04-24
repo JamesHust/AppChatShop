@@ -9,6 +9,7 @@ const ListCardProduct = (props) => {
         showsVerticalScrollIndicator={false}
         numColumns={2}
         data={props.data}
+        keyExtractor={(item, index) => index}
         renderItem={(item) => <CardProduct data={item} />}
       />
     </View>

@@ -5,6 +5,7 @@ module.exports = class Product {
     productCode, //mã sản phẩm(cho phép người dùng nhìn)
     productName, //tên sản phẩm
     description, //mô tả
+    unit, //mô tả
     imageUrl, //đường dẫn hình ảnh minh họa sản phẩm
     importPrice, //giá nhập hàng
     purchasePrice, //giá bán
@@ -20,6 +21,7 @@ module.exports = class Product {
     this.productCode = productCode;
     this.productName = productName;
     this.description = description;
+    this.unit = unit;
     this.imageUrl = imageUrl;
     this.importPrice = importPrice;
     this.purchasePrice = purchasePrice;

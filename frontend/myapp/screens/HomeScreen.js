@@ -28,6 +28,7 @@ const HomeScreen = (props) => {
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
   const [error, setError] = useState(null); //biến lưu lỗi
   const dispatch = useDispatch(); //khởi tạo dispatch
+  const customer = useSelector(state => state.authReducer.customer);
 
   // Hàm load dữ liệu
   const load = useCallback(async () => {
@@ -77,7 +78,7 @@ const HomeScreen = (props) => {
                   fontSize: 15,
                 }}
               >
-                Căn B-108, Tòa nhà C2, Ngoại Giao Đoàn, Cầu Giấy, Hà Nội
+                {customer.address}
               </Text>
             </View>
           </View>

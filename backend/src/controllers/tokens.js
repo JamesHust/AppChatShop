@@ -45,10 +45,10 @@ const getToken = async (token) => {
  * @param {} token
  * @returns
  */
-const updateToken = async (refreshToken) => {
+const updateToken = async (refreshToken, token) => {
   let result = null;
   const modifyDate = new Date().toISOString().slice(0, 10);
-  if (tokenId && token && modifyDate) {
+  if (refreshToken && token && modifyDate) {
     const sql = `update ${tableName} set Token = '${token}', ModifyDate = '${modifyDate}' where RefreshToken = '${refreshToken}'`;
     result = await db.execute(sql);
   }

@@ -67,7 +67,7 @@ const CartScreen = () => {
         </View>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text style={style.title}>Tất cả</Text>
-          <View style={{ paddingTop: 15 }}>
+          <View style={{ paddingTop: 15, marginLeft: 5 }}>
             <Checkbox
               status={checkedAll ? "checked" : "unchecked"}
               onPress={() => {

@@ -18,6 +18,7 @@ let generateToken = (user, secretSignature, tokenLife) => {
     _phone: user.phone,
     _email: user.email,
     _password: user.password,
+    _actorCurrent: user.actorCurrent,
   };
 
   // Thực hiện ký và tạo token

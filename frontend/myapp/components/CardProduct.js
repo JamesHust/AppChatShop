@@ -25,13 +25,13 @@ const CartProduct = (props) => {
     <TouchableOpacity
       activeOpacity={0.6}
       style={styles.container}
-      onPress={() => navigation.navigate("DetailProduct", { data: product })}
+      onPress={() => navigation.navigate("DetailProduct", { idProduct: product.productId })}
     >
       <View>
         {/* Ảnh minh họa sản phẩm */}
         <View>
           <Image
-            source={{ uri: product.img }}
+            source={{ uri: product.imageUrl }}
             resizeMode="contain"
             style={styles.image}
           />
@@ -52,11 +52,11 @@ const CartProduct = (props) => {
               ellipsizeMode="tail"
               style={styles.nameProduct}
             >
-              {product.name}
+              {product.productName}
             </Text>
             {/* Giá bán sản phẩm */}
             <Text style={styles.textPrice}>
-              {addDotToNumber(product.price)} ₫
+              {addDotToNumber(product.purchasePrice)} ₫
             </Text>
             {/* Đánh giá, số lượng đã bán */}
             <View
@@ -79,7 +79,7 @@ const CartProduct = (props) => {
               </Text>
               {/* Số lượng đã bán */}
               <Text style={{ fontWeight: "bold", color: COLORS.grey_6 }}>
-                ({product.sold})
+                ({product.quantitySold})
               </Text>
             </View>
           </View>

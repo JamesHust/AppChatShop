@@ -17,7 +17,6 @@ export const fetchCustomers = () => {
       }
 
       const resData = await response.json();
-      console.log(`Dữ liệu : ${JSON.stringify(resData)}`);
       const loadedOrders = [];
 
       for (const key in resData) {
@@ -32,22 +31,26 @@ export const fetchCustomers = () => {
       }
       dispatch({ type: SET_ORDERS, orders: loadedOrders });
     } catch (err) {
-      throw err;
+      console.log(err);
     }
   };
 };
-// export const fetchCustomers = () => {
-//   return async (dispatch) => {
-//     return fetch("http://192.168.1.125:3000/customers")
-//       .then(function (response) {
-//         console.log(response.json());
-//       })
-//       .catch(function (error) {
-//         console.log(
-//           "There has been a problem with your fetch operation: " + error.message
-//         );
-//         // ADD THIS THROW error
-//         throw error;
-//       });
-//   };
-// };
+
+/**
+ * Lấy chi tiết thông tin khách hàng theo id
+ * @param {*} customerId Id khách hàng
+ * @returns 
+ */
+export const fetchCustomerById = (customerId) => {
+  return async (dispatch) => {
+    try{
+      const response = await fetch(`http://192.168.1.125:3000/customers/${customerId}`);
+      if (response.status != 200) {
+        throw new Error("Something went wrong!");
+      }
+      const resData = await response.json();
+    }catch(err){
+      console.log(err);
+    }
+  };
+};

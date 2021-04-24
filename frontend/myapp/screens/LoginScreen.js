@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { useDispatch } from "react-redux";
 import * as authActions from "../redux/actions/auth";
 import COLORS from "../constants/color";
 import HideWithKeyboard from "react-native-hide-with-keyboard";
+import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 
 // Trang đăng nhập
 const LoginScreen = ({ navigation }) => {
@@ -24,7 +25,51 @@ const LoginScreen = ({ navigation }) => {
     isValidPassword: true,
   });
   const [showPassword, setShowPassword] = useState(true); //biến hiển thị password
+  const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
   const dispatch = useDispatch(); //khởi tạo dispatch
+
+  // Hàm load dữ liệu
+  const checkSignedIn = useCallback(async () => {
+    setIsLoading(true);
+    //fetching data ở đây
+    try {
+      const userToken = await AsyncStorage.getItem("userToken");
+      const res = await fetch("http://192.168.1.125:3000/api/check/token", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "x-access-token": userToken,
+        },
+      });
+      switch (res.status) {
+        case 200:
+          const resData = await res.json();
+          dispatch(authActions.storageToken(resData.data));
+          return navigation.navigate("Home");
+        default:
+          Alert.alert(
+            "goFAST",
+            "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại",
+            [
+              {
+                text: "OK",
+                style: "cancel",
+              },
+            ]
+          );
+          return;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setIsLoading(false);
+  }, [dispatch, setIsLoading]);
+
+  // Hàm kiểm tra đã login chưa
+  useEffect(() => {
+    checkSignedIn();
+  }, [dispatch]);
 
   // Hàm xet show password
   const togglePassword = () => {

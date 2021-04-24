@@ -9,6 +9,7 @@ const {
   checkExist,
   deleteRecord,
 } = require("../util/common");
+const {convertPathFile} = require('../util/common');
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "customer";
@@ -32,6 +33,7 @@ const getCustomers = (req, res, next) => {
             item.CustomerId,
             item.CustomerCode,
             item.CustomerName,
+            convertPathFile(item.Avatar),
             item.PhoneNumber,
             item.OtherPhoneNumber,
             item.Address,
@@ -98,6 +100,7 @@ const getCustomerById = async (req, res, next) => {
           result.CustomerId,
           result.CustomerCode,
           result.CustomerName,
+          convertPathFile(result.Avatar),
           result.PhoneNumber,
           result.OtherPhoneNumber,
           result.Address,
@@ -164,6 +167,7 @@ const createNewCustomer = async (req, res, next) => {
   const customerId = Guid.newGuid().toString();
   let customerCode = null;
   const customerName = req.body.customerName;
+  const avatar = req.body.avatar;
   const phoneNumber = req.body.phoneNumber;
   const otherPhoneNumber = req.body.otherPhoneNumber;
   const address = req.body.address;
@@ -191,7 +195,7 @@ const createNewCustomer = async (req, res, next) => {
 
     //thực hiện insert database
     db.execute(
-      `insert into ${tableName} (CustomerId, CustomerCode, CustomerName, PhoneNumber, OtherPhoneNumber, Address, Email, Password, ChatId) values ('${customerId}', '${customerCode}', '${customerName}', '${phoneNumber}', '${otherPhoneNumber}', '${address}', '${email}', '${passEncryption}', '${chatId}')`
+      `insert into ${tableName} (CustomerId, CustomerCode, CustomerName, Avatar, PhoneNumber, OtherPhoneNumber, Address, Email, Password, ChatId) values ('${customerId}', '${customerCode}', '${customerName}', '${avatar}', '${phoneNumber}', '${otherPhoneNumber}', '${address}', '${email}', '${passEncryption}', '${chatId}')`
     )
       .then((result) => {
         res.send(
@@ -242,6 +246,7 @@ const updateInfoCustomer = async (req, res, next) => {
   //lấy các giá trị request
   let customerId = req.params.customerId;
   let customerName = req.body.customerName;
+  let avatar = req.body.avatar;
   let phoneNumber = req.body.phoneNumber;
   let otherPhoneNumber = req.body.otherPhoneNumber;
   let address = req.body.address;
@@ -262,6 +267,7 @@ const updateInfoCustomer = async (req, res, next) => {
           customerName === undefined
             ? existCustomer.CustomerName
             : customerName;
+        avatar = avatar === undefined ? existCustomer.Avatar : avatar;
         phoneNumber =
           phoneNumber === undefined ? existCustomer.PhoneNumber : phoneNumber;
         otherPhoneNumber =
@@ -277,7 +283,7 @@ const updateInfoCustomer = async (req, res, next) => {
             : passEncryption;
         //cập nhật database
         const result = await db.execute(
-          `update ${tableName} set CustomerName = "${customerName}", PhoneNumber = "${phoneNumber}", OtherPhoneNumber = "${otherPhoneNumber}", Address = "${address}", Email = "${email}", Password = "${password}" where ${primaryKeyTable} = "${customerId}"`
+          `update ${tableName} set CustomerName = "${customerName}", Avatar = "${avatar}", PhoneNumber = "${phoneNumber}", OtherPhoneNumber = "${otherPhoneNumber}", Address = "${address}", Email = "${email}", Password = "${password}" where ${primaryKeyTable} = "${customerId}"`
         );
         res.send(
           new Response(
@@ -392,6 +398,7 @@ const getCustomerByEmailOrPhone = async (userName) => {
       customer[0][0].CustomerId,
       customer[0][0].CustomerCode,
       customer[0][0].CustomerName,
+      convertPathFile(customer[0][0].Avatar),
       customer[0][0].PhoneNumber,
       customer[0][0].OtherPhoneNumber,
       customer[0][0].Address,

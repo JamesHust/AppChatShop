@@ -9,6 +9,9 @@ const {
   deleteRecord,
   formatDateTimeInsertDB,
 } = require("../util/common");
+const { convertPathFile } = require("../util/common");
+const Shop = require("../models/shop");
+const Category = require("../models/category");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "product";
@@ -34,7 +37,7 @@ const getProducts = (req, res, next) => {
   //thực hiện lấy danh sách sản phẩm
   db.execute(sql)
     .then((result) => {
-      if (result && result.length > 0) {
+      if (result[0] && result[0].length > 0) {
         let products = [];
         result[0].forEach((item) => {
           const product = new Product(
@@ -42,7 +45,8 @@ const getProducts = (req, res, next) => {
             item.ProductCode,
             item.ProductName,
             item.Description,
-            item.ImageUrl,
+            item.Unit,
+            convertPathFile(item.ImageUrl),
             item.ImportPrice,
             item.PurchasePrice,
             item.Amount,
@@ -55,41 +59,47 @@ const getProducts = (req, res, next) => {
           );
           products.push(product);
         });
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = null),
-            (userMsg = null),
-            (moreInfo = null),
-            (data = products)
-          )
-        );
+        return res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = null),
+              (devMsg = null),
+              (userMsg = null),
+              (moreInfo = null),
+              (data = products)
+            )
+          );
       } else {
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = "Data is empty."),
-            (userMsg = null),
-            (moreInfo = null),
-            (data = null)
-          )
-        );
+        return res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = null),
+              (devMsg = "Data is empty."),
+              (userMsg = null),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
       }
     })
     .catch((err) => {
       console.log("errorr: " + err);
-      res.send(
-        new Response(
-          (isSuccess = false),
-          (errorCode = "DB001"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
-          (moreInfo = null),
-          (data = null)
-        )
-      );
+      return res
+        .status(500)
+        .send(
+          new Response(
+            (isSuccess = false),
+            (errorCode = "DB001"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
+            (moreInfo = null),
+            (data = null)
+          )
+        );
     });
 };
 
@@ -114,7 +124,7 @@ const getRandomProducts = (req, res, next) => {
   //thực hiện lấy danh sách sản phẩm
   db.execute(sql)
     .then((result) => {
-      if (result && result.length > 0) {
+      if (result[0] && result[0].length > 0) {
         let products = [];
         result[0].forEach((item) => {
           const product = new Product(
@@ -122,7 +132,8 @@ const getRandomProducts = (req, res, next) => {
             item.ProductCode,
             item.ProductName,
             item.Description,
-            item.ImageUrl,
+            item.Unit,
+            convertPathFile(item.ImageUrl),
             item.ImportPrice,
             item.PurchasePrice,
             item.Amount,
@@ -135,7 +146,7 @@ const getRandomProducts = (req, res, next) => {
           );
           products.push(product);
         });
-        res.send(
+        res.status(200).send(
           new Response(
             (isSuccess = true),
             (errorCode = null),
@@ -146,7 +157,7 @@ const getRandomProducts = (req, res, next) => {
           )
         );
       } else {
-        res.send(
+        res.status(404).send(
           new Response(
             (isSuccess = true),
             (errorCode = null),
@@ -160,7 +171,7 @@ const getRandomProducts = (req, res, next) => {
     })
     .catch((err) => {
       console.log("errorr: " + err);
-      res.send(
+      res.status(500).send(
         new Response(
           (isSuccess = false),
           (errorCode = "DB001"),
@@ -191,7 +202,8 @@ const getProductById = async (req, res, next) => {
           result.ProductCode,
           result.ProductName,
           result.Description,
-          result.ImageUrl,
+          result.Unit,
+          convertPathFile(result.ImageUrl),
           result.ImportPrice,
           result.PurchasePrice,
           result.Amount,
@@ -202,51 +214,80 @@ const getProductById = async (req, res, next) => {
           result.ShopId,
           result.CategoryId
         );
-        res.send(
+        const shop = await checkExist("ShopId", result.ShopId);
+        const store = new Shop(
+          shop.ShopId,
+          shop.ShopCode,
+          shop.ShopName,
+          shop.PhoneNumber,
+          shop.OtherPhoneNumber,
+          shop.Address,
+          shop.Email,
+          shop.OpenTime,
+          shop.CloseTime,
+          shop.Rating
+        );
+        const category = await checkExist("CategoryId", result.CategoryId);
+        const cate = new Category(
+          category.CategoryId,
+          category.CategoryCode,
+          category.CategoryName
+        );
+        res.status(200).send(
           new Response(
             (isSuccess = true),
             (errorCode = null),
             (devMsg = null),
             (userMsg = null),
             (moreInfo = null),
-            (data = product)
+            (data = {
+              shop: store,
+              cate: cate,
+              product: product,
+            })
           )
         );
       } else {
-        res.send(
+        res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = null),
+              (devMsg = `Cannot found product have id=${productId} in the database.`),
+              (userMsg = "Không tồn tại sản phẩm cần tìm"),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      }
+    } catch (err) {
+      res
+        .status(500)
+        .send(
           new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = `Cannot found product have id=${productId} in the database.`),
-            (userMsg = "Không tồn tại sản phẩm cần tìm"),
+            (isSuccess = false),
+            (errorCode = "DB001"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
             (moreInfo = null),
             (data = null)
           )
         );
-      }
-    } catch (err) {
-      res.send(
+    }
+  } else {
+    res
+      .status(400)
+      .send(
         new Response(
           (isSuccess = false),
-          (errorCode = "DB001"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
+          (errorCode = null),
+          (devMsg = "Params in request is null"),
+          (userMsg = null),
           (moreInfo = null),
           (data = null)
         )
       );
-    }
-  } else {
-    res.send(
-      new Response(
-        (isSuccess = true),
-        (errorCode = null),
-        (devMsg = "Params in request is null"),
-        (userMsg = null),
-        (moreInfo = null),
-        (data = null)
-      )
-    );
   }
 };
 
@@ -275,7 +316,8 @@ const searchProduct = async (req, res, next) => {
               item.ProductCode,
               item.ProductName,
               item.Description,
-              item.ImageUrl,
+              item.Unit,
+              convertPathFile(item.ImageUrl),
               item.ImportPrice,
               item.PurchasePrice,
               item.Amount,
@@ -288,7 +330,7 @@ const searchProduct = async (req, res, next) => {
             );
             products.push(product);
           });
-          res.send(
+          res.status(200).send(
             new Response(
               (isSuccess = true),
               (errorCode = null),
@@ -299,7 +341,7 @@ const searchProduct = async (req, res, next) => {
             )
           );
         } else {
-          res.send(
+          res.status(404).send(
             new Response(
               (isSuccess = true),
               (errorCode = null),
@@ -312,7 +354,7 @@ const searchProduct = async (req, res, next) => {
         }
       });
     } catch (err) {
-      res.send(
+      res.status(500).send(
         new Response(
           (isSuccess = false),
           (errorCode = "DB001"),
@@ -324,7 +366,7 @@ const searchProduct = async (req, res, next) => {
       );
     }
   } else {
-    res.send(
+    res.status(400).send(
       new Response(
         (isSuccess = true),
         (errorCode = null),
@@ -350,6 +392,7 @@ const addNewProduct = async (req, res, next) => {
   const productName = req.body.productName;
   const description =
     req.body.description === undefined ? "" : req.body.description;
+  const unit = req.body.unit;
   const imageUrl = req.body.imageUrl;
   const importPrice = req.body.importPrice;
   const purchasePrice = req.body.purchasePrice;
@@ -368,6 +411,7 @@ const addNewProduct = async (req, res, next) => {
     productId &&
     productCode &&
     productName &&
+    unit &&
     imageUrl &&
     importPrice &&
     purchasePrice &&
@@ -379,7 +423,7 @@ const addNewProduct = async (req, res, next) => {
   ) {
     //thực hiện insert database
     db.execute(
-      `insert into ${tableName} (ProductId, ProductCode, ProductName, Description, ImageUrl, ImportPrice, PurchasePrice, Amount, QuantitySold, DateOfImport, Rating, Sale, ShopId, CategoryId) values ('${productId}', '${productCode}', '${productName}', '${description}', '${imageUrl}', '${importPrice}', '${purchasePrice}', '${amount}', '${quantitySold}', '${dateOfImport}', 0.0, 0, '${shopId}', '${categoryId}')`
+      `insert into ${tableName} (ProductId, ProductCode, ProductName, Description, Unit, ImageUrl, ImportPrice, PurchasePrice, Amount, QuantitySold, DateOfImport, Rating, Sale, ShopId, CategoryId) values ('${productId}', '${productCode}', '${productName}', '${description}', '${unit}', '${imageUrl}', '${importPrice}', '${purchasePrice}', '${amount}', '${quantitySold}', '${dateOfImport}', 0.0, 0, '${shopId}', '${categoryId}')`
     )
       .then((result) => {
         res.send(
@@ -430,6 +474,7 @@ const updateInfoProduct = async (req, res, next) => {
   let productId = req.params.productId;
   let productName = req.body.productName;
   let description = req.body.description;
+  let unit = req.body.unit;
   let imageUrl = req.body.imageUrl;
   let importPrice = req.body.importPrice;
   let purchasePrice = req.body.purchasePrice;
@@ -452,6 +497,7 @@ const updateInfoProduct = async (req, res, next) => {
           productName === undefined ? existProduct.ProductName : productName;
         description =
           description === undefined ? existProduct.Description : description;
+        unit = unit === undefined ? existProduct.Unit : unit;
         imageUrl = imageUrl === undefined ? existProduct.ImageUrl : imageUrl;
         importPrice =
           importPrice === undefined ? existProduct.ImportPrice : importPrice;
@@ -469,7 +515,7 @@ const updateInfoProduct = async (req, res, next) => {
 
         //cập nhật database
         const result = await db.execute(
-          `update ${tableName} set ProductName = "${productName}", Description = "${description}", ImageUrl = "${imageUrl}", ImportPrice = "${importPrice}", PurchasePrice = "${purchasePrice}", Amount = "${amount}", QuantitySold = '${quantitySold}', DateOfImport = '${dateOfImport}', Rating = ${rating}, CategoryId = "${categoryId}" where ${primaryKeyTable} = "${productId}"`
+          `update ${tableName} set ProductName = "${productName}", Description = "${description}", Unit = "${unit}", ImageUrl = "${imageUrl}", ImportPrice = "${importPrice}", PurchasePrice = "${purchasePrice}", Amount = "${amount}", QuantitySold = '${quantitySold}', DateOfImport = '${dateOfImport}', Rating = ${rating}, CategoryId = "${categoryId}" where ${primaryKeyTable} = "${productId}"`
         );
         res.send(
           new Response(
@@ -647,5 +693,5 @@ module.exports = {
   addNewProduct,
   updateInfoProduct,
   deleteProduct,
-  updateAmountProduct
+  updateAmountProduct,
 };

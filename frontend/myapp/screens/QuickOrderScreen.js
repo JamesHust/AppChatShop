@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,21 +6,30 @@ import {
   SafeAreaView,
   TextInput,
   Image,
-  TouchableOpacity
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import COLORS from "../constants/color";
 import { Ionicons } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
 import { FontAwesome } from "@expo/vector-icons";
 import TabCategories from "../components/TabCategories";
-import products from "../data/products";
 import ListCartProduct from "../components/ListCartProduct";
 
 const QuickOrderScreen = (props) => {
-  const categories = ["HOT", "Khuyến mãi", "Gần tôi", "Yêu thích"];
-  const idUser = "ID_USER" //chỗ này cần lấy id từ server
-  return (
-    <SafeAreaView style={styles.container}>
+  const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
+  const [products, setProducts] = useState(null); //danh sách sản phẩm
+  const categories = useMemo(() => [
+    "HOT",
+    "Khuyến mãi",
+    "Gần tôi",
+    "Yêu thích",
+  ]);
+  const idUser = "ID_USER"; //chỗ này cần lấy id từ server
+
+  // component header
+  const Header = () => {
+    return (
       <View style={styles.boxHeader}>
         {/* header */}
         <View style={styles.header}>
@@ -54,6 +63,75 @@ const QuickOrderScreen = (props) => {
         {/* Danh muc sản phẩm */}
         <TabCategories listCategory={categories} />
       </View>
+    );
+  };
+
+  // Hàm load dữ liệu
+  const loadProducts = useCallback(async () => {
+    setIsLoading(true);
+    //fetching data ở đây
+    try {
+      const response = await fetch("http://192.168.1.125:3000/api/products", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      setIsLoading(false);
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setProducts(resData.data);
+          return;
+        default:
+          Alert.alert("goFAST", `Lỗi tải dữ liệu:`, [
+            {
+              text: "Tải lại",
+              onPress: () => loadProducts(),
+            },
+            {
+              text: "OK",
+              style: "cancel",
+            },
+          ]);
+          return;
+      }
+    } catch (err) {
+      setIsLoading(false);
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => loadProducts(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  }, [setIsLoading]);
+
+  //check thay đổi khi tải trang
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts, setIsLoading]);
+
+  // Check trường hợp đang tải dữ liệu
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Header />
+        <View style={styles.containerCenter}>
+          <ActivityIndicator size="large" color={COLORS.red_13} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Header />
       <ListCartProduct data={products} />
     </SafeAreaView>
   );
@@ -63,6 +141,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.grey_4,
+  },
+  containerCenter: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   boxHeader: {
     paddingHorizontal: 20,

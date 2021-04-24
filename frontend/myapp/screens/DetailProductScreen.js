@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   SafeAreaView,
@@ -6,22 +6,48 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import COLORS from "../constants/color";
 import { addDotToNumber } from "../utils/Common";
 import { AntDesign } from "@expo/vector-icons";
 import RatingStar from "../components/RatingStar";
 import ReadMore from "react-native-read-more-text";
 import { TouchableOpacity } from "react-native-gesture-handler";
+import Product from "../models/product";
+import { useSelector, useDispatch } from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 
 const DetailProductScreen = ({ route, navigation }) => {
+  const [isLoading, setIsLoading] = useState(false);
   const [amount, setAmount] = useState(0);
   // Thông tin sản phẩm
-  const product = route.params.data;
-  console.log(product);
-  const [favourite, setFavourite] = useState(product.favourite);
+  const idProduct = route.params.idProduct;
+  const [data, setData] = useState({
+    product: {
+      imageUrl:
+        "https://www.flaticon.com/svg/vstatic/svg/812/812850.svg?token=exp=1619003978~hmac=c7940ae416e210578fa00f6b23b02de2",
+      productName: "",
+      purchasePrice: "",
+      rating: "",
+      quantitySold: "",
+      unit: "",
+      description: "",
+    },
+    cate: {
+      categoryName: "",
+    },
+    shop: {
+      shopName: "",
+    },
+  });
+  const [favourite, setFavourite] = useState(false); //yêu thích sản phẩm không?
+  const [rating, setRating] = useState(0); //đánh giá sao cho sản phẩm
+  const dispatch = useDispatch(); //khởi tạo dispatch
+  const customer = useSelector((state) => state.authReducer.customer);
 
   //Hàm giảm số lượng
   const reduceAmount = () => {
@@ -58,6 +84,218 @@ const DetailProductScreen = ({ route, navigation }) => {
       </Text>
     );
   };
+
+  // Hàm load đánh giá sản phẩm
+  const loadReview = async () => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/reviews/products?idProduct=${idProduct}&idCustomer=${customer.customerId}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+        }
+      );
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          console.log(resData);
+          if(resData){
+            if(resData.data.isFavourite === 1){
+              setFavourite(true);
+            }else{
+              setFavourite(false);
+            }
+            setRating(resData.data.rating);
+          }
+          return;
+        default:
+          return Alert.alert("goFAST", `Lỗi tải đánh giá:`, [
+            {
+              text: "Tải lại",
+              onPress: () => loadReview(),
+            },
+            {
+              text: "Hủy",
+              style: "cancel",
+            },
+          ]);
+          
+      }
+    } catch (err) {
+      return Alert.alert("goFAST", `Lỗi tải đánh giá sản phẩm: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => loadProduct(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  };
+
+  // Hàm load dữ liệu chi tiết sản phẩm
+  const loadProduct = useCallback(async () => {
+    setIsLoading(true);
+    //fetching data ở đây
+    try {
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/products/${idProduct}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setData(resData.data);
+          await loadReview();
+          setIsLoading(false);
+          return;
+        default:
+          setIsLoading(false);
+          Alert.alert("goFAST", `Lỗi tải dữ liệu:`, [
+            {
+              text: "Tải lại",
+              onPress: () => loadProduct(),
+            },
+            {
+              text: "Hủy",
+              style: "cancel",
+            },
+          ]);
+          return;
+      }
+    } catch (err) {
+      setIsLoading(false);
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => loadProduct(),
+        },
+        {
+          text: "Hủy",
+          style: "cancel",
+        },
+      ]);
+    }
+  }, [setIsLoading]);
+
+  // Hàm cập nhật đánh giá sản phẩm
+  const updateReview = async (rating, isFavourite) => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/reviews/products`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+          body: JSON.stringify({
+            idCustomer: customer.customerId,
+            idProduct: idProduct,
+            rating: rating,
+            isFavourite: isFavourite,
+          }),
+        }
+      );
+      switch (response.status) {
+        case 200:
+          Alert.alert("goFAST", "Cập nhật đánh giá thành công", [
+            {
+              text: "OK",
+              style: "cancel",
+            },
+          ]);
+          return;
+        default:
+          Alert.alert("goFAST", "Cập nhật đánh giá thất bại", [
+            {
+              text: "Cập nhật lại",
+              onPress: () => updateReview(),
+            },
+            {
+              text: "Hủy",
+              style: "cancel",
+            },
+          ]);
+          return;
+      }
+    } catch (err) {
+      setIsLoading(false);
+      Alert.alert("goFAST", `Lỗi cập nhật đánh giá: ${err}`, [
+        {
+          text: "Cập nhật lại",
+          onPress: () => updateReview(),
+        },
+        {
+          text: "Hủy",
+          style: "cancel",
+        },
+      ]);
+    }
+  };
+
+  //check thay đổi khi tải trang và khi cập nhật đánh giá
+  useEffect(() => {
+    loadProduct();
+  }, [loadProduct, setIsLoading, setFavourite, setRating]);
+
+  // Cập nhật rating
+  const updateRating = async (rate) => {
+    console.log("rate : " + rate);
+    setRating(rate);
+    await updateReview(rate, null);
+  };
+
+  // Cập nhật sản phẩm yêu thích
+  const updateIsFavorite = async () => {
+    let isFavorite;
+    isFavorite = !favourite ? 1 : 0;
+    console.log(isFavorite);
+    await updateReview(null, isFavorite);
+    setFavourite(!favourite);
+  };
+
+  // Trường hợp đang load dữ liệu
+  if (isLoading) {
+    return (
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: COLORS.light,
+        }}
+      >
+        {/* header */}
+        <View style={styles.header}>
+          {/* Quay về trang đầu */}
+          <Icon
+            name="arrow-back"
+            size={28}
+            color={COLORS.red_13}
+            onPress={() => navigation.popToTop()}
+          />
+        </View>
+        <View style={styles.containerCenter}>
+          <ActivityIndicator size="large" color={COLORS.red_13} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView
       style={{
@@ -79,23 +317,40 @@ const DetailProductScreen = ({ route, navigation }) => {
         {/* Thêm hoặc xóa khỏi danh sách yêu thích */}
         <View style={styles.iconAddFavourite}>
           <AntDesign
-            name={favourite ? "hearto" : "heart"}
+            name={!favourite ? "hearto" : "heart"}
             size={27}
-            color={favourite ? COLORS.grey_6 : COLORS.red_14}
+            color={!favourite ? COLORS.grey_6 : COLORS.red_14}
             style={{ paddingTop: 3 }}
-            onPress={() => setFavourite(!favourite)}
+            onPress={updateIsFavorite}
           />
         </View>
         {/* Ảnh minh họa */}
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: product.img ? product.img : product.image }}
+            source={{ uri: data.product.imageUrl }}
             resizeMode="contain"
             style={styles.imageProduct}
           />
         </View>
         {/* Thông tin chi tiết sản phẩm */}
         <View style={styles.detailsContainer}>
+          {/* Tên cửa hàng bán */}
+          <View style={styles.nameStore}>
+            <View style={styles.dash} />
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <MaterialCommunityIcons
+                name="storefront"
+                size={24}
+                color={COLORS.red_13}
+              />
+              <Text
+                style={{ fontSize: 16, fontWeight: "bold", marginLeft: 10 }}
+              >
+                {data.shop.shopName}
+              </Text>
+            </View>
+            <View style={styles.dash} />
+          </View>
           {/* Đánh giá sản phẩm */}
           <View
             style={{
@@ -109,7 +364,7 @@ const DetailProductScreen = ({ route, navigation }) => {
             </View>
             {/* Số sao đánh giá */}
             <View>
-              <RatingStar rated={product.rated} />
+              <RatingStar rated={rating} updateRating={updateRating} />
             </View>
           </View>
           {/* Tên và giá sản phẩm */}
@@ -129,7 +384,7 @@ const DetailProductScreen = ({ route, navigation }) => {
                 width: "75%",
               }}
             >
-              {product.name}
+              {data.product.productName}
             </Text>
             {/* Giá tiền sản phẩm */}
             <View style={styles.priceTag}>
@@ -141,14 +396,14 @@ const DetailProductScreen = ({ route, navigation }) => {
                   fontSize: 16,
                 }}
               >
-                {addDotToNumber(product.price)} ₫
+                {addDotToNumber(data.product.purchasePrice)} ₫
               </Text>
             </View>
           </View>
           {/* Mô tả, thông tin chung sản phẩm */}
           <View style={{ marginTop: 5 }}>
             {/* Tên loại sản phẩm */}
-            <Text style={{ fontSize: 16 }}>{product.cate}</Text>
+            <Text style={{ fontSize: 16 }}>{data.cate.categoryName}</Text>
             {/* Rating của sản phẩm */}
             <View
               style={{
@@ -167,7 +422,7 @@ const DetailProductScreen = ({ route, navigation }) => {
                   fontSize: 18,
                 }}
               >
-                {product.rating}
+                {data.product.rating}
               </Text>
               {/* Số lượng đã bán */}
               <Text
@@ -177,7 +432,7 @@ const DetailProductScreen = ({ route, navigation }) => {
                   fontSize: 18,
                 }}
               >
-                ({product.sold})
+                ({data.product.quantitySold})
               </Text>
             </View>
             {/* Mô tả */}
@@ -189,7 +444,7 @@ const DetailProductScreen = ({ route, navigation }) => {
                 fontSize: 18,
               }}
             >
-              Đơn vị : {product.unit}
+              Đơn vị : {data.product.unit}
             </Text>
             <ReadMore
               numberOfLines={2}
@@ -204,7 +459,7 @@ const DetailProductScreen = ({ route, navigation }) => {
                   marginTop: 5,
                 }}
               >
-                {product.description}
+                {data.product.description}
               </Text>
             </ReadMore>
           </View>
@@ -283,6 +538,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
+  containerCenter: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   imageContainer: {
     marginTop: 10,
     justifyContent: "center",
@@ -350,7 +610,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   iconAddFavourite: {
-
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 25,
@@ -358,6 +617,17 @@ const styles = StyleSheet.create({
     top: 15,
     right: 20,
     zIndex: 3,
+  },
+  nameStore: {
+    paddingBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dash: {
+    height: 1,
+    width: 120,
+    backgroundColor: COLORS.grey_5,
   },
 });
 

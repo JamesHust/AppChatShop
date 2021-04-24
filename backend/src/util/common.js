@@ -1,5 +1,9 @@
 const db = require("./database");
 
+//Khai báo cấu hình, khai báo phải theo thứ tự, nhận môi trường theo cấu hình
+process.env.NODE_ENV = "development";
+const config = require("../../config/config");
+
 /**
  * Hàm tạo mã code mới
  * @param {*} maxOldCode id cũ
@@ -79,10 +83,19 @@ const formatDateTimeInsertDB = (dateTime) => {
   return `${date} ${time}`;
 };
 
+/**
+ * Hàm chuyển sang http tương ứng truy xuất tới file ở mục public
+ * @param {*} path 
+ */
+const convertPathFile = (path) => {
+  return `http://${config.node_ip}:${config.node_port}/public/${path}`;
+}
+
 module.exports = {
   generateNewCode,
   getMaxCode,
   checkExist,
   deleteRecord,
   formatDateTimeInsertDB,
+  convertPathFile
 };

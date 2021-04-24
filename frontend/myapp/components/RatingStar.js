@@ -4,16 +4,16 @@ import { AntDesign } from "@expo/vector-icons";
 import COLORS from "../constants/color";
 
 const RatingStar = (props) => {
-  const [rating, setRating] = useState(props.rated);
+  // const [rating, setRating] = useState(props.rated);
   let stars = [];
   //render danh sách sao
   for (let x = 1; x <= 5; x++) {
     stars.push(
-      <TouchableWithoutFeedback key={x} onPress={() => setRating(x)}>
+      <TouchableWithoutFeedback key={x} onPress={props.updateRating.bind(this, x)}>
         <AntDesign
-          name={x <= rating ? "star" : "staro"}
+          name={x <= props.rated ? "star" : "staro"}
           size={25}
-          color={x <= rating ? COLORS.amber : COLORS.grey_6}
+          color={x <= props.rated ? COLORS.amber : COLORS.grey_6}
           style={{marginLeft: 3}}
         />
       </TouchableWithoutFeedback>

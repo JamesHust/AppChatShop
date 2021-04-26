@@ -42,7 +42,6 @@ const EditProfileScreen = ({ route, navigation }) => {
       cropping: true,
       compressImageQuality: 0.7,
     }).then((image) => {
-      console.log(image);
       setAvatar(image.path);
       bs.current.snapTo(1);
     });

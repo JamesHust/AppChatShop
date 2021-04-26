@@ -1,31 +1,109 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { screenWidth } from "../utils/Dimentions";
 import COLORS from "../constants/color";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { addDotToNumber } from "../utils/Common";
+import { addDotToNumber, showToast } from "../utils/Common";
+import { useSelector} from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 
 const CartProduct = (props) => {
   const [product, setProduct] = useState(props.data.item);
   const [amount, setAmount] = useState(0);
+  const [amountHandle, setAmountHandle] = useState(0);
   const navigation = useNavigation(); //Cho phép truy cập navigation
+  const customer = useSelector((state) => state.authReducer.customer);
 
   //Hàm giảm số lượng
   const reduceAmount = () => {
     if (amount > 0) {
       setAmount((amount) => amount - 1);
-    } else setAmount(0);
+    } else {
+      setAmount(0);
+    }
   };
   //Hàm tăng số lượng
   const increasingAmount = () => {
     setAmount((amount) => amount + 1);
   };
+
+  // Hàm xử lý thêm sản phẩm vào giỏ hàng
+  const addProductToCart = useCallback(async (amountBuy) => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      if (token) {
+        const response = await fetch("http://192.168.1.125:3000/api/carts", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+          body: JSON.stringify({
+            customerId: customer.customerId,
+            shopId: product.shopId,
+            productId: product.productId,
+            productPrice: product.purchasePrice,
+            productAmount: amountBuy,
+          }),
+        });
+        switch (response.status) {
+          case 200:
+            showToast(`Thêm thành công ${amountBuy} sản phẩm mới vào giỏ!`);
+            return;
+          default:
+            showToast(`Thêm mới sản phẩm vào giỏ thất bại!`);
+            return;
+        }
+      } else {
+        Alert.alert("goFAST", `Lỗi lấy xác thực`, [
+          {
+            text: "Thực hiện lại",
+            onPress: () => addProductToCart(),
+          },
+          {
+            text: "Hủy",
+            style: "cancel",
+          },
+        ]);
+      }
+    } catch (err) {
+      Alert.alert("goFAST", `Lỗi thêm sản phẩm vào giỏ hàng: ${err}`, [
+        {
+          text: "Thực hiện lại",
+          onPress: () => addProductToCart(),
+        },
+        {
+          text: "Hủy",
+          style: "cancel",
+        },
+      ]);
+    }
+  }, []);
+
+  // Theo dõi khi số lượng thay đổi sau 3 giây sẽ thêm sản phẩm vào giỏ
+  useEffect(() => {
+    if (amountHandle > 0) {
+      addProductToCart(amountHandle);
+    }
+  }, [amountHandle]);
+
+  // Theo dõi số lượng sản phẩm mua thay đổi sau 2 giây
+  useEffect(() => {
+    const prodAmountAdd = setTimeout(() => {
+      setAmountHandle(amount);
+    }, 2000);
+    return () => clearTimeout(prodAmountAdd);
+  }, [amount])
+
   return (
     <TouchableOpacity
       activeOpacity={0.6}
       style={styles.container}
-      onPress={() => navigation.navigate("DetailProduct", { idProduct: product.productId })}
+      onPress={() =>
+        navigation.navigate("DetailProduct", { idProduct: product.productId })
+      }
     >
       <View>
         {/* Ảnh minh họa sản phẩm */}

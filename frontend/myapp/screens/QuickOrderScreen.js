@@ -25,8 +25,6 @@ const QuickOrderScreen = (props) => {
     "Gần tôi",
     "Yêu thích",
   ]);
-  const idUser = "ID_USER"; //chỗ này cần lấy id từ server
-
   // component header
   const Header = () => {
     return (

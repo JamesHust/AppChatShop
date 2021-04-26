@@ -22,7 +22,8 @@ const MainTab = () => {
       routeName === "EditProfile" ||
       routeName === "DetailProduct" ||
       routeName === "Wishlist" ||
-      routeName === "MonitorOrder"
+      routeName === "MonitorOrder" ||
+      routeName === "LoginScreen"
     ) {
       return false;
     }

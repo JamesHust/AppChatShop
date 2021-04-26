@@ -1,5 +1,5 @@
 const db = require("../util/database");
-const {formatDateTimeInsertDB} = require('../util/common');
+const { formatDateTimeInsertDB } = require("../util/common");
 const { Guid } = require("js-guid");
 
 //khai báo các biến toàn cục dùng chung
@@ -57,14 +57,17 @@ const updateToken = async (refreshToken, token) => {
 
 /**
  * Xóa token
- * @param {*} refreshToken
+ * @param {*} token
  * @returns
  */
-const deleteToken = async (refreshToken) => {
+const deleteToken = async (token) => {
   let result = null;
-  if (refreshToken) {
-    const sql = `delete from ${tableName} where RefreshToken = '${refreshToken}';`;
-    result = await db.execute(sql);
+  if (token) {
+    const existToken = await getToken(token);
+    if (existToken) {
+      const sql = `delete from ${tableName} where Id = '${existToken.Id}';`;
+      result = await db.execute(sql);
+    }
   }
   return result;
 };
@@ -75,5 +78,5 @@ module.exports = {
   getToken,
   createTokenDB,
   deleteToken,
-  updateToken
+  updateToken,
 };

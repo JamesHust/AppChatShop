@@ -11,7 +11,7 @@ import ReduxThunk from "redux-thunk";
 // Khai báo các reducer và gom về 1 nguồn
 const rootReducer = combineReducers({
   customerReducer,
-  authReducer
+  authReducer,
 });
 
 // Khởi tạo store

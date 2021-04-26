@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import InputIcon from "../components/InputIcon";
 import Button from "../components/Button";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import * as authActions from "../redux/actions/auth";
 import COLORS from "../constants/color";
 import HideWithKeyboard from "react-native-hide-with-keyboard";
@@ -107,6 +107,7 @@ const LoginScreen = ({ navigation }) => {
             case 200:
               const resData = await response.json();
               dispatch(authActions.storageToken(resData.data));
+              // await saveCartIdByCustomer();
               return navigation.navigate("Home");
             // trường hợp request truyền sang
             case 400:

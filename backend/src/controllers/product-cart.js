@@ -16,7 +16,7 @@ const getProductCarts = async (cartId) => {
   if (cartId) {
     const sql = `select * from ${tableName} where CartId = '${cartId}';`;
     const result = await db.execute(sql);
-    result[0].forEach(item => {
+    result[0].forEach((item) => {
       productCart = new ProductCart(
         item.Id,
         item.ProductId,
@@ -25,7 +25,7 @@ const getProductCarts = async (cartId) => {
         item.CartId
       );
       productCarts.push(productCart);
-    })
+    });
   }
   return productCarts;
 };
@@ -41,13 +41,15 @@ const getDetailProductCart = async (cartId, productId) => {
   if (cartId && productId) {
     const sql = `select * from ${tableName} where CartId = '${cartId}' and ProductId = '${productId}';`;
     const productCart = await db.execute(sql);
-    result = new ProductCart(
-      productCart[0][0].Id,
-      productCart[0][0].ProductId,
-      productCart[0][0].ProductAmount,
-      productCart[0][0].ProductPrice,
-      productCart[0][0].CartId
-    );
+    if (productCart[0][0]) {
+      result = new ProductCart(
+        productCart[0][0].Id,
+        productCart[0][0].ProductId,
+        productCart[0][0].ProductAmount,
+        productCart[0][0].ProductPrice,
+        productCart[0][0].CartId
+      );
+    }
   }
   return result;
 };
@@ -73,8 +75,6 @@ const updateOrAddProductCart = async (
     //kiểm tra tồn tại sản phẩm
     const existProductCart = await getDetailProductCart(cartId, productId);
     if (existProductCart) {
-      if (productAmount || productAmount === "0" || productAmount <= 0) {
-      }
       const amount = +existProductCart.productAmount + +productAmount;
       if (amount <= 0) {
         result = await deleteProductCart(existProductCart.id);

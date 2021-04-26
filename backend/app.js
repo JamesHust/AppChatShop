@@ -28,12 +28,13 @@ app.use("/public",express.static('public'));//cho phép hiển thị các file p
 app.use("/api", authRoutes);
 app.use("/api", productRoutes);
 app.use("/api", categoryRoutes);
+app.use("/api", cartRoutes);
 app.use("/api/reviews", isAuth, reviewRoutes);
 app.use("/api", isAuth, customerRoutes);
 app.use("/api", isAuth, adminRoutes);
 app.use("/api", isAuth, shipperRoutes);
 app.use("/api", isAuth, shopRoutes);
-app.use("/api", isAuth, cartRoutes);
+// app.use("/api", isAuth, cartRoutes);
 app.use("/api", isAuth, orderRoutes);
 app.use(errorRoutes.get404);
 

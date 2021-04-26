@@ -41,10 +41,8 @@ export const logout = () => {
           "x-access-token": userToken,
         },
       });
-      console.log(response.status);
       switch (response.status) {
         case 200:
-          console.log(userToken);
           await AsyncStorage.removeItem("userToken");
           return dispatch({ type: REMOVE_TOKEN });
         case 403:

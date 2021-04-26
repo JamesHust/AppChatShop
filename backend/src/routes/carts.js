@@ -1,6 +1,7 @@
 const express = require("express");
 const {
   getCarts,
+  getCartIdByCustomer,
   getDetailCartById,
   addProductToCart,
   deleteProductInCart,
@@ -12,6 +13,8 @@ const router = express.Router();
 
 //Lấy toàn bộ giỏ hàng, cho phép lọc theo khách hàng và cửa hàng
 router.get("/carts", getCarts);
+//Lấy id giỏ hàng theo khách hàng tương ứng
+router.get("/carts/id", getCartIdByCustomer);
 //Lấy chi tiết giỏ hàng theo id
 router.get("/carts/:cartId", getDetailCartById);
 //Thêm, sửa, xóa sản phẩm trong giỏ hàng

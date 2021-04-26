@@ -156,7 +156,6 @@ const ChatScreen = ({ route, navigation }) => {
       aspect: [4, 3],
       quality: 1,
     });
-    console.log(result);
 
     if (!result.cancelled) {
       let msg = {

@@ -12,22 +12,22 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import COLORS from "../constants/color";
-import { addDotToNumber } from "../utils/Common";
+import { addDotToNumber, showToast } from "../utils/Common";
 import { AntDesign } from "@expo/vector-icons";
 import RatingStar from "../components/RatingStar";
 import ReadMore from "react-native-read-more-text";
 import { TouchableOpacity } from "react-native-gesture-handler";
-import Product from "../models/product";
 import { useSelector, useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 
 const DetailProductScreen = ({ route, navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState(1);
   // Thông tin sản phẩm
   const idProduct = route.params.idProduct;
   const [data, setData] = useState({
     product: {
+      productId: "",
       imageUrl:
         "https://www.flaticon.com/svg/vstatic/svg/812/812850.svg?token=exp=1619003978~hmac=c7940ae416e210578fa00f6b23b02de2",
       productName: "",
@@ -41,6 +41,7 @@ const DetailProductScreen = ({ route, navigation }) => {
       categoryName: "",
     },
     shop: {
+      shopId: "",
       shopName: "",
     },
   });
@@ -51,9 +52,9 @@ const DetailProductScreen = ({ route, navigation }) => {
 
   //Hàm giảm số lượng
   const reduceAmount = () => {
-    if (amount > 0) {
+    if (amount > 1) {
       setAmount((amount) => amount - 1);
-    } else setAmount(0);
+    } else setAmount(1);
   };
 
   //Hàm tăng số lượng
@@ -103,11 +104,10 @@ const DetailProductScreen = ({ route, navigation }) => {
       switch (response.status) {
         case 200:
           const resData = await response.json();
-          console.log(resData);
-          if(resData){
-            if(resData.data.isFavourite === 1){
+          if (resData) {
+            if (resData.data.isFavourite === 1) {
               setFavourite(true);
-            }else{
+            } else {
               setFavourite(false);
             }
             setRating(resData.data.rating);
@@ -124,7 +124,6 @@ const DetailProductScreen = ({ route, navigation }) => {
               style: "cancel",
             },
           ]);
-          
       }
     } catch (err) {
       return Alert.alert("goFAST", `Lỗi tải đánh giá sản phẩm: ${err}`, [
@@ -256,7 +255,6 @@ const DetailProductScreen = ({ route, navigation }) => {
 
   // Cập nhật rating
   const updateRating = async (rate) => {
-    console.log("rate : " + rate);
     setRating(rate);
     await updateReview(rate, null);
   };
@@ -265,9 +263,62 @@ const DetailProductScreen = ({ route, navigation }) => {
   const updateIsFavorite = async () => {
     let isFavorite;
     isFavorite = !favourite ? 1 : 0;
-    console.log(isFavorite);
     await updateReview(null, isFavorite);
     setFavourite(!favourite);
+  };
+
+  // Hàm xử lý thêm
+  const handleOrder = async (amount) => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      if (token) {
+        const response = await fetch("http://192.168.1.125:3000/api/carts", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+          body: JSON.stringify({
+            customerId: customer.customerId,
+            shopId: data.shop.shopId,
+            productId: data.product.productId,
+            productPrice: data.product.purchasePrice,
+            productAmount: amount,
+          }),
+        });
+        switch (response.status) {
+          case 200:
+            showToast(`Thêm thành công ${amount} sản phẩm mới vào giỏ!`);
+            return;
+          default:
+            showToast(`Thêm mới sản phẩm vào giỏ thất bại!`);
+            return;
+        }
+      } else {
+        Alert.alert("goFAST", `Lỗi lấy xác thực`, [
+          {
+            text: "Thực hiện lại",
+            onPress: () => handleOrder(),
+          },
+          {
+            text: "Hủy",
+            style: "cancel",
+          },
+        ]);
+      }
+    } catch (err) {
+      Alert.alert("goFAST", `Lỗi thêm sản phẩm vào giỏ hàng: ${err}`, [
+        {
+          text: "Thực hiện lại",
+          onPress: () => handleOrder(),
+        },
+        {
+          text: "Hủy",
+          style: "cancel",
+        },
+      ]);
+    }
   };
 
   // Trường hợp đang load dữ liệu
@@ -512,7 +563,10 @@ const DetailProductScreen = ({ route, navigation }) => {
             </View>
           </View>
           {/* Đặt mua */}
-          <TouchableOpacity activeOpacity={0.8}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => handleOrder(amount)}
+          >
             <View style={styles.buyBtn}>
               <Text
                 style={{
@@ -521,7 +575,7 @@ const DetailProductScreen = ({ route, navigation }) => {
                   fontWeight: "bold",
                 }}
               >
-                Đặt mua
+                Thêm vào giỏ
               </Text>
             </View>
           </TouchableOpacity>
@@ -571,7 +625,7 @@ const styles = StyleSheet.create({
   },
   borderBtnText: { fontWeight: "bold", fontSize: 28 },
   buyBtn: {
-    width: 130,
+    width: 180,
     height: 45,
     backgroundColor: COLORS.red_13,
     justifyContent: "center",

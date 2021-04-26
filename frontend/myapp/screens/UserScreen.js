@@ -17,6 +17,7 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import COLORS from "../constants/color";
 import myaccount from "../data/myaccount";
 import { useDispatch, useSelector } from "react-redux";
+import { CommonActions, StackActions } from "@react-navigation/native";
 
 import Share from "react-native-share";
 
@@ -50,7 +51,7 @@ const ProfileScreen = ({ navigation }) => {
   const logoutHandle = () => {
     try {
       dispatch(authActions.logout());
-      navigation.navigate("LoginScreen");
+      navigation.dispatch(StackActions.popToTop());
     } catch (err) {
       Alert.alert("goFAST", `Có lỗi không mong muốn: ${e}`, [
         {
@@ -61,7 +62,7 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
   
-  const customer = useSelector(state => state.authReducer.customer);
+  const customer = useSelector((state) => state.authReducer.customer);
 
   // Check trường hợp đang tải dữ liệu
   if (isLoading) {

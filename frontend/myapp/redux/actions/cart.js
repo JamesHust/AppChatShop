@@ -18,6 +18,7 @@ export const REMOVE_ALL_SELECTED = "REMOVE_ALL_SELECTED";
  */
 export const getOldCart = (customerId, token) => {
   return async (dispatch) => {
+    console.log("getOldCart");
     try {
       const response = await fetch(
         `http://192.168.0.4:3000/api/carts?customerId=${customerId}`,

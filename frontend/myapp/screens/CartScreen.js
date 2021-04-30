@@ -292,7 +292,7 @@ const CartScreen = () => {
       <Header />
       <ScrollView showsVerticalScrollIndicator={false}>
         <CartBody />
-        <View style={{ paddingHorizontal: 20 }}>
+        <View style={{ paddingHorizontal: 15 }}>
           {/* Tiền ship */}
           <View
             style={{

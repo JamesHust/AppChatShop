@@ -77,7 +77,6 @@ const CartProduct = (props) => {
         });
         switch (response.status) {
           case 200:
-            console.log("200");
             dispatch(cartActions.getOldCart(customer.customerId, token));
             showToast(`Thêm thành công ${amountBuy} sản phẩm mới vào giỏ!`);
             return;

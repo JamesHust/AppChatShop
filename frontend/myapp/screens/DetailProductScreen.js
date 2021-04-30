@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -19,10 +20,11 @@ import ReadMore from "react-native-read-more-text";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { useSelector, useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
+import * as cartActions from "../redux/actions/cart";
 
 const DetailProductScreen = ({ route, navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [amount, setAmount] = useState(1);
+  const [amount, setAmount] = useState("1");
   // Thông tin sản phẩm
   const idProduct = route.params.idProduct;
   const [data, setData] = useState({
@@ -52,14 +54,14 @@ const DetailProductScreen = ({ route, navigation }) => {
 
   //Hàm giảm số lượng
   const reduceAmount = () => {
-    if (amount > 1) {
-      setAmount((amount) => amount - 1);
-    } else setAmount(1);
+    if (+amount > 1) {
+      setAmount((amount) => `${+amount - 1}`);
+    } else setAmount("1");
   };
 
   //Hàm tăng số lượng
   const increasingAmount = () => {
-    setAmount((amount) => amount + 1);
+    setAmount((amount) => `${+amount + 1}`);
   };
 
   // Hiển thị khi co đoạn text
@@ -216,7 +218,7 @@ const DetailProductScreen = ({ route, navigation }) => {
           showToast("Cập nhật đánh giá thành công");
           return;
         default:
-          showToast("Cập nhật đánh giá thất bại")
+          showToast("Cập nhật đánh giá thất bại");
           return;
       }
     } catch (err) {
@@ -253,6 +255,13 @@ const DetailProductScreen = ({ route, navigation }) => {
     setFavourite(!favourite);
   };
 
+  // Hàm xử lý khi tự nhập sản phẩm
+  const numberInputHandler = (inputText) => {
+    if (inputText && inputText!="0") {
+      setAmount(inputText.replace(/[^0-9]/g, ""));
+    } else setAmount("1");
+  };
+
   // Hàm xử lý thêm
   const handleOrder = async (amount) => {
     try {
@@ -270,17 +279,12 @@ const DetailProductScreen = ({ route, navigation }) => {
             shopId: data.shop.shopId,
             productId: data.product.productId,
             productPrice: data.product.purchasePrice,
-            productAmount: amount,
+            productAmount: +amount,
           }),
         });
         switch (response.status) {
           case 200:
-            dispatch(
-              cartActions.getOldCart(
-                customer.CustomerId,
-                token
-              )
-            );
+            dispatch(cartActions.getOldCart(customer.customerId, token));
             showToast(`Thêm thành công ${amount} sản phẩm mới vào giỏ!`);
             return;
           default:
@@ -533,14 +537,17 @@ const DetailProductScreen = ({ route, navigation }) => {
                   <Text style={styles.iconSetAmount}>-</Text>
                 </View>
               </TouchableOpacity>
-              <View
-                style={{
-                  ...styles.buttonSetAmount,
-                }}
-              >
-                <Text style={{ ...styles.iconSetAmount, color: COLORS.dark }}>
-                  {amount}
-                </Text>
+              <View style={{ width: 50 }}>
+                <TextInput
+                  blurOnSubmit
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  style={styles.input}
+                  value={amount}
+                  onChangeText={numberInputHandler}
+                />
               </View>
               <TouchableOpacity onPress={increasingAmount} activeOpacity={0.8}>
                 <View
@@ -557,7 +564,15 @@ const DetailProductScreen = ({ route, navigation }) => {
           {/* Đặt mua */}
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => handleOrder(amount)}
+            onPress={() => {
+              if (amount > 0) {
+                handleOrder(amount);
+              } else {
+                showToast(
+                  "Hãy tăng số sản phẩm lớn hơn 0 để thêm vào giỏ hàng."
+                );
+              }
+            }}
           >
             <View style={styles.buyBtn}>
               <Text
@@ -642,6 +657,8 @@ const styles = StyleSheet.create({
   containerSetAmount: {
     flexDirection: "row",
     overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonSetAmount: {
     width: 35,
@@ -674,6 +691,11 @@ const styles = StyleSheet.create({
     height: 1,
     width: 100,
     backgroundColor: COLORS.grey_5,
+  },
+  input: {
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

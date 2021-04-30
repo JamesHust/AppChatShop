@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from "react-native";
 import { Checkbox } from "react-native-paper";
 import COLORS from "../constants/color";
@@ -20,7 +21,7 @@ const CardCart = ({ data, checkedAll }) => {
     (state) => state.cartReducer.selectedProductInCart
   );
   const [checked, setChecked] = useState(false);
-  const [amount, setAmount] = useState(data.productAmount);
+  const [amount, setAmount] = useState(`${data.productAmount}`);
   const [amountHandle, setAmountHandle] = useState();
   const isFirstRun = useRef(true);
   const dispatch = useDispatch(); //khởi tạo dispatch
@@ -37,7 +38,7 @@ const CardCart = ({ data, checkedAll }) => {
       : setChecked(false);
   }, []);
 
-  // hàm xử lý khi check và không check sản phẩm 
+  // hàm xử lý khi check và không check sản phẩm
   const handleCheck = () => {
     if (!checked) {
       dispatch(cartActions.addSelectedProductCart(data.productId));
@@ -45,50 +46,70 @@ const CardCart = ({ data, checkedAll }) => {
       dispatch(cartActions.removeSelectedProductCart(data.productId));
     }
     setChecked(!checked);
-  }
+  };
 
   //Hàm giảm số lượng
   const reduceAmount = () => {
-    if (amount > 1) {
-      setAmount((amount) => +amount - 1);
-    } else setAmount(1);
+    if (+amount > 1) {
+      setAmount((amount) => `${+amount - 1}`);
+    } else setAmount("1");
   };
 
   //Hàm tăng số lượng
   const increasingAmount = () => {
-    setAmount((amount) => +amount + 1);
+    setAmount((amount) => `${+amount + 1}`);
+  };
+
+  // Hàm xử lý khi tự nhập sản phẩm
+  const numberInputHandler = (inputText) => {
+    if (inputText && inputText!="0") {
+      setAmount(inputText.replace(/[^0-9]/g, ""));
+    } else setAmount("1");
   };
 
   // Hàm xử lý thêm sản phẩm vào giỏ hàng
-  const updateProductToCart = useCallback(async (amountBuy) => {
-    console.log("updateProductToCart");
-    try {
-      const token = await AsyncStorage.getItem("userToken");
-      if (token) {
-        const response = await fetch("http://192.168.0.4:3000/api/carts", {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "x-access-token": token,
-          },
-          body: JSON.stringify({
-            productId: data.productId,
-            cartId: data.cartId,
-            amountUpdate: amountBuy,
-          }),
-        });
-        switch (response.status) {
-          case 200:
-            dispatch(cartActions.getOldCart(customer.customerId, token));
-            showToast(`Cập nhật sản phẩm trong giỏ thành công!`);
-            return;
-          default:
-            showToast(`Cập nhật sản phẩm trong giỏ thất bại!`);
-            return;
+  const updateProductToCart = useCallback(
+    async (amountBuy) => {
+      console.log("updateProductToCart");
+      try {
+        const token = await AsyncStorage.getItem("userToken");
+        if (token) {
+          const response = await fetch("http://192.168.0.4:3000/api/carts", {
+            method: "PUT",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "x-access-token": token,
+            },
+            body: JSON.stringify({
+              productId: data.productId,
+              cartId: data.cartId,
+              amountUpdate: amountBuy,
+            }),
+          });
+          switch (response.status) {
+            case 200:
+              dispatch(cartActions.getOldCart(customer.customerId, token));
+              showToast(`Cập nhật sản phẩm trong giỏ thành công!`);
+              return;
+            default:
+              showToast(`Cập nhật sản phẩm trong giỏ thất bại!`);
+              return;
+          }
+        } else {
+          Alert.alert("goFAST", `Lỗi lấy xác thực`, [
+            {
+              text: "Thực hiện lại",
+              onPress: () => addProductToCart(),
+            },
+            {
+              text: "Hủy",
+              style: "cancel",
+            },
+          ]);
         }
-      } else {
-        Alert.alert("goFAST", `Lỗi lấy xác thực`, [
+      } catch (err) {
+        Alert.alert("goFAST", `Lỗi cập nhật sản phẩm trong giỏ hàng: ${err}`, [
           {
             text: "Thực hiện lại",
             onPress: () => addProductToCart(),
@@ -99,19 +120,9 @@ const CardCart = ({ data, checkedAll }) => {
           },
         ]);
       }
-    } catch (err) {
-      Alert.alert("goFAST", `Lỗi cập nhật sản phẩm trong giỏ hàng: ${err}`, [
-        {
-          text: "Thực hiện lại",
-          onPress: () => addProductToCart(),
-        },
-        {
-          text: "Hủy",
-          style: "cancel",
-        },
-      ]);
-    }
-  }, [amountHandle]);
+    },
+    [amountHandle]
+  );
 
   // Theo dõi khi số lượng thay đổi sau 1.8 giây sẽ thêm sản phẩm vào giỏ
   useEffect(() => {
@@ -124,7 +135,7 @@ const CardCart = ({ data, checkedAll }) => {
   useEffect(() => {
     if (!isFirstRun.current) {
       const prodAmountUpdate = setTimeout(() => {
-        setAmountHandle(amount);
+        setAmountHandle(+amount);
       }, 1500);
       return () => clearTimeout(prodAmountUpdate);
     } else {
@@ -175,14 +186,17 @@ const CardCart = ({ data, checkedAll }) => {
               <Text style={style.iconSetAmount}>-</Text>
             </View>
           </TouchableOpacity>
-          <View
-            style={{
-              ...style.buttonSetAmount,
-            }}
-          >
-            <Text style={{ ...style.iconSetAmount, color: COLORS.dark }}>
-              {amount}
-            </Text>
+          <View style={{ width: 50 }}>
+            <TextInput
+              blurOnSubmit
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="numeric"
+              maxLength={4}
+              style={style.input}
+              value={amount}
+              onChangeText={numberInputHandler}
+            />
           </View>
           <TouchableOpacity onPress={increasingAmount} activeOpacity={0.8}>
             <View
@@ -207,8 +221,8 @@ const style = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: COLORS.light,
     marginVertical: 7,
-    marginHorizontal: 15,
-    paddingHorizontal: 10,
+    marginHorizontal: 10,
+    paddingHorizontal: 8,
     flexDirection: "row",
     alignItems: "center",
   },
@@ -235,7 +249,7 @@ const style = StyleSheet.create({
   },
   infoProductContainer: {
     height: 100,
-    marginLeft: 10,
+    marginLeft: 5,
     paddingVertical: 18,
     flex: 1,
     justifyContent: "space-between",
@@ -243,6 +257,8 @@ const style = StyleSheet.create({
   containerSetAmount: {
     flexDirection: "row",
     overflow: "hidden",
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   buttonSetAmount: {
     width: 30,
@@ -255,6 +271,11 @@ const style = StyleSheet.create({
     fontWeight: "bold",
     color: COLORS.light,
     textAlign: "center",
+  },
+  input: {
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 export default CardCart;

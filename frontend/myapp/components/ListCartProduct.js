@@ -32,14 +32,13 @@ const styles = StyleSheet.create({
   listProduct: {
     flex: 1,
     marginTop: 10,
-    paddingHorizontal: 8,
   },
   nameStore: {
     paddingBottom: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 15,
+    paddingHorizontal: 10,
   },
   dash: {
     height: 1,

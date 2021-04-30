@@ -6,6 +6,7 @@ module.exports = class DetailProduct extends Product {
     productCode, //mã sản phẩm(cho phép người dùng nhìn)
     productName, //tên sản phẩm
     description, //mô tả
+    unit,
     imageUrl, //đường dẫn hình ảnh minh họa sản phẩm
     importPrice, //giá nhập hàng
     purchasePrice, //giá bán
@@ -15,10 +16,12 @@ module.exports = class DetailProduct extends Product {
     rating, //đánh giá
     sale, //giảm giá
     shopId, //id cửa hàng
+    shopName, //id cửa hàng
     categoryId, //id loại sản phẩm
+    categoryName, //id loại sản phẩm
     cartId, //id giỏ hàng
     orderId, //id giỏ hàng
-    productAmount, //số lượng sản phẩm
+    productAmount, //số lượng sản phẩm bán
     productPrice //giá tiền bán hiện tại
   ) {
     super(
@@ -26,6 +29,7 @@ module.exports = class DetailProduct extends Product {
       productCode,
       productName,
       description,
+      unit,
       imageUrl,
       importPrice,
       purchasePrice,
@@ -41,5 +45,7 @@ module.exports = class DetailProduct extends Product {
     this.orderId = orderId;
     this.productAmount = productAmount;
     this.productPrice = productPrice;
+    this.shopName = shopName;
+    this.categoryName = categoryName;
   }
 };

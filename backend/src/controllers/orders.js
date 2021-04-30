@@ -10,6 +10,7 @@ const {
   deleteRecord,
 } = require("../util/common");
 const { getProductCarts } = require("./product-cart");
+const { Guid } = require("js-guid");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "order";
@@ -29,7 +30,7 @@ const getOrders = async (req, res, next) => {
 
   try {
     const listOrder = await db.execute(sql);
-    if(listOrder[0] && listOrder.length > 0){
+    if (listOrder[0] && listOrder.length > 0) {
       const result = listOrder[0];
       res.send(
         new Response(
@@ -41,7 +42,7 @@ const getOrders = async (req, res, next) => {
           (data = result)
         )
       );
-    }else{
+    } else {
       res.send(
         new Response(
           (isSuccess = true),
@@ -93,6 +94,7 @@ const getDetailProductOrders = async (req, res, next) => {
           productOrder.ProductCode,
           productOrder.ProductName,
           productOrder.Description,
+          productOrder.Unit,
           productOrder.ImageUrl,
           productOrder.ImportPrice,
           productOrder.PurchasePrice,
@@ -102,7 +104,9 @@ const getDetailProductOrders = async (req, res, next) => {
           productOrder.Rating,
           productOrder.Sale,
           productOrder.ShopId,
+          productOrder.ShopName,
           productOrder.CategoryId,
+          productOrder.CategoryName,
           "",
           productOrder.OrderId,
           productOrder.ProductAmount,
@@ -157,93 +161,63 @@ const getDetailProductOrders = async (req, res, next) => {
  * @param {*} next next sang middleware khác
  */
 const addProductsToOrder = async (req, res, next) => {
-  const cartId = req.body.cartId;
+  const listProductForShop = req.body.listProductForShop;
   const customerId = req.body.customerId;
-  const shopId = req.body.shopId;
-  const total = req.body.total;
-  if (cartId && customerId && shopId && total) {
+  if (listProductForShop && listProductForShop.length > 0) {
     try {
-      const listProducts = await getProductCarts(cartId);
-      if (listProducts && listProducts.length > 0) {
-        const resultCreateOrderEmpty = await createOrder(
-          cartId,
-          customerId,
-          shopId,
-          total
-        );
-        if (resultCreateOrderEmpty) {
-          const result = await addProductOrders(listProducts);
-          await deleteRecord("CartId", cartId);
-          if (result) {
-            res.send(
-              new Response(
-                (isSuccess = true),
-                (errorCode = null),
-                (devMsg = `Craete order success.`),
-                (userMsg = `Tạo đơn hàng thành công.`),
-                (moreInfo = null),
-                (data = result)
-              )
-            );
-          } else {
-            res.send(
-              new Response(
-                (isSuccess = false),
-                (errorCode = "DB004"),
-                (devMsg = "Cannot add product to empty order."),
-                (userMsg = "Không thể thêm sản phẩm vào đơn hàng rỗng."),
-                (moreInfo = "addProductsToOrder error!"),
-                (data = null)
-              )
-            );
-          }
-        } else {
-          res.send(
-            new Response(
-              (isSuccess = false),
-              (errorCode = "DB004"),
-              (devMsg = "Cannot create order empty to add products."),
-              (userMsg = "Không thể tạo đơn hàng rỗng để thêm sản phẩm"),
-              (moreInfo = "addProductsToOrder error!"),
-              (data = null)
-            )
-          );
+      let checkSuccess = true;
+      listProductForShop.map(async (item) => {
+        let total = 15000;
+        const shopId = item[0].shopId;
+        item.forEach((prod) => {
+          total += +prod.productAmount * +prod.productPrice;
+        });
+        //Tạo order mới
+        const orderId = await createOrder(customerId, shopId, total);
+        //Kiểm tra đã tạo thành công order mới chưa, nếu rồi thì thêm các product order vào
+        if (orderId) {
+          await addProductOrders(item, orderId);
         }
-      } else {
-        res.send(
+      });
+      res
+        .status(200)
+        .send(
+          new Response(
+            (isSuccess = true),
+            (errorCode = null),
+            (devMsg = `Craete order success.`),
+            (userMsg = `Tạo đơn hàng thành công.`),
+            (moreInfo = null),
+            (data = "success")
+          )
+        );
+    } catch (err) {
+      res
+        .status(500)
+        .send(
           new Response(
             (isSuccess = false),
-            (errorCode = "DB001"),
-            (devMsg = `Cannot get list products in cart or does not exist cart with id = '${cartId}'`),
-            (userMsg = `Không thể lấy danh sách sản phẩm trong giỏ hoặc không tồn tại giỏ hàng có id = '${cartId}'`),
+            (errorCode = "DB004"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi không thêm mới được dữ liệu"),
             (moreInfo = "addProductsToOrder error!"),
             (data = null)
           )
         );
-      }
-    } catch (err) {
-      res.send(
+    }
+  } else {
+    res
+      .status(400)
+      .send(
         new Response(
           (isSuccess = false),
-          (errorCode = "DB004"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi không thêm mới được dữ liệu"),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
           (moreInfo = "addProductsToOrder error!"),
           (data = null)
         )
       );
-    }
-  } else {
-    res.send(
-      new Response(
-        (isSuccess = false),
-        (errorCode = ""),
-        (devMsg = "Params in request is null."),
-        (userMsg = "Dữ liệu truyền sang đang để trống."),
-        (moreInfo = "addProductsToOrder error!"),
-        (data = null)
-      )
-    );
   }
 };
 
@@ -439,8 +413,8 @@ const getOrderById = async (orderId) => {
  * @param {*} total Tổng tiền đơn hàng
  * @returns
  */
-const createOrder = async (cartId, customerId, shopId, total) => {
-  const orderId = cartId;
+const createOrder = async (customerId, shopId, total) => {
+  const orderId = Guid.newGuid().toString();
   //Lấy mã code lớn nhất và tạo mã code mới khi thêm mới đơn hàng
   const maxCode = await getMaxCode(objName);
   let orderCode = generateNewCode(maxCode);

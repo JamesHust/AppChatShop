@@ -4,9 +4,11 @@ const Response = require("../models/response");
 const { Guid } = require("js-guid");
 const {
   getDetailProductCart,
-  updateOrAddProductCart,
+  addProductCart,
   deleteProductCart,
+  updateProductCart,
 } = require("./product-cart");
+const { convertPathFile } = require("../util/common");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "cart";
@@ -14,7 +16,12 @@ const tableNameReference = "product_cart";
 const primaryKeyTable = "CartId";
 
 //#region API function - service
-
+/**
+ * Lấy danh sách id giỏ hàng theo khách hàng
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
 const getCartIdByCustomer = async (req, res, next) => {
   const customerId = req.query.customerId;
   const shopId = req.query.shopId;
@@ -62,17 +69,19 @@ const getCartIdByCustomer = async (req, res, next) => {
           )
         );
     }
-  }else{
-    res.status(400).send(
-      new Response(
-        (isSuccess = false),
-        (errorCode = null),
-        (devMsg = "Params in request is null"),
-        (userMsg = null),
-        (moreInfo = null),
-        (data = null)
-      )
-    );
+  } else {
+    res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = null),
+          (devMsg = "Params in request is null"),
+          (userMsg = null),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
   }
 };
 
@@ -84,14 +93,14 @@ const getCartIdByCustomer = async (req, res, next) => {
  * @param {*} next next sang middleware khác
  */
 const getCarts = async (req, res, next) => {
-  const shopCode = req.query.shopCode;
-  const customerCode = req.query.customerCode;
+  const shopId = req.query.shopId;
+  const customerId = req.query.customerId;
   let sql = `select distinct c1.${primaryKeyTable} from ${tableName} c1 `;
-  if (customerCode) {
-    sql += `inner join ${tableName} c2 on c1.CustomerCode like '%${customerCode}%' `;
+  if (customerId) {
+    sql += `inner join ${tableName} c2 on c1.CustomerId = '${customerId}' `;
   }
-  if (shopCode) {
-    sql += `inner join ${tableName} c3 on c1.ShopCode = '${shopCode}' `;
+  if (shopId) {
+    sql += `inner join ${tableName} c3 on c1.ShopId = '${shopId}' `;
   }
   try {
     let result = [];
@@ -99,30 +108,38 @@ const getCarts = async (req, res, next) => {
     await Promise.all(
       listCartId[0].map(async (item) => {
         const productCart = await getProductsByCart(item.CartId);
-        const detailProduct = new DetailProduct(
-          productCart.ProductId,
-          productCart.ProductCode,
-          productCart.ProductName,
-          productCart.Description,
-          productCart.ImageUrl,
-          productCart.ImportPrice,
-          productCart.PurchasePrice,
-          productCart.Amount,
-          productCart.QuantitySold,
-          productCart.DateOfImport,
-          productCart.Rating,
-          productCart.Sale,
-          productCart.ShopId,
-          productCart.CategoryId,
-          productCart.CartId,
-          "",
-          productCart.ProductAmount,
-          productCart.ProductPrice
-        );
-        result.push(detailProduct);
+        if (productCart.length && productCart.length > 1) {
+          result = [...productCart, ...result];
+        } else {
+          const detailProduct = new DetailProduct(
+            productCart.ProductId,
+            productCart.ProductCode,
+            productCart.ProductName,
+            productCart.Description,
+            productCart.Unit,
+            convertPathFile(productCart.ImageUrl),
+            productCart.ImportPrice,
+            productCart.PurchasePrice,
+            productCart.Amount,
+            productCart.QuantitySold,
+            productCart.DateOfImport,
+            productCart.Rating,
+            productCart.Sale,
+            productCart.ShopId,
+            productCart.ShopName,
+            productCart.CategoryId,
+            productCart.CategoryName,
+            productCart.CartId,
+            "",
+            productCart.ProductAmount,
+            productCart.ProductPrice
+          );
+          result.push(detailProduct);
+        }
       })
     );
     if (result.length > 0) {
+      const rs = classifyShop(result);
       res.send(
         new Response(
           (isSuccess = true),
@@ -130,7 +147,7 @@ const getCarts = async (req, res, next) => {
           (devMsg = `Get list cart success.`),
           (userMsg = `Lấy danh sách giỏ hàng thành công.`),
           (moreInfo = null),
-          (data = result)
+          (data = rs)
         )
       );
     } else {
@@ -176,7 +193,7 @@ const getDetailCartById = async (req, res, next) => {
           result.ProductCode,
           result.ProductName,
           result.Description,
-          result.ImageUrl,
+          convertPathFile(result.ImageUrl),
           result.ImportPrice,
           result.PurchasePrice,
           result.Amount,
@@ -240,7 +257,7 @@ const getDetailCartById = async (req, res, next) => {
 };
 
 /**
- * Thêm, cập nhật sản phẩm trong giỏ hàng
+ * Thêm sản phẩm vào giỏ hàng
  * @param {*} req request
  * @param {*} res response
  * @param {*} next next sang middleware khác
@@ -265,12 +282,7 @@ const addProductToCart = async (req, res, next) => {
         if (exitsCart) {
           const costAdded = +productPrice * +productAmount;
           result = await Promise.all([
-            updateOrAddProductCart(
-              cartId,
-              productId,
-              productAmount,
-              productPrice
-            ),
+            addProductCart(cartId, productId, productAmount, productPrice),
             updateTotalCart(cartId, costAdded),
           ]);
           res
@@ -301,7 +313,7 @@ const addProductToCart = async (req, res, next) => {
         }
       } else {
         const newCartId = await createCart(customerId, shopId, costAdded);
-        result = await updateOrAddProductCart(
+        result = await addProductCart(
           newCartId,
           productId,
           productAmount,
@@ -351,6 +363,76 @@ const addProductToCart = async (req, res, next) => {
 };
 
 /**
+ * Cập nhật sản phẩm giỏ hàng
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+const updateProductInCart = async (req, res, next) => {
+  const cartId = req.body.cartId;
+  const productId = req.body.productId;
+  const amountUpdate = req.body.amountUpdate;
+  if (cartId && productId && amountUpdate) {
+    try {
+      const result = await updateProductCart(cartId, productId, amountUpdate);
+      if (result) {
+        res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = null),
+              (devMsg = "Update cart success!"),
+              (userMsg = "Cập nhật giỏ hàng thành công"),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      } else {
+        res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = false),
+              (errorCode = null),
+              (devMsg = "Cannot found product in cart!"),
+              (userMsg = "Không thể tìm thấy sản phẩm trong giỏ hàng"),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      }
+    } catch (err) {
+      res
+        .status(500)
+        .send(
+          new Response(
+            (isSuccess = false),
+            (errorCode = "DB002"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi cập nhật cơ sở dữ liệu"),
+            (moreInfo = null),
+            (data = null)
+          )
+        );
+    }
+  } else {
+    res
+      .status(404)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = null),
+          (devMsg = "Params in request is null"),
+          (userMsg = null),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
+  }
+};
+
+/**
  * Xóa toàn bộ giỏ hàng, bao gồm tất cả sản phẩm trong giỏ
  * @param {*} req request
  * @param {*} res response
@@ -362,7 +444,7 @@ const deleteCart = async (req, res, next) => {
   if (cartId) {
     try {
       const sql = `delete from ${tableName} where ${primaryKeyTable} = "${cartId}"`;
-      result = db.execute(sql);
+      result = await db.execute(sql);
       res.send(
         new Response(
           (isSuccess = true),
@@ -406,38 +488,41 @@ const deleteCart = async (req, res, next) => {
  * @param {*} next next sang middleware khác
  */
 const deleteProductInCart = async (req, res, next) => {
-  console.log("deleteProductInCart");
-  const cartId = req.query.cartId;
-  const productId = req.query.productId;
+  const listProd = req.body.listProd;
 
-  if (cartId && productId) {
-    let result;
+  if (listProd && listProd.length > 0) {
+    let result = [];
     try {
-      const existProductCart = await getDetailProductCart(cartId, productId);
-      if (existProductCart) {
-        result = await deleteProductCart(existProductCart.Id);
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = null),
-            (userMsg = null),
-            (moreInfo = null),
-            (data = result)
-          )
-        );
-      } else {
-        res.send(
-          new Response(
-            (isSuccess = false),
-            (errorCode = null),
-            (devMsg = `Cannot found product with id = '${productId}' in cart with id = '${productId}'`),
-            (userMsg = `Không thể tìm thấy sản phẩm có id = '${productId}' trong giỏ hàng có id = '${productId}'`),
-            (moreInfo = null),
-            (data = null)
-          )
-        );
-      }
+      await Promise.all(
+        listProd.map(async (item) => {
+          const cartId = item.cartId;
+          const productId = item.productId;
+          const existProductCart = await getDetailProductCart(
+            cartId,
+            productId
+          );
+          if (existProductCart) {
+            const rs = await deleteProductCart(existProductCart.id);
+            const checkHaveProdInCart = await getProductsByCart(cartId);
+            if (!checkHaveProdInCart) {
+              await db.execute(
+                `delete from ${tableName} where ${primaryKeyTable} = "${cartId}"`
+              );
+            }
+            result.push(rs);
+          }
+        })
+      );
+      res.send(
+        new Response(
+          (isSuccess = true),
+          (errorCode = null),
+          (devMsg = null),
+          (userMsg = null),
+          (moreInfo = null),
+          (data = result)
+        )
+      );
     } catch (err) {
       res.send(
         new Response(
@@ -474,9 +559,40 @@ const deleteProductInCart = async (req, res, next) => {
  */
 const getProductsByCart = async (cartId) => {
   //tạo câu lệnh sql tương ứng
-  const sql = `select p.*, pc.ProductAmount, pc.ProductPrice, pc.CartId from product p, ${tableNameReference} pc where pc.CartId = '${cartId}' and p.ProductId = pc.ProductId;`;
+  const sql = `select p.*, pc.ProductAmount, pc.ProductPrice, pc.CartId, s.ShopName, c.CategoryName from product p, ${tableNameReference} pc, shop s, category c where pc.CartId = '${cartId}' and p.ProductId = pc.ProductId and p.ShopId = s.ShopId and p.CategoryId = c.CategoryId;`;
   const result = await db.execute(sql);
-  return result[0][0];
+  if (result && result.length > 0) {
+    if (result[0].length > 1) {
+      const listRs = [];
+      result[0].map(async (item) => {
+        const detailProduct = new DetailProduct(
+          item.ProductId,
+          item.ProductCode,
+          item.ProductName,
+          item.Description,
+          item.Unit,
+          convertPathFile(item.ImageUrl),
+          item.ImportPrice,
+          item.PurchasePrice,
+          item.Amount,
+          item.QuantitySold,
+          item.DateOfImport,
+          item.Rating,
+          item.Sale,
+          item.ShopId,
+          item.ShopName,
+          item.CategoryId,
+          item.CategoryName,
+          item.CartId,
+          "",
+          item.ProductAmount,
+          item.ProductPrice
+        );
+        listRs.push(detailProduct);
+      });
+      return listRs;
+    } else return result[0][0];
+  } else return null;
 };
 
 /**
@@ -548,6 +664,26 @@ const updateTotalCart = async (cartId, costAdded) => {
   } else return null;
 };
 
+/**
+ * Hàm phân loại sản phẩm theo cửa hàng
+ * @param {*} data
+ */
+const classifyShop = (data) => {
+  const dt = data.map((i) => i.shopId);
+  const listShop = dt.filter((value, index) => dt.indexOf(value) == index);
+
+  let list = [];
+  listShop.forEach((i) => {
+    let itemRs = [];
+    data.forEach((item) => {
+      if (item.shopId == i) {
+        itemRs.push(item);
+      }
+    });
+    list.push(itemRs);
+  });
+  return list;
+};
 //#endregion
 
 //export controller
@@ -556,6 +692,7 @@ module.exports = {
   getCartIdByCustomer,
   getDetailCartById,
   addProductToCart,
+  updateProductInCart,
   deleteCart,
   deleteProductInCart,
 };

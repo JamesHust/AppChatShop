@@ -1,7 +1,9 @@
 const { Guid } = require("js-guid");
 const db = require("../util/database");
 const ReviewProduct = require("../models/review-product");
-const Response = require('../models/response');
+const DetailProduct = require("../models/detail-product");
+const { convertPathFile } = require("../util/common");
+const Response = require("../models/response");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "review_product";
@@ -94,31 +96,55 @@ const getListFavouriteProduct = async (req, res, next) => {
   const idCustomer = req.params.idCustomer;
   if (idCustomer) {
     try {
-      const sql = ``;
-      const result = await db.execute(sql);
-      if (result[0] && result[0].length > 0) {
-        let reviews = [];
-        result[0].forEach((item) => {
-          const review = new ReviewProduct(
-            item.Id,
-            item.CustomerId,
-            item.ProductId,
-            item.Rating,
-            item.ReviewText,
-            item.IsFavourite
-          );
-          reviews.push(review);
-        });
+      let wishlist = [];
+      const listIdProd = await db.execute(
+        `select ProductId from review_product where CustomerId = '${idCustomer}' and IsFavourite = 1`
+      );
+      if (listIdProd[0].length > 0) {
+        await Promise.all(
+          listIdProd[0].map(async (item) => {
+            const sql = `select p.*, s.ShopName, c.CategoryName from \`product\` p,\`shop\` s,\`category\` c where p.ProductId = '${item.ProductId}' and p.ShopId = s.ShopId and p.CategoryId = c.CategoryId;`;
+            const rs = await db.execute(sql);
+            const product = rs[0][0];
+            wishlist.push(
+              new DetailProduct(
+                product.ProductId,
+                product.ProductCode,
+                product.ProductName,
+                product.Description,
+                product.Unit,
+                convertPathFile(product.ImageUrl),
+                product.ImportPrice,
+                product.PurchasePrice,
+                product.Amount,
+                product.QuantitySold,
+                product.DateOfImport,
+                product.Rating,
+                product.Sale,
+                product.ShopId,
+                product.ShopName,
+                product.CategoryId,
+                product.CategoryName,
+                product.CartId,
+                "",
+                "",
+                ""
+              )
+            );
+          })
+        );
+      }
+      if (wishlist.length > 0) {
         res
           .status(200)
           .send(
             new Response(
               (isSuccess = true),
               (errorCode = null),
-              (devMsg = null),
-              (userMsg = null),
+              (devMsg = `Get wishlist for customer with id = '${idCustomer}' success!`),
+              (userMsg = `Lấy danh sách yêu thích thành công.`),
               (moreInfo = null),
-              (data = reviews)
+              (data = wishlist)
             )
           );
       } else {
@@ -128,8 +154,8 @@ const getListFavouriteProduct = async (req, res, next) => {
             new Response(
               (isSuccess = true),
               (errorCode = null),
-              (devMsg = "Data is empty."),
-              (userMsg = `Không tìm thấy kết quả`),
+              (devMsg = `Customer don't have any favourite product.`),
+              (userMsg = `Khách hàng không có sản phẩm yêu thích nào.`),
               (moreInfo = null),
               (data = null)
             )
@@ -252,7 +278,7 @@ const checkExistReview = async (idCustomer, idProduct) => {
   if (rs[0][0]) {
     result = rs[0][0];
   }
-  return result;    
+  return result;
 };
 
 //#endregion
@@ -261,5 +287,5 @@ const checkExistReview = async (idCustomer, idProduct) => {
 module.exports = {
   getReview,
   getListFavouriteProduct,
-  reviewProduct
+  reviewProduct,
 };

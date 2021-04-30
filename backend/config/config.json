@@ -4,7 +4,7 @@
         "app_name": "app_shop",
         "app_desc": "Quick order application in just 3 steps on smartphone with integrated online chat.",
         "node_port": 3000,
-        "node_ip": "192.168.1.125",
+        "node_ip": "192.168.0.4",
         "database": {
             "host": "localhost",
             "user": "root",

@@ -91,7 +91,7 @@ const DetailProductScreen = ({ route, navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/reviews/products?idProduct=${idProduct}&idCustomer=${customer.customerId}`,
+        `http://192.168.0.4:3000/api/reviews/products?idProduct=${idProduct}&idCustomer=${customer.customerId}`,
         {
           method: "GET",
           headers: {
@@ -145,7 +145,7 @@ const DetailProductScreen = ({ route, navigation }) => {
     //fetching data ở đây
     try {
       const response = await fetch(
-        `http://192.168.1.125:3000/api/products/${idProduct}`,
+        `http://192.168.0.4:3000/api/products/${idProduct}`,
         {
           method: "GET",
           headers: {
@@ -195,7 +195,7 @@ const DetailProductScreen = ({ route, navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/reviews/products`,
+        `http://192.168.0.4:3000/api/reviews/products`,
         {
           method: "POST",
           headers: {
@@ -213,24 +213,10 @@ const DetailProductScreen = ({ route, navigation }) => {
       );
       switch (response.status) {
         case 200:
-          Alert.alert("goFAST", "Cập nhật đánh giá thành công", [
-            {
-              text: "OK",
-              style: "cancel",
-            },
-          ]);
+          showToast("Cập nhật đánh giá thành công");
           return;
         default:
-          Alert.alert("goFAST", "Cập nhật đánh giá thất bại", [
-            {
-              text: "Cập nhật lại",
-              onPress: () => updateReview(),
-            },
-            {
-              text: "Hủy",
-              style: "cancel",
-            },
-          ]);
+          showToast("Cập nhật đánh giá thất bại")
           return;
       }
     } catch (err) {
@@ -262,7 +248,7 @@ const DetailProductScreen = ({ route, navigation }) => {
   // Cập nhật sản phẩm yêu thích
   const updateIsFavorite = async () => {
     let isFavorite;
-    isFavorite = !favourite ? 1 : 0;
+    isFavorite = !favourite ? 1 : 2;
     await updateReview(null, isFavorite);
     setFavourite(!favourite);
   };
@@ -272,7 +258,7 @@ const DetailProductScreen = ({ route, navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       if (token) {
-        const response = await fetch("http://192.168.1.125:3000/api/carts", {
+        const response = await fetch("http://192.168.0.4:3000/api/carts", {
           method: "POST",
           headers: {
             Accept: "application/json",
@@ -289,6 +275,12 @@ const DetailProductScreen = ({ route, navigation }) => {
         });
         switch (response.status) {
           case 200:
+            dispatch(
+              cartActions.getOldCart(
+                customer.CustomerId,
+                token
+              )
+            );
             showToast(`Thêm thành công ${amount} sản phẩm mới vào giỏ!`);
             return;
           default:
@@ -680,7 +672,7 @@ const styles = StyleSheet.create({
   },
   dash: {
     height: 1,
-    width: 120,
+    width: 100,
     backgroundColor: COLORS.grey_5,
   },
 });

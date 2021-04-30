@@ -55,14 +55,14 @@ const getDetailProductCart = async (cartId, productId) => {
 };
 
 /**
- * Thêm mới và Cập nhật sản phẩm có trong giỏ hàng
+ * Thêm sản phẩm vào giỏ hàng
  * @param {*} cartId Mã giỏ hàng
  * @param {*} productId Mã sản phẩm
  * @param {*} productAmount Số lượng sản phẩm cập nhật
  * @param {*} productPrice Giá sản phẩm
  * @returns kết quả
  */
-const updateOrAddProductCart = async (
+const addProductCart = async (
   cartId,
   productId,
   productAmount,
@@ -76,16 +76,37 @@ const updateOrAddProductCart = async (
     const existProductCart = await getDetailProductCart(cartId, productId);
     if (existProductCart) {
       const amount = +existProductCart.productAmount + +productAmount;
-      if (amount <= 0) {
-        result = await deleteProductCart(existProductCart.id);
-      } else {
-        sql = `update ${tableName} set ProductAmount = '${amount}', ProductPrice = '${productPrice}' where ProductId = '${productId}' and CartId = '${cartId}'`;
-        result = await db.execute(sql);
-      }
+      //sinh câu lệnh truy vân tương ứng
+      sql = `update ${tableName} set ProductAmount = '${amount}', ProductPrice = '${productPrice}' where ProductId = '${productId}' and CartId = '${cartId}'`;
+      result = await db.execute(sql);
     } else {
       //thêm mới sản phẩm vào giỏ hàng
       const id = Guid.newGuid().toString();
       sql = `insert into ${tableName} (Id, ProductId, ProductAmount, ProductPrice, CartId) values ('${id}', '${productId}', '${productAmount}', '${productPrice}', '${cartId}')`;
+      result = await db.execute(sql);
+    }
+  }
+  return result;
+};
+
+/**
+ * Cập nhật sản phẩm có trong giỏ hàng
+ * @param {*} cartId Mã giỏ hàng
+ * @param {*} productId Mã sản phẩm
+ * @param {*} productAmount Số lượng sản phẩm cập nhật
+ * @returns kết quả
+ */
+const updateProductCart = async (cartId, productId, amountUpdate) => {
+  let result;
+  //kiểm tra mã giỏ hàng và mã sản phẩm truyền vào có bị trống
+  let sql = "";
+  //kiểm tra tồn tại sản phẩm
+  const existProductCart = await getDetailProductCart(cartId, productId);
+  if (existProductCart) {
+    if (amountUpdate <= 0) {
+      result = await deleteProductCart(existProductCart.id);
+    } else {
+      sql = `update ${tableName} set ProductAmount = '${amountUpdate}' where ProductId = '${productId}' and CartId = '${cartId}'`;
       result = await db.execute(sql);
     }
   }
@@ -111,6 +132,7 @@ const deleteProductCart = async (id) => {
 module.exports = {
   getProductCarts,
   getDetailProductCart,
-  updateOrAddProductCart,
+  addProductCart,
+  updateProductCart,
   deleteProductCart,
 };

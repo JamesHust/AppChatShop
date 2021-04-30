@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
 import { FontAwesome } from "@expo/vector-icons";
 import TabCategories from "../components/TabCategories";
-import ListCartProduct from "../components/ListCartProduct";
+import ListCardProduct from "../components/ListCardProduct";
 
 const QuickOrderScreen = (props) => {
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
@@ -69,7 +69,7 @@ const QuickOrderScreen = (props) => {
     setIsLoading(true);
     //fetching data ở đây
     try {
-      const response = await fetch("http://192.168.1.125:3000/api/products", {
+      const response = await fetch("http://192.168.0.4:3000/api/products", {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -130,7 +130,7 @@ const QuickOrderScreen = (props) => {
   return (
     <SafeAreaView style={styles.container}>
       <Header />
-      <ListCartProduct data={products} />
+      <ListCardProduct data={products} />
     </SafeAreaView>
   );
 };

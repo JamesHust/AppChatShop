@@ -57,10 +57,10 @@ const getDetailProductOrder = async (orderId, productId) => {
  * @param {*} listProduct danh sách sản phẩm
  * @returns kết quả thêm
  */
-const addProductOrders = async (listProduct) => {
+const addProductOrders = async (listProduct, orderId) => {
   const result = await Promise.all(
     listProduct.map(async (item) => {
-      await addProductOrder(item);
+      await addProductOrder(item, orderId);
     })
   );
   return result;
@@ -71,11 +71,10 @@ const addProductOrders = async (listProduct) => {
  * @param {*} productOrder sản phẩm trong giỏ - object: ProductOrder
  * @returns kết quả thêm
  */
-const addProductOrder = async (productOrder) => {
-  //Mặc định khi khởi tạo, orderId sẽ có giá trị bằng cartId , cho tiện truy xuất lịch sử sau này
-  const orderId = productOrder.cartId;
+const addProductOrder = async (productOrder, orderId) => {
+  const id = Guid.newGuid().toString();
   //tạo câu lệnh sql
-  const sql = `insert into ${tableName} (Id, ProductId, ProductAmount, ProductPrice, OrderId) values ('${productOrder.id}', '${productOrder.productId}', '${productOrder.productAmount}', '${productOrder.productPrice}', '${orderId}')`;
+  const sql = `insert into ${tableName} (Id, ProductId, ProductAmount, ProductPrice, OrderId) values ('${id}', '${productOrder.productId}', '${productOrder.productAmount}', '${productOrder.productPrice}', '${orderId}')`;
   //thực hiện thêm vào cơ sở dữ liệu
   const result = await db.execute(sql);
   return result;

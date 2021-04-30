@@ -11,6 +11,7 @@ import InputIcon from "../components/InputIcon";
 import Button from "../components/Button";
 import { useDispatch, useSelector } from "react-redux";
 import * as authActions from "../redux/actions/auth";
+import * as cartActions from "../redux/actions/cart";
 import COLORS from "../constants/color";
 import HideWithKeyboard from "react-native-hide-with-keyboard";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
@@ -34,7 +35,7 @@ const LoginScreen = ({ navigation }) => {
     //fetching data ở đây
     try {
       const userToken = await AsyncStorage.getItem("userToken");
-      const res = await fetch("http://192.168.1.125:3000/api/check/token", {
+      const res = await fetch("http://192.168.0.4:3000/api/check/token", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -46,6 +47,12 @@ const LoginScreen = ({ navigation }) => {
         case 200:
           const resData = await res.json();
           dispatch(authActions.storageToken(resData.data));
+          dispatch(
+            cartActions.getOldCart(
+              resData.data.customer.CustomerId,
+              userToken
+            )
+          );
           return navigation.navigate("Home");
         default:
           Alert.alert(
@@ -87,7 +94,7 @@ const LoginScreen = ({ navigation }) => {
       ]);
     } else {
       //thực hiện đăng nhập, gửi request lên server để check tài khoản
-      fetch("http://192.168.1.125:3000/api/login", {
+      fetch("http://192.168.0.4:3000/api/login", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -107,7 +114,12 @@ const LoginScreen = ({ navigation }) => {
             case 200:
               const resData = await response.json();
               dispatch(authActions.storageToken(resData.data));
-              // await saveCartIdByCustomer();
+              dispatch(
+                cartActions.getOldCart(
+                  resData.data.customer.customerId,
+                  resData.data.accessToken
+                )
+              );
               return navigation.navigate("Home");
             // trường hợp request truyền sang
             case 400:

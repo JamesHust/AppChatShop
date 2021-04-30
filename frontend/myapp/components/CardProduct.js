@@ -5,15 +5,34 @@ import COLORS from "../constants/color";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { addDotToNumber, showToast } from "../utils/Common";
-import { useSelector} from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
+import * as cartActions from "../redux/actions/cart";
 
 const CartProduct = (props) => {
   const [product, setProduct] = useState(props.data.item);
   const [amount, setAmount] = useState(0);
   const [amountHandle, setAmountHandle] = useState(0);
   const navigation = useNavigation(); //Cho phép truy cập navigation
+  const dispatch = useDispatch();
   const customer = useSelector((state) => state.authReducer.customer);
+  const cart = useSelector((state) => state.cartReducer.cart);
+  // Hàm lấy sản phẩm đã mua trong giỏ
+  const getAmountExistCart = () => {
+    // Lấy lại danh sách sản phẩm đã có trong giỏ
+    if (cart.length > 0) {
+      const list = [];
+      cart.forEach((element) => {
+        element.forEach((prod) => {
+          list.push(prod);
+        });
+      });
+      const existProd = list.find((i) => i.productId === product.productId);
+      if (existProd) {
+        return existProd.productAmount;
+      } else return 0;
+    } else return 0;
+  };
 
   //Hàm giảm số lượng
   const reduceAmount = () => {
@@ -23,9 +42,17 @@ const CartProduct = (props) => {
       setAmount(0);
     }
   };
+
   //Hàm tăng số lượng
   const increasingAmount = () => {
-    setAmount((amount) => amount + 1);
+    const exist = getAmountExistCart();
+    // Check xem số lượng có vượt quá giỏ hàng không
+    const check = (+exist + amount + 1) - (+product.amount);
+    if (check <= 0) {
+      setAmount((amount) => amount + 1);
+    } else {
+      showToast("Số lượng chọn vượt quá số lượng trong kho");
+    }
   };
 
   // Hàm xử lý thêm sản phẩm vào giỏ hàng
@@ -33,7 +60,7 @@ const CartProduct = (props) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       if (token) {
-        const response = await fetch("http://192.168.1.125:3000/api/carts", {
+        const response = await fetch("http://192.168.0.4:3000/api/carts", {
           method: "POST",
           headers: {
             Accept: "application/json",
@@ -50,6 +77,8 @@ const CartProduct = (props) => {
         });
         switch (response.status) {
           case 200:
+            console.log("200");
+            dispatch(cartActions.getOldCart(customer.customerId, token));
             showToast(`Thêm thành công ${amountBuy} sản phẩm mới vào giỏ!`);
             return;
           default:
@@ -82,20 +111,29 @@ const CartProduct = (props) => {
     }
   }, []);
 
-  // Theo dõi khi số lượng thay đổi sau 3 giây sẽ thêm sản phẩm vào giỏ
+  // Theo dõi khi số lượng thay đổi sau 1.8 giây sẽ thêm sản phẩm vào giỏ
   useEffect(() => {
     if (amountHandle > 0) {
       addProductToCart(amountHandle);
     }
   }, [amountHandle]);
 
-  // Theo dõi số lượng sản phẩm mua thay đổi sau 2 giây
+  // Theo dõi số lượng sản phẩm mua thay đổi sau 1.8 giây
   useEffect(() => {
     const prodAmountAdd = setTimeout(() => {
-      setAmountHandle(amount);
-    }, 2000);
+      const exist = getAmountExistCart();
+      // Check xem số lượng có vượt quá giỏ hàng không
+      const check = +exist + amount - (+product.amount);
+      let rest = (+product.amount) - (+exist);
+      if(rest <= 0) rest = 0;
+      if(check <= 0){
+        setAmountHandle(amount);
+      }else{
+        showToast(`Số lượng chọn vượt quá số lượng trong kho. Số lượng còn lại là ${rest}.`);
+      }
+    }, 1800);
     return () => clearTimeout(prodAmountAdd);
-  }, [amount])
+  }, [amount]);
 
   return (
     <TouchableOpacity

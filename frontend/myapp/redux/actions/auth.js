@@ -16,7 +16,7 @@ export const storageToken = (data) => {
       const customer = data.customer;
       // Lưu token vào storage
       await AsyncStorage.setItem("userToken", token);
-      dispatch({ type: SAVE_TOKEN, customer: customer, token: token });
+      return dispatch({ type: SAVE_TOKEN, customer: customer, token: token });
     } catch (err) {
       throw err;
     }
@@ -33,7 +33,7 @@ export const logout = () => {
     try {
       const userToken = await AsyncStorage.getItem("userToken");
       // Thực hiện xóa token trong cơ sở dữ liệu
-      const response = await fetch("http://192.168.1.125:3000/api/logout", {
+      const response = await fetch("http://192.168.0.4:3000/api/logout", {
         method: "POST",
         headers: {
           Accept: "application/json",

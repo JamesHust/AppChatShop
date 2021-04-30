@@ -29,13 +29,14 @@ app.use("/api", authRoutes);
 app.use("/api", productRoutes);
 app.use("/api", categoryRoutes);
 app.use("/api", cartRoutes);
+app.use("/api", orderRoutes);
 app.use("/api/reviews", isAuth, reviewRoutes);
 app.use("/api", isAuth, customerRoutes);
 app.use("/api", isAuth, adminRoutes);
 app.use("/api", isAuth, shipperRoutes);
 app.use("/api", isAuth, shopRoutes);
 // app.use("/api", isAuth, cartRoutes);
-app.use("/api", isAuth, orderRoutes);
+// app.use("/api", isAuth, orderRoutes);
 app.use(errorRoutes.get404);
 
 //Tạo địa chỉ Ip, cổng kết nối cho server

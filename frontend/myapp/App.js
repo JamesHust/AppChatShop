@@ -4,14 +4,16 @@ import { Provider } from "react-redux";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import { createStore, combineReducers, applyMiddleware } from "redux";
-import customerReducer from "./redux/reducers/customer";
 import authReducer from "./redux/reducers/auth";
+import cartReducer from "./redux/reducers/cart";
+import wishlistReducer from "./redux/reducers/wishlist";
 import ReduxThunk from "redux-thunk";
 
 // Khai báo các reducer và gom về 1 nguồn
 const rootReducer = combineReducers({
-  customerReducer,
   authReducer,
+  cartReducer,
+  wishlistReducer
 });
 
 // Khởi tạo store

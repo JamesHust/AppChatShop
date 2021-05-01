@@ -27,12 +27,28 @@ const CartScreen = () => {
   const customer = useSelector((state) => state.authReducer.customer);
   const ship = useSelector((state) => state.cartReducer.ship);
   const totalPayment = useSelector((state) => state.cartReducer.totalPayment);
+  const cart = useSelector((state) => state.cartReducer.cart);
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
   const [checkedAll, setCheckedAll] = useState(false);
   const dispatch = useDispatch();
 
   // Gen header của trang
   const Header = () => {
+    const setSelectedAll = () => {
+      if (!checkedAll) {
+        const listAllId = [];
+        cart.forEach((list) => {
+          list.forEach((i) => {
+            listAllId.push(i.productId);
+          });
+        });
+        dispatch(cartActions.addSelectedAllCart(listAllId));
+      } else {
+        dispatch(cartActions.removeAllSelected());
+      }
+      setCheckedAll(!checkedAll);
+    };
+
     return (
       <View style={style.header}>
         <View>
@@ -47,9 +63,7 @@ const CartScreen = () => {
           <View style={{ paddingTop: 15, marginLeft: 5 }}>
             <Checkbox
               status={checkedAll ? "checked" : "unchecked"}
-              onPress={() => {
-                setCheckedAll(!checkedAll);
-              }}
+              onPress={setSelectedAll}
               color={COLORS.red_13}
             />
           </View>
@@ -168,7 +182,7 @@ const CartScreen = () => {
       },
       body: JSON.stringify({
         listProductForShop: listProductForShop,
-        customerId: customer.customerId
+        customerId: customer.customerId,
       }),
     });
 
@@ -191,7 +205,7 @@ const CartScreen = () => {
                   cartId: prod.cartId,
                   productAmount: prod.productAmount,
                   productPrice: prod.productPrice,
-                  shopId: prod.shopId
+                  shopId: prod.shopId,
                 });
               }
             });
@@ -200,13 +214,15 @@ const CartScreen = () => {
           const statusOrder = await orderProducts(listProd, token);
           console.log(statusOrder);
           const statusRemove = await removeProductInCart(listProd, token);
-          if(statusOrder != 200 || statusRemove != 200 ){
+          if (statusOrder != 200 || statusRemove != 200) {
             status = 500;
           }
           if (status == 200) {
             dispatch(cartActions.getOldCart(customer.customerId, token));
             dispatch(cartActions.removeAllSelected());
-            showToast(`Đặt hàng thành công. Vui lòng vào Tài khoản => Theo dõi đơn hàng để theo dõi tiến độ đơn hàng.`);
+            showToast(
+              `Đặt hàng thành công. Vui lòng vào Tài khoản => Theo dõi đơn hàng để theo dõi tiến độ đơn hàng.`
+            );
           } else {
             showToast(`Có lỗi xảy ra khi đặt hàng!`);
           }

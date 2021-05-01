@@ -9,6 +9,7 @@ export const ADD_QUICK_CART = "ADD_QUICK_CART";
 export const REMOVE_QUICK_CART = "REMOVE_QUICK_CART";
 
 export const ADD_SELECTED_PROD = "ADD_SELECTED_PROD";
+export const ADD_ALL_SELECTED_PROD = "ADD_ALL_SELECTED_PROD";
 export const REMOVE_SELECTED_PROD = "REMOVE_SELECTED_PROD";
 export const REMOVE_ALL_SELECTED = "REMOVE_ALL_SELECTED";
 
@@ -18,7 +19,6 @@ export const REMOVE_ALL_SELECTED = "REMOVE_ALL_SELECTED";
  */
 export const getOldCart = (customerId, token) => {
   return async (dispatch) => {
-    console.log("getOldCart");
     try {
       const response = await fetch(
         `http://192.168.0.4:3000/api/carts?customerId=${customerId}`,
@@ -74,6 +74,22 @@ export const addSelectedProductCart = (idProd) => {
     }
   };
 };
+
+/**
+ * Hàm action xử lý sự kiện thêm tất cả sản phẩm trong giỏ vào danh sách chọn
+ * @param {*} listId Danh sách id tất cả sản phẩm có trong giỏ
+ * @returns 
+ */
+export const addSelectedAllCart = (listId) => {
+  return (dispatch) => {
+    try {
+      dispatch({ type: ADD_ALL_SELECTED_PROD, listId: listId });
+      return;
+    } catch (err) {
+      throw err;
+    }
+  };
+}
 
 /**
  * Hàm action xử lý sự kiện bỏ chọn sản phẩm trong cửa hàng

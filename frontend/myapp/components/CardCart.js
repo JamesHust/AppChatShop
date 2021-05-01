@@ -26,11 +26,6 @@ const CardCart = ({ data, checkedAll }) => {
   const isFirstRun = useRef(true);
   const dispatch = useDispatch(); //khởi tạo dispatch
 
-  // Check tất cả các thẻ trong trường hợp chọn tất cả
-  useEffect(() => {
-    setChecked(checkedAll);
-  }, [checkedAll]);
-
   // Hàm xét check khi danh sách check có
   useEffect(() => {
     selectedList.findIndex((i) => i == data.productId) >= 0
@@ -57,20 +52,45 @@ const CardCart = ({ data, checkedAll }) => {
 
   //Hàm tăng số lượng
   const increasingAmount = () => {
-    setAmount((amount) => `${+amount + 1}`);
+    if (+amount + 1 <= data.amount) {
+      setAmount((amount) => `${+amount + 1}`);
+    } else {
+      showToast(
+        "Số lượng sản phẩm không thể vượt quá sản phẩm còn lại trong kho."
+      );
+    }
   };
 
   // Hàm xử lý khi tự nhập sản phẩm
   const numberInputHandler = (inputText) => {
-    if (inputText && inputText!="0") {
-      setAmount(inputText.replace(/[^0-9]/g, ""));
-    } else setAmount("1");
+    if (inputText) {
+      // Xóa các trường hợp có dấu, không phải số 0 -> 9);
+      let filterText = inputText.replace(/[^0-9]/g, "");
+      if (filterText.length > 1) {
+        const num = parseInt(filterText, 10);
+        filterText = `${num}`;
+      }
+      setAmount(filterText);
+    } else {
+      setAmount("0");
+    }
+  };
+
+  // Xử lý trường hợp ngoại lệ không nhập gì số lượng
+  const onSubmitOrBlurHandler = () => {
+    if (amount == "0" || amount == "") {
+      showToast("Sản phẩm trong giỏ không thể nhỏ hơn hoặc bằng 0.");
+      setAmount("1");
+    }
+    if (+amount > data.amount) {
+      showToast(`Số lượng sản phẩm còn lại trong kho chỉ còn ${data.amount}.`);
+      setAmount(data.amount);
+    }
   };
 
   // Hàm xử lý thêm sản phẩm vào giỏ hàng
   const updateProductToCart = useCallback(
     async (amountBuy) => {
-      console.log("updateProductToCart");
       try {
         const token = await AsyncStorage.getItem("userToken");
         if (token) {
@@ -126,7 +146,7 @@ const CardCart = ({ data, checkedAll }) => {
 
   // Theo dõi khi số lượng thay đổi sau 1.8 giây sẽ thêm sản phẩm vào giỏ
   useEffect(() => {
-    if (amountHandle >= 0) {
+    if (amountHandle > 0) {
       updateProductToCart(amountHandle);
     }
   }, [amountHandle]);
@@ -196,6 +216,8 @@ const CardCart = ({ data, checkedAll }) => {
               style={style.input}
               value={amount}
               onChangeText={numberInputHandler}
+              onSubmitEditing={onSubmitOrBlurHandler}
+              onBlur={onSubmitOrBlurHandler}
             />
           </View>
           <TouchableOpacity onPress={increasingAmount} activeOpacity={0.8}>
@@ -257,8 +279,8 @@ const style = StyleSheet.create({
   containerSetAmount: {
     flexDirection: "row",
     overflow: "hidden",
-    alignItems: 'center',
-    justifyContent: 'center'
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonSetAmount: {
     width: 30,

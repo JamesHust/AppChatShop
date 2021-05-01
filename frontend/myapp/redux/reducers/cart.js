@@ -4,6 +4,7 @@ import {
   ADD_QUICK_CART,
   REMOVE_QUICK_CART,
   ADD_SELECTED_PROD,
+  ADD_ALL_SELECTED_PROD,
   REMOVE_SELECTED_PROD,
   REMOVE_ALL_SELECTED,
 } from "../actions/cart";
@@ -54,6 +55,19 @@ export default (state = initialState, action) => {
             ship: rsUpdateA.shipUpdate,
           };
         }
+      }
+      return state;
+    case ADD_ALL_SELECTED_PROD:
+      const listId = action.listId;
+      const cartAA = state.cart;
+      if (cartAA.length > 0 && listId.length > 0) {
+        const rsUpdateAA = updatePaymentAndShip(listId, cartAA);
+        return {
+          ...state,
+          selectedProductInCart: listId,
+          totalPayment: rsUpdateAA.sumPay,
+          ship: rsUpdateAA.shipUpdate,
+        };
       }
       return state;
     case REMOVE_SELECTED_PROD:

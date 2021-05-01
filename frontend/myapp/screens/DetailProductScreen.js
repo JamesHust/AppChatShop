@@ -29,6 +29,7 @@ const DetailProductScreen = ({ route, navigation }) => {
   const idProduct = route.params.idProduct;
   const [data, setData] = useState({
     product: {
+      amount: 0,
       productId: "",
       imageUrl:
         "https://www.flaticon.com/svg/vstatic/svg/812/812850.svg?token=exp=1619003978~hmac=c7940ae416e210578fa00f6b23b02de2",
@@ -51,6 +52,45 @@ const DetailProductScreen = ({ route, navigation }) => {
   const [rating, setRating] = useState(0); //đánh giá sao cho sản phẩm
   const dispatch = useDispatch(); //khởi tạo dispatch
   const customer = useSelector((state) => state.authReducer.customer);
+  const cart = useSelector((state) => state.cartReducer.cart);
+
+  // Hàm lấy sản phẩm đã mua trong giỏ
+  const getAmountExistCart = () => {
+    // Lấy lại danh sách sản phẩm đã có trong giỏ
+    if (cart.length > 0) {
+      const list = [];
+      cart.forEach((element) => {
+        element.forEach((prod) => {
+          list.push(prod);
+        });
+      });
+      const existProd = list.find(
+        (i) => i.productId === data.product.productId
+      );
+      if (existProd) {
+        return existProd.productAmount;
+      } else return 0;
+    } else return 0;
+  };
+
+  // Xử lý trường hợp ngoại lệ không nhập gì số lượng
+  const onSubmitOrBlurHandler = () => {
+    const exist = getAmountExistCart();
+    if (amount == "") {
+      showToast("Sản phẩm trong giỏ không thể nhỏ hơn hoặc bằng 0.");
+      setAmount("0");
+    }
+    const rest = +data.product.amount - +exist;
+    if (+amount + +exist > +data.product.amount) {
+      if (rest > 0) {
+        showToast(`Số lượng sản phẩm còn lại trong kho chỉ còn ${rest}.`);
+        setAmount(`${rest}`);
+      } else {
+        showToast(`Trong kho không còn sản phẩm này. Vui lòng quay lại sau.`);
+        setAmount("0");
+      }
+    }
+  };
 
   //Hàm giảm số lượng
   const reduceAmount = () => {
@@ -61,7 +101,14 @@ const DetailProductScreen = ({ route, navigation }) => {
 
   //Hàm tăng số lượng
   const increasingAmount = () => {
-    setAmount((amount) => `${+amount + 1}`);
+    const exist = getAmountExistCart();
+    // Check xem số lượng có vượt quá giỏ hàng không
+    const check = +exist + +amount + 1 - +data.product.amount;
+    if (check <= 0) {
+      setAmount((amount) => `${+amount + 1}`);
+    } else {
+      showToast("Số lượng chọn vượt quá số lượng trong kho");
+    }
   };
 
   // Hiển thị khi co đoạn text
@@ -257,13 +304,21 @@ const DetailProductScreen = ({ route, navigation }) => {
 
   // Hàm xử lý khi tự nhập sản phẩm
   const numberInputHandler = (inputText) => {
-    if (inputText && inputText!="0") {
-      setAmount(inputText.replace(/[^0-9]/g, ""));
-    } else setAmount("1");
+    if (inputText) {
+      // Xóa các trường hợp có dấu, không phải số 0 -> 9);
+      let filterText = inputText.replace(/[^0-9]/g, "");
+      if (filterText.length > 1) {
+        const num = parseInt(filterText, 10);
+        filterText = `${num}`;
+      }
+      setAmount(filterText);
+    } else {
+      setAmount("0");
+    }
   };
 
-  // Hàm xử lý thêm
-  const handleOrder = async (amount) => {
+  // Hàm thêm sản phẩm vào giỏ
+  const order = async (amount) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       if (token) {
@@ -314,6 +369,28 @@ const DetailProductScreen = ({ route, navigation }) => {
           style: "cancel",
         },
       ]);
+    }
+  };
+
+  // Hàm xử lý gọi đến để thêm sản phẩm vào giỏ
+  const orderHandler = async () => {
+    const exist = getAmountExistCart();
+    if (amount > 0 && +exist + +amount <= +data.product.amount) {
+      await order(amount);
+    } else {
+      if (amount <= 0) {
+        showToast("Hãy tăng số sản phẩm lớn hơn 0 để thêm vào giỏ hàng.");
+      }
+      if (+exist + amount > +data.product.amount) {
+        const rest = +data.product.amount - +exist;
+        if (rest > 0) {
+          showToast(`Số lượng sản phẩm còn lại trong kho chỉ còn ${rest}.`);
+          setAmount(`${rest}`);
+        } else {
+          showToast(`Trong kho không còn sản phẩm này. Vui lòng quay lại sau.`);
+          setAmount("0");
+        }
+      }
     }
   };
 
@@ -547,6 +624,8 @@ const DetailProductScreen = ({ route, navigation }) => {
                   style={styles.input}
                   value={amount}
                   onChangeText={numberInputHandler}
+                  onSubmitEditing={onSubmitOrBlurHandler}
+                  onBlur={onSubmitOrBlurHandler}
                 />
               </View>
               <TouchableOpacity onPress={increasingAmount} activeOpacity={0.8}>
@@ -562,18 +641,7 @@ const DetailProductScreen = ({ route, navigation }) => {
             </View>
           </View>
           {/* Đặt mua */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => {
-              if (amount > 0) {
-                handleOrder(amount);
-              } else {
-                showToast(
-                  "Hãy tăng số sản phẩm lớn hơn 0 để thêm vào giỏ hàng."
-                );
-              }
-            }}
-          >
+          <TouchableOpacity activeOpacity={0.8} onPress={orderHandler}>
             <View style={styles.buyBtn}>
               <Text
                 style={{

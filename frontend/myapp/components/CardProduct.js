@@ -17,6 +17,7 @@ const CartProduct = (props) => {
   const dispatch = useDispatch();
   const customer = useSelector((state) => state.authReducer.customer);
   const cart = useSelector((state) => state.cartReducer.cart);
+  
   // Hàm lấy sản phẩm đã mua trong giỏ
   const getAmountExistCart = () => {
     // Lấy lại danh sách sản phẩm đã có trong giỏ

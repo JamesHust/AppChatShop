@@ -23,65 +23,63 @@ const codePropName = "ShopCode";
  * @param {*} res response
  * @param {*} next next sang middleware khác
  */
-const getShops = (req, res, next) => {
-  //tạo câu lệnh sql tương ứng
-  const sql = `select * from ${tableName} `;
+const getShops = async (req, res, next) => {
+  try {
+    const result = getInfoShops();
 
-  //thực hiện lấy danh sách shop
-  db.execute(sql)
-    .then((result) => {
-      if (result && result.length > 0) {
-        let shops = [];
-        result[0].forEach((item) => {
-          const shop = new Shop(
-            item.ShopId,
-            item.ShopCode,
-            item.ShopName,
-            item.PhoneNumber,
-            item.OtherPhoneNumber,
-            item.Address,
-            item.Email,
-            item.OpenTime,
-            item.CloseTime,
-            item.Rating
-          );
-          shops.push(shop);
-        });
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = null),
-            (userMsg = null),
-            (moreInfo = null),
-            (data = shops)
-          )
+    if (result && result.length > 0) {
+      let shops = [];
+      result.forEach((item) => {
+        const shop = new Shop(
+          item.ShopId,
+          item.ShopCode,
+          item.ShopName,
+          item.Avatar,
+          item.PhoneNumber,
+          item.OtherPhoneNumber,
+          item.Address,
+          item.Email,
+          item.OpenTime,
+          item.CloseTime,
+          item.Rating,
+          item.ChatId
         );
-      } else {
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = "Data is empty."),
-            (userMsg = "Không tồn tại dữ liệu trong cơ sở dữ liệu."),
-            (moreInfo = null),
-            (data = null)
-          )
-        );
-      }
-    })
-    .catch((err) => {
+        shops.push(shop);
+      });
       res.send(
         new Response(
-          (isSuccess = false),
-          (errorCode = "DB001"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
+          (isSuccess = true),
+          (errorCode = null),
+          (devMsg = null),
+          (userMsg = null),
+          (moreInfo = null),
+          (data = shops)
+        )
+      );
+    } else {
+      res.send(
+        new Response(
+          (isSuccess = true),
+          (errorCode = null),
+          (devMsg = "Data is empty."),
+          (userMsg = "Không tồn tại dữ liệu trong cơ sở dữ liệu."),
           (moreInfo = null),
           (data = null)
         )
       );
-    });
+    }
+  } catch (err) {
+    res.send(
+      new Response(
+        (isSuccess = false),
+        (errorCode = "DB001"),
+        (devMsg = err.toString()),
+        (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
+        (moreInfo = null),
+        (data = null)
+      )
+    );
+  }
 };
 
 /**
@@ -101,13 +99,15 @@ const getShopById = async (req, res, next) => {
           result.ShopId,
           result.ShopCode,
           result.ShopName,
+          result.Avatar,
           result.PhoneNumber,
           result.OtherPhoneNumber,
           result.Address,
           result.Email,
           result.OpenTime,
           result.CloseTime,
-          result.Rating
+          result.Rating,
+          result.ChatId
         );
         res.send(
           new Response(
@@ -181,13 +181,15 @@ const searchShop = async (req, res, next) => {
               item.ShopId,
               item.ShopCode,
               item.ShopName,
+              item.Avatar,
               item.PhoneNumber,
               item.OtherPhoneNumber,
               item.Address,
               item.Email,
               item.OpenTime,
               item.CloseTime,
-              item.Rating
+              item.Rating,
+              item.ChatId
             );
             shops.push(shop);
           });
@@ -251,6 +253,7 @@ const addNewShop = async (req, res, next) => {
   const shopId = Guid.newGuid().toString();
   let shopCode = null;
   const shopName = req.body.shopName;
+  const avatar = req.body.avatar ? req.body.avatar : "shops/shops.png";
   const phoneNumber = req.body.phoneNumber;
   const otherPhoneNumber =
     req.body.otherPhoneNumber === undefined ? "" : req.body.otherPhoneNumber;
@@ -258,6 +261,7 @@ const addNewShop = async (req, res, next) => {
   const email = req.body.email;
   const openTime = req.body.openTime;
   const closeTime = req.body.closeTime;
+  const chatId = Guid.newGuid().toString();
 
   //Lấy mã code lớn nhất và tạo mã code mới khi thêm mới cửa hàng
   const maxCode = await getMaxCode(objName);
@@ -272,11 +276,12 @@ const addNewShop = async (req, res, next) => {
     address &&
     email &&
     openTime &&
-    closeTime
+    closeTime &&
+    chatId
   ) {
     //thực hiện insert database
     db.execute(
-      `insert into ${tableName} (ShopId, ShopCode, ShopName, PhoneNumber, OtherPhoneNumber, Address, Email, OpenTime, CloseTime, Rating) values ('${shopId}', '${shopCode}', '${shopName}', '${phoneNumber}', '${otherPhoneNumber}', '${address}', '${email}', ${openTime}, '${closeTime}', 0.0)`
+      `insert into ${tableName} (ShopId, ShopCode, ShopName, Avatar, PhoneNumber, OtherPhoneNumber, Address, Email, OpenTime, CloseTime, Rating, ChatId) values ('${shopId}', '${shopCode}', '${shopName}', '${avatar}', '${phoneNumber}', '${otherPhoneNumber}', '${address}', '${email}', ${openTime}, '${closeTime}', 0.0, '${chatId}')`
     )
       .then((result) => {
         res.send(
@@ -326,6 +331,7 @@ const updateInfoShop = async (req, res, next) => {
   //lấy các giá trị request
   let shopId = req.params.shopId;
   let shopName = req.body.shopName;
+  let avatar = req.body.avatar;
   let phoneNumber = req.body.phoneNumber;
   let otherPhoneNumber = req.body.otherPhoneNumber;
   let email = req.body.email;
@@ -341,6 +347,7 @@ const updateInfoShop = async (req, res, next) => {
       //check tồn tại account admin có id tương ứng
       if (existShop) {
         shopName = shopName === undefined ? existShop.ShopName : shopName;
+        avatar = avatar === undefined ? existShop.Avatar : avatar;
         phoneNumber =
           phoneNumber === undefined ? existShop.PhoneNumber : phoneNumber;
         otherPhoneNumber =
@@ -354,7 +361,7 @@ const updateInfoShop = async (req, res, next) => {
         rating = rating === undefined ? existShop.Rating : rating;
         //cập nhật database
         const result = await db.execute(
-          `update ${tableName} set ShopName = "${shopName}", PhoneNumber = "${phoneNumber}", Address = "${address}", Email = "${email}", OpenTime = "${openTime}", CloseTime = ${closeTime}, Rating = ${rating} where ${primaryKeyTable} = "${shopId}"`
+          `update ${tableName} set ShopName = "${shopName}", Avatar = "${avatar}" PhoneNumber = "${phoneNumber}", Address = "${address}", Email = "${email}", OpenTime = "${openTime}", CloseTime = ${closeTime}, Rating = ${rating} where ${primaryKeyTable} = "${shopId}"`
         );
         res.send(
           new Response(
@@ -455,6 +462,17 @@ const deleteShop = async (req, res, next) => {
 //#endregion
 
 //#region Private Function
+// Lấy thông tin tất cả cửa hàng
+const getInfoShops = async () => {
+  let result = null;
+  //tạo câu lệnh sql tương ứng
+  const sql = `select * from ${tableName} `;
+  const response = await db.execute(sql);
+  if (response[0] && response[0].length > 0) {
+    result = response[0];
+  }
+  return result;
+};
 //#endregion
 
 //export controller
@@ -465,4 +483,5 @@ module.exports = {
   addNewShop,
   updateInfoShop,
   deleteShop,
+  getInfoShops,
 };

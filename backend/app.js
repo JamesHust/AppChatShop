@@ -10,6 +10,7 @@ const orderRoutes = require("./src/routes/orders");
 const errorRoutes = require("./src/controllers/error");
 const authRoutes = require("./src/routes/auth");
 const reviewRoutes = require("./src/routes/reviews");
+const messageRoutes = require("./src/routes/messages");
 const { isAuth } = require("./src/middlewares/auth");
 const cors = require("cors");
 
@@ -30,6 +31,7 @@ app.use("/api", productRoutes);
 app.use("/api", categoryRoutes);
 app.use("/api", cartRoutes);
 app.use("/api", orderRoutes);
+app.use("/api/messages", messageRoutes);
 app.use("/api/reviews", isAuth, reviewRoutes);
 app.use("/api", isAuth, customerRoutes);
 app.use("/api", isAuth, adminRoutes);

@@ -7,13 +7,15 @@ import { createStore, combineReducers, applyMiddleware } from "redux";
 import authReducer from "./redux/reducers/auth";
 import cartReducer from "./redux/reducers/cart";
 import wishlistReducer from "./redux/reducers/wishlist";
+import boardChatReducer from "./redux/reducers/board-chat";
 import ReduxThunk from "redux-thunk";
 
 // Khai báo các reducer và gom về 1 nguồn
 const rootReducer = combineReducers({
   authReducer,
   cartReducer,
-  wishlistReducer
+  wishlistReducer,
+  boardChatReducer
 });
 
 // Khởi tạo store

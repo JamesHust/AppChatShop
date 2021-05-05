@@ -90,7 +90,7 @@ const CartScreen = () => {
 
   // Hàm thực hiện xóa sản phẩm khỏi cửa hàng
   const removeProductInCart = async (listProd, token) => {
-    const response = await fetch("http://192.168.0.4:3000/api/carts", {
+    const response = await fetch("http://192.168.1.125:3000/api/carts", {
       method: "DELETE",
       headers: {
         Accept: "application/json",
@@ -173,7 +173,7 @@ const CartScreen = () => {
       listProductForShop.push(listProdInShop);
     });
     // Thực hiện gửi request lên server
-    const response = await fetch("http://192.168.0.4:3000/api/orders", {
+    const response = await fetch("http://192.168.1.125:3000/api/orders", {
       method: "POST",
       headers: {
         Accept: "application/json",

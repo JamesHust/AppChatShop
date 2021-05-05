@@ -94,7 +94,7 @@ const CardCart = ({ data, checkedAll }) => {
       try {
         const token = await AsyncStorage.getItem("userToken");
         if (token) {
-          const response = await fetch("http://192.168.0.4:3000/api/carts", {
+          const response = await fetch("http://192.168.1.125:3000/api/carts", {
             method: "PUT",
             headers: {
               Accept: "application/json",

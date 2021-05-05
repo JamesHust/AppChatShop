@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, forwardRef } from "react";
 import { View, TextInput, StyleSheet } from "react-native";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { windowHeight, windowWidth } from "../utils/Dimentions";
 import COLORS from "../constants/color";
 
-const InputIcon = (props) => {
+const InputIcon = forwardRef((props, ref) => {
   return (
     <View style={{ ...styles.inputContainer, ...props.style }}>
       <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
@@ -16,6 +16,7 @@ const InputIcon = (props) => {
           />
         </View>
         <TextInput
+          ref={ref}
           value={props.value}
           style={styles.input}
           numberOfLines={props.numberOfLines}
@@ -24,12 +25,19 @@ const InputIcon = (props) => {
           onChangeText={props.onChangeText}
           placeholderTextColor={COLORS.grey_7}
           onEndEditing={props.onEndEditing}
+          onSubmitEditing={props.onSubmitEditing}
+          blurOnSubmit={props.blurOnSubmit}
         />
       </View>
 
       <View>
         {!props.isValid ? (
-          <AntDesign name="exclamationcircle" size={24} color={COLORS.red_14} style={styles.iconRight}/>
+          <AntDesign
+            name="exclamationcircle"
+            size={24}
+            color={COLORS.red_14}
+            style={styles.iconRight}
+          />
         ) : props.nameIconRight ? (
           <Ionicons
             name={props.nameIconRight}
@@ -44,7 +52,7 @@ const InputIcon = (props) => {
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   inputContainer: {

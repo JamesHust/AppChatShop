@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage"; //thư vi�
 
 // Trang đăng nhập
 const LoginScreen = ({ navigation }) => {
+  // Khai báo các ref
+  const inputPass = useRef(null);
+
   //khai báo các  state
   const [data, setData] = useState({
     username: "",
@@ -35,7 +38,7 @@ const LoginScreen = ({ navigation }) => {
     //fetching data ở đây
     try {
       const userToken = await AsyncStorage.getItem("userToken");
-      const res = await fetch("http://192.168.0.4:3000/api/check/token", {
+      const res = await fetch("http://192.168.1.125:3000/api/check/token", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -48,10 +51,7 @@ const LoginScreen = ({ navigation }) => {
           const resData = await res.json();
           dispatch(authActions.storageToken(resData.data));
           dispatch(
-            cartActions.getOldCart(
-              resData.data.customer.CustomerId,
-              userToken
-            )
+            cartActions.getOldCart(resData.data.customer.CustomerId, userToken)
           );
           return navigation.navigate("Home");
         default:
@@ -83,6 +83,11 @@ const LoginScreen = ({ navigation }) => {
     setShowPassword(!showPassword);
   };
 
+  // Hàm xử lý khi nhập xong tên đăng nhập sẽ tự động focus input pass
+  const onFocusInputPass = () => {
+    inputPass.current.focus();
+  };
+
   //hàm xử lý sự kiện khi click đăng nhập
   const submitOnClick = () => {
     if (!data.isValidUser || !data.isValidPassword) {
@@ -94,7 +99,7 @@ const LoginScreen = ({ navigation }) => {
       ]);
     } else {
       //thực hiện đăng nhập, gửi request lên server để check tài khoản
-      fetch("http://192.168.0.4:3000/api/login", {
+      fetch("http://192.168.1.125:3000/api/login", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -212,8 +217,11 @@ const LoginScreen = ({ navigation }) => {
             isValid={data.isValidUser}
             onChangeText={(value) => setData({ ...data, username: value })}
             onEndEditing={(e) => handleValidUser(e.nativeEvent.text)}
+            onSubmitEditing={onFocusInputPass}
+            blurOnSubmit={false}
           />
           <InputIcon
+            ref={inputPass}
             value={data.password}
             nameIcon="lock1"
             sizeIcon={25}
@@ -225,6 +233,7 @@ const LoginScreen = ({ navigation }) => {
             isValid={data.isValidPassword}
             onChangeText={(value) => setData({ ...data, password: value })}
             onEndEditing={(e) => handleValidPass(e.nativeEvent.text)}
+            onSubmitEditing={submitOnClick}
           />
         </View>
         <View style={styles.forgetText}>

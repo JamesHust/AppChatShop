@@ -15,7 +15,7 @@ const ListWishList = (props) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.0.4:3000/api/reviews/products`,
+        `http://192.168.1.125:3000/api/reviews/products`,
         {
           method: "POST",
           headers: {

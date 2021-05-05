@@ -22,110 +22,76 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import COLORS from "../constants/color";
 import * as ImagePicker from "expo-image-picker";
 import RecognizeVoice from "../modules/RecognizeVoice";
+import { useDispatch } from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { showToast } from "../utils/Common";
+import * as boardChatActions from "../redux/actions/board-chat";
 
-const uuidv4 = require('uuid/v4');
+const uuidv4 = require("uuid/v4");
 
 const ChatScreen = ({ route, navigation }) => {
   LogBox.ignoreAllLogs(); //Ignore all log notifications
 
   const data = route.params.data;
+  const customerId = route.params.customerId;
   const [messages, setMessages] = useState([]);
+  const dispatch = useDispatch();
 
-  //lấy danh sách tin nhắn
-  useEffect(() => {
-    setMessages([
-      {
-        _id: 11,
-        image:
-          "https://i.pinimg.com/564x/10/44/10/104410f06dea80c0dd8163bbddfaa950.jpg",
-        // audio: 'https://raw.githubusercontent.com/himalayasingh/music-player-1/master/music/2.mp3',
-        // video: "https://flyreel.blob.core.windows.net/underwriter-video-storage/e591ef04-8146-4586-b80e-e7c032578549.mp4",
-        createdAt: new Date(),
-        user: {
-          _id: 4,
-          name: "React Native",
-          avatar: data.avatar,
-        },
-      },
-      {
-        _id: 5,
-        text: "Hello",
-        // audio: 'https://raw.githubusercontent.com/himalayasingh/music-player-1/master/music/2.mp3',
-        // video: "https://flyreel.blob.core.windows.net/underwriter-video-storage/e591ef04-8146-4586-b80e-e7c032578549.mp4",
-        createdAt: new Date(),
-        user: {
-          _id: 4,
-          name: "React Native",
-          avatar: data.avatar,
-        },
-      },
-      {
-        _id: 2,
-        image:
-          "https://i.pinimg.com/564x/10/44/10/104410f06dea80c0dd8163bbddfaa950.jpg",
-        // audio: 'https://raw.githubusercontent.com/himalayasingh/music-player-1/master/music/2.mp3',
-        // video: "https://flyreel.blob.core.windows.net/underwriter-video-storage/e591ef04-8146-4586-b80e-e7c032578549.mp4",
-        createdAt: new Date(),
-        user: {
-          _id: 1,
-          name: "React Native",
-          avatar: data.avatar,
-        },
-      },
-      {
-        _id: 3,
-        text: "test",
-        // audio: 'https://raw.githubusercontent.com/himalayasingh/music-player-1/master/music/2.mp3',
-        // video: "https://flyreel.blob.core.windows.net/underwriter-video-storage/e591ef04-8146-4586-b80e-e7c032578549.mp4",
-        createdAt: new Date(),
-        user: {
-          _id: 4,
-          name: "React Native",
-          avatar: data.avatar,
-        },
-      },
-      {
-        _id: 1,
-        text: "test đấy",
-        // audio: 'https://raw.githubusercontent.com/himalayasingh/music-player-1/master/music/2.mp3',
-        // video: "https://flyreel.blob.core.windows.net/underwriter-video-storage/e591ef04-8146-4586-b80e-e7c032578549.mp4",
-        createdAt: new Date(),
-        user: {
-          _id: 1,
-          name: "React Native",
-          avatar: data.avatar,
-        },
-      },
-      {
-        _id: 10,
-        text: "This is a quick reply. Do you love Gifted Chat? (radio) KEEP IT",
-        createdAt: new Date(),
-        quickReplies: {
-          type: "radio", // or 'checkbox',
-          keepIt: true,
-          values: [
+  // Lấy danh sách tin nhắn
+  const getListMessage = useCallback(async () => {
+    //fetching data ở đây
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/messages/room/${data.roomId}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+        }
+      );
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setMessages(resData.data);
+          return;
+        case 404:
+          setMessages([]);
+          return;
+        default:
+          Alert.alert("goFAST", `Lỗi tải dữ liệu:`, [
             {
-              title: "😋 Yes",
-              value: "yes",
+              text: "Tải lại",
+              onPress: () => getListMessage(),
             },
             {
-              title: "📷 Yes, let me show you with a picture!",
-              value: "yes_picture",
+              text: "OK",
+              style: "cancel",
             },
-            {
-              title: "😞 Nope. What?",
-              value: "no",
-            },
-          ],
+          ]);
+          return;
+      }
+    } catch (err) {
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => getListMessage(),
         },
-        user: {
-          _id: 4,
-          name: "React Native",
-          avatar: data.avatar,
+        {
+          text: "OK",
+          style: "cancel",
         },
-      },
-    ]);
+      ]);
+    }
   }, []);
+
+  //Theo dõi và gọi tới hàm lấy danh sách tin nhắn
+  useEffect(() => {
+    getListMessage();
+  }, [dispatch, getListMessage]);
 
   //kiểm tra quyền truy cập máy ảnh và thư viện
   useEffect(() => {
@@ -142,10 +108,47 @@ const ChatScreen = ({ route, navigation }) => {
   }, []);
 
   //Hàm thêm tin nhắn vào mảng message
-  const onSend = useCallback((messages = []) => {
-    setMessages((previousMessages) =>
-      GiftedChat.append(previousMessages, messages)
-    );
+  const onSend = useCallback(async (messages = []) => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const response = await fetch(`http://192.168.1.125:3000/api/messages`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "x-access-token": token,
+        },
+        body: JSON.stringify({
+          packageMess: messages[0],
+          actor: "customer",
+          roomId: data.roomId,
+        }),
+      });
+      // Nếu thêm tin nhắn thành công
+      if (response.status === 200) {
+        // Cập nhật lại bảng chat
+        const token = await AsyncStorage.getItem("userToken");
+        dispatch(boardChatActions.getBoardChat(customerId, token));
+        // Thêm tin nhắn mới hiển thị lên giao diện
+        setMessages((previousMessages) =>
+          GiftedChat.append(previousMessages, messages)
+        );
+      } else {
+        console.log(messages);
+        showToast("Lỗi không gửi được tin nhắn!");
+      }
+    } catch (err) {
+      Alert.alert("goFAST", `Lỗi gửi tin nhắn: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => getListMessage(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
   }, []);
 
   //Hàm chọn và gửi ảnh từ máy lên
@@ -229,7 +232,7 @@ const ChatScreen = ({ route, navigation }) => {
     const text = await RecognizeVoice.startVoice();
     console.log("Test ABCDEF :" + text);
     Alert.alert("Test Mic : " + text);
-  }
+  };
 
   //Custom lại phần các action cho left icon bổ sung
   const renderLeftIcon = () => {
@@ -287,15 +290,17 @@ const ChatScreen = ({ route, navigation }) => {
             <AntDesign name="arrowleft" size={24} color={COLORS.red_13} />
           </TouchableOpacity>
           <Image
-            source={data.avatar}
+            source={{ uri: data.avatar }}
             resizeMode="cover"
             style={styles.avatar}
           />
           <View style={styles.title}>
-            <Text style={{ fontSize: 15, fontWeight: "bold" }}>
-              {data.name}
+            <Text
+              style={{ fontSize: 15, fontWeight: "bold", color: COLORS.dark }}
+            >
+              {data.shopName}
             </Text>
-            <Text>Hoạt động {data.time}</Text>
+            <Text>{data.activeStatus}</Text>
           </View>
         </View>
         <MaterialIcons name="call" size={28} color={COLORS.red_13} />
@@ -340,6 +345,8 @@ const styles = StyleSheet.create({
     width: 38,
     borderRadius: 200,
     marginLeft: 10,
+    borderWidth: 1,
+    borderColor: COLORS.grey_6,
   },
   title: {
     marginLeft: 10,

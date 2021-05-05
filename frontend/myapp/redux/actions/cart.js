@@ -21,7 +21,7 @@ export const getOldCart = (customerId, token) => {
   return async (dispatch) => {
     try {
       const response = await fetch(
-        `http://192.168.0.4:3000/api/carts?customerId=${customerId}`,
+        `http://192.168.1.125:3000/api/carts?customerId=${customerId}`,
         {
           method: "GET",
           headers: {

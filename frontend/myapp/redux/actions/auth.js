@@ -33,7 +33,7 @@ export const logout = () => {
     try {
       const userToken = await AsyncStorage.getItem("userToken");
       // Thực hiện xóa token trong cơ sở dữ liệu
-      const response = await fetch("http://192.168.0.4:3000/api/logout", {
+      const response = await fetch("http://192.168.1.125:3000/api/logout", {
         method: "POST",
         headers: {
           Accept: "application/json",

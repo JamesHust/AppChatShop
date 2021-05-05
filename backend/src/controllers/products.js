@@ -8,8 +8,8 @@ const {
   checkExist,
   deleteRecord,
   formatDateTimeInsertDB,
+  convertPathFile
 } = require("../util/common");
-const { convertPathFile } = require("../util/common");
 const Shop = require("../models/shop");
 const Category = require("../models/category");
 
@@ -219,13 +219,15 @@ const getProductById = async (req, res, next) => {
           shop.ShopId,
           shop.ShopCode,
           shop.ShopName,
+          shop.Avatar,
           shop.PhoneNumber,
           shop.OtherPhoneNumber,
           shop.Address,
           shop.Email,
           shop.OpenTime,
           shop.CloseTime,
-          shop.Rating
+          shop.Rating,
+          shop.ChatId
         );
         const category = await checkExist("CategoryId", result.CategoryId);
         const cate = new Category(

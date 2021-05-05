@@ -69,7 +69,7 @@ const QuickOrderScreen = (props) => {
     setIsLoading(true);
     //fetching data ở đây
     try {
-      const response = await fetch("http://192.168.0.4:3000/api/products", {
+      const response = await fetch("http://192.168.1.125:3000/api/products", {
         method: "GET",
         headers: {
           Accept: "application/json",

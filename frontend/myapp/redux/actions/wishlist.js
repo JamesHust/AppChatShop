@@ -14,7 +14,7 @@ export const getWishlist = (customerId, token) => {
   return async (dispatch) => {
     try {
       const response = await fetch(
-        `http://192.168.0.4:3000/api/reviews/products/${customerId}`,
+        `http://192.168.1.125:3000/api/reviews/products/${customerId}`,
         {
           method: "GET",
           headers: {

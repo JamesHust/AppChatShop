@@ -1,8 +1,9 @@
 import {
   GET_CART,
   REMOVE_CART,
-  ADD_QUICK_CART,
+  ADD_UPDATE_QUICK_CART,
   REMOVE_QUICK_CART,
+  REMOVE_ALL_QUICK_CART,
   ADD_SELECTED_PROD,
   ADD_ALL_SELECTED_PROD,
   REMOVE_SELECTED_PROD,
@@ -12,6 +13,7 @@ import {
 const initialState = {
   cart: [],
   quickCart: [],
+  totalPaymentQuickCart: 0,
   selectedProductInCart: [],
   totalPayment: 0,
   ship: 0,
@@ -37,10 +39,49 @@ export default (state = initialState, action) => {
       };
     case REMOVE_CART:
       return;
-    case ADD_QUICK_CART:
-      return;
+    case ADD_UPDATE_QUICK_CART:
+      const product = action.product;
+      const listQuickCart = state.quickCart;
+      const indexProd = listQuickCart.findIndex(
+        (i) => i.productId === product.productId
+      );
+      if (indexProd > -1) {
+        //cập nhật nếu đã có sản phẩm
+        listQuickCart.splice(indexProd, 1, product);
+      } else {
+        //thêm mới nếu chưa có sản phẩm
+        listQuickCart.push(product);
+      }
+      // Tính lại tổng tiền giỏ hàng nhanh
+      const paymentQuickCartA = updatePaymentQuickCart(listQuickCart);
+      return {
+        ...state,
+        quickCart: listQuickCart,
+        totalPaymentQuickCart: paymentQuickCartA
+      };
     case REMOVE_QUICK_CART:
-      return;
+      const prodID = action.productId;
+      const listQuickCartQ = state.quickCart;
+      const indexProdQ = listQuickCartQ.findIndex(
+        (i) => i.productId === prodID
+      );
+      if (indexProdQ > -1) {
+        //cập nhật nếu đã có sản phẩm
+        listQuickCartQ.splice(indexProdQ, 1)
+      } 
+      // Tính lại tổng tiền giỏ hàng nhanh
+      const paymentQuickCartQ = updatePaymentQuickCart(listQuickCartQ);
+      return {
+        ...state,
+        quickCart: listQuickCartQ,
+        totalPaymentQuickCart: paymentQuickCartQ
+      };
+    case REMOVE_ALL_QUICK_CART:
+      return {
+        ...state,
+        quickCart: [],
+        totalPaymentQuickCart: 0
+      };
     case ADD_SELECTED_PROD:
       const idProd = action.idProd;
       const selectedListA = state.selectedProductInCart;
@@ -106,6 +147,7 @@ export default (state = initialState, action) => {
   return state;
 };
 
+// Hàm tính lại số tiền giỏ thường và tiền ship
 const updatePaymentAndShip = (selectedList, cart) => {
   let sumPay = 0;
   // Tính tổng tiền tất cả sản phẩm trong giỏ
@@ -135,4 +177,18 @@ const updatePaymentAndShip = (selectedList, cart) => {
   const shipUpdate = +kq.length * 15000;
   sumPay += shipUpdate;
   return { sumPay, shipUpdate };
+};
+
+// Hàm tính lại tổng số tiền của giỏ hàng nhanh
+const updatePaymentQuickCart = (data) => {
+  let sumQuickCart = 0;
+  if (data.length > 0) {
+    data.forEach((item) => {
+      sumQuickCart += +item.purchasePrice * +item.productAmount;
+    });
+    if(sumQuickCart > 0){
+      sumQuickCart += 15000;//phí ship cố định khi giao cho từng cửa hàng
+    }
+  }
+  return sumQuickCart
 };

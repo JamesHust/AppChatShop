@@ -2,10 +2,12 @@ const db = require("../util/database");
 const { Guid } = require("js-guid");
 const { getInfoShops } = require("./shops");
 const { getRoomById, checkExistRoom, createRoom } = require("./room-chat");
-const { convertPathFile, formatDateTimeInsertDB } = require("../util/common");
+const { convertPathFile, checkExist } = require("../util/common");
 const Response = require("../models/response");
+const DetailProduct = require("../models/detail-product");
 const DetailMessageText = require("../models/detail-message-text");
 const DetailMessageImage = require("../models/detail-message-img");
+const { result } = require("lodash");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "message";
@@ -252,11 +254,14 @@ const addNewMessage = async (req, res, next) => {
   const packageMess = req.body.packageMess;
   const actor = req.body.actor;
   const roomId = req.body.roomId;
-  if (packageMess && actor && roomId) {
+  const shopId = req.body.shopId;
+  const type = req.body.type; //kiểu nhập tin nhắn
+  if (packageMess && actor && roomId && shopId && type) {
     try {
       const roomChat = await getRoomById(roomId);
       // Check có roomchat phù hợp
       if (roomChat) {
+        let result = null;
         const messageId = packageMess._id;
         let senderId = null;
         let recipientId = null;
@@ -275,13 +280,16 @@ const addNewMessage = async (req, res, next) => {
         //trường hợp gửi tin nhắn là text
         if (packageMess.text) {
           textMessage = packageMess.text;
+          if (actor == "customer") {
+            result = await analysisOfText(textMessage, shopId, type);
+          }
         }
         //trường hợp gửi tin nhắn là hình ảnh
         if (packageMess.image) {
           imgMessage = packageMess.image;
         }
         //Thực hiện thêm tin nhắn mới
-        const result = db.execute(
+        await db.execute(
           `insert into ${tableName} (MesageId, SenderId, RecipientId, TextMessage, ImgMessage, RoomId, Status) values ('${messageId}', '${senderId}', '${recipientId}', '${textMessage}', '${imgMessage}', '${roomId}', ${status})`
         );
         res
@@ -342,6 +350,135 @@ const addNewMessage = async (req, res, next) => {
 //#region
 
 //#region Private Function
+/**
+ * Hàm phân tích tin nhắn
+ * @param {*} messageText tin nhắn dạng text
+ * @param {*} shopId Id cửa hàng
+ * @param {*} type loại nhập tin nhắn: voice, enter
+ * @returns
+ */
+const analysisOfText = async (messageText, shopId, type) => {
+  const message = messageText.toUpperCase();
+  try {
+    let result = null;
+    let sql = null;
+    let amount = null;
+    //TH1: Trường hợp nhập từ bàn phím. Cú pháp đặt: DAT_#SP00001_15
+    if (type === "enterKeyboard") {
+      // Loại bỏ dấu và khoảng trắng
+      const text = message
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s/g, "");
+      const prefixText = text.substring(0, 4);
+      // Kiểm tra tiền tố
+      if (prefixText === "ĐAT_" || prefixText === "DAT_") {
+        const arrText = text.split("_");
+        const prefixId = arrText[1].charAt(0);
+        if (prefixId === "#") {
+          const productCode = arrText[1].substring(1);
+          amount = parseInt(arrText[2]) + "";
+          sql = `select * from product where ShopId = '${shopId}' and ProductCode = '${productCode}'`;
+        } else {
+          result = "Sai cú pháp. Cú pháp đúng: DAT_#[mã sản phẩm]_[số lượng]";
+        }
+      }
+    } else {
+      //TH2: Trường hợp nhập bằng giọng nói. Cú pháp: ĐẶT [Số lượng] [Đơn vị] [Tên sản phẩm]
+      const arrText = message.split(" ");
+      const prefix = arrText[0]
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      if (prefix === "ĐAT" || prefix === "DAT") {
+        const amountText = arrText[1];
+        // Check trường hợp là chữ "một" và check dư số 0 ở đầu
+        if (amountText === "MỘT") {
+          amount = "1";
+        } else {
+          amount = parseInt(arrText[1]) + "";
+        }
+        const productName = arrText[3] + message.split(arrText[3])[1];
+        sql = `select * from product where ShopId = '${shopId}' and ProductName like '%${productName}%'`;
+      } else {
+        result =
+          "Sai cú pháp. Cú pháp đúng: ĐẶT [Số lượng] [Đơn vị] [Tên sản phẩm]";
+      }
+    }
+    // Check câu lệnh sql
+    if (sql) {
+      const checkExistProduct = await db.execute(sql);
+      if (
+        checkExistProduct[0] &&
+        checkExistProduct[0].length > 0 &&
+        amount != "NaN" &&
+        +amount > 0
+      ) {
+        if (checkExistProduct[0].length > 1) {
+          const listProd = [];
+          checkExistProduct[0].forEach((item) => {
+            listProd.push(
+              new DetailProduct(
+                item.ProductId,
+                item.ProductCode,
+                item.ProductName,
+                item.Description,
+                item.Unit,
+                convertPathFile(item.ImageUrl),
+                item.ImportPrice,
+                item.PurchasePrice,
+                item.QuantitySold,
+                item.Amount,
+                item.DateOfImport,
+                item.Rating,
+                item.Sale,
+                item.ShopId,
+                "",
+                item.CategoryId,
+                "",
+                "",
+                "",
+                amount,
+                item.PurchasePrice //mặc định là tiền bán không tính giảm giá
+              )
+            );
+          });
+          result = listProd;
+        } else {
+          result = new DetailProduct(
+            checkExistProduct[0][0].ProductId,
+            checkExistProduct[0][0].ProductCode,
+            checkExistProduct[0][0].ProductName,
+            checkExistProduct[0][0].Description,
+            checkExistProduct[0][0].Unit,
+            convertPathFile(checkExistProduct[0][0].ImageUrl),
+            checkExistProduct[0][0].ImportPrice,
+            checkExistProduct[0][0].PurchasePrice,
+            checkExistProduct[0][0].Amount,
+            checkExistProduct[0][0].QuantitySold,
+            checkExistProduct[0][0].DateOfImport,
+            checkExistProduct[0][0].Rating,
+            checkExistProduct[0][0].Sale,
+            checkExistProduct[0][0].ShopId,
+            "",
+            checkExistProduct[0][0].CategoryId,
+            "",
+            "",
+            "",
+            amount,
+            checkExistProduct[0][0].PurchasePrice //mặc định là tiền bán không tính giảm giá
+          );
+        }
+      } else {
+        result =
+          "Sai mã sản phẩm. Vui lòng nhập lại đúng mã sản phẩm theo cú pháp.";
+      }
+    }
+    return result;
+  } catch (err) {
+    return `Sai cú pháp. Có lỗi xảy ra: ${err}`;
+  }
+};
+
 /**
  * Hàm lấy tin nhắn cuối cùng theo roomId
  * @param {*} roomId Id phòng chat

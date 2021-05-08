@@ -52,11 +52,15 @@ const getMaxCode = async (className) => {
  * @returns Bản ghi có chứa khóa chính trùng
  */
 const checkExist = async (primaryKeyName, valueKey) => {
+  let result = null;
   const tableName = primaryKeyName.slice(0, -2).toLowerCase();
-  const result = await db.execute(
+  const response = await db.execute(
     `select * from \`${tableName}\` where ${primaryKeyName} = "${valueKey}"`
   );
-  return result[0][0];
+  if(response[0][0]){
+    result = response[0][0];
+  }
+  return result;
 };
 
 /**

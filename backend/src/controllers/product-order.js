@@ -1,6 +1,7 @@
 const { Guid } = require("js-guid");
 const db = require("../util/database");
 const ProductOrder = require("../models/product-order");
+const { updateAmountProduct } = require("./products");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "product_order";
@@ -60,6 +61,7 @@ const getDetailProductOrder = async (orderId, productId) => {
 const addProductOrders = async (listProduct, orderId) => {
   const result = await Promise.all(
     listProduct.map(async (item) => {
+      await updateAmountProduct(item.productId, item.productAmount);
       await addProductOrder(item, orderId);
     })
   );

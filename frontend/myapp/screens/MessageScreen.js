@@ -115,6 +115,7 @@ const ChatScreen = ({ navigation }) => {
                 navigation.navigate("Chat", {
                   data: item,
                   customerId: customer.customerId,
+                  shopId: item.shopId
                 });
               }}
             >

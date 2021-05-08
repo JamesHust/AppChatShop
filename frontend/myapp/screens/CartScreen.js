@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import ModalOrderSuccess from "../components/ModalOrderSuccess";
 import COLORS from "../constants/color";
 import { Checkbox } from "react-native-paper";
 import { screenWidth } from "../utils/Dimentions";
@@ -30,6 +31,7 @@ const CartScreen = () => {
   const cart = useSelector((state) => state.cartReducer.cart);
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
   const [checkedAll, setCheckedAll] = useState(false);
+  const [visibleOrderSuccess, setVisibleOrderSuccess] = useState(false); // xét hiển thị đặt hàng thành công
   const dispatch = useDispatch();
 
   // Gen header của trang
@@ -86,6 +88,14 @@ const CartScreen = () => {
         ))}
       </View>
     );
+  };
+
+  // Hàm show thông báo đặt hàng thành công
+  const showSuccessNotification = () => {
+    setVisibleOrderSuccess(true);
+    setTimeout(() => {
+      setVisibleOrderSuccess(false);
+    }, 3000);
   };
 
   // Hàm thực hiện xóa sản phẩm khỏi cửa hàng
@@ -220,9 +230,10 @@ const CartScreen = () => {
           if (status == 200) {
             dispatch(cartActions.getOldCart(customer.customerId, token));
             dispatch(cartActions.removeAllSelected());
-            showToast(
-              `Đặt hàng thành công. Vui lòng vào Tài khoản => Theo dõi đơn hàng để theo dõi tiến độ đơn hàng.`
-            );
+            showSuccessNotification();
+            // showToast(
+            //   `Vui lòng vào Tài khoản => Theo dõi đơn hàng để theo dõi tiến độ đơn hàng.`
+            // );
           } else {
             showToast(`Có lỗi xảy ra khi đặt hàng!`);
           }
@@ -271,6 +282,11 @@ const CartScreen = () => {
   if (listProduct.length <= 0) {
     return (
       <View style={{ backgroundColor: COLORS.light, flex: 1 }}>
+        {/* Modal hiển thị đặt hàng thành công */}
+        <ModalOrderSuccess
+          onVisible={visibleOrderSuccess}
+          backdropColor={COLORS.light}
+        />
         {/* Logo */}
         <View style={style.header}>
           <Image

@@ -12,7 +12,7 @@ import {
 import COLORS from "../constants/color";
 import { Ionicons } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
-import { FontAwesome } from "@expo/vector-icons";
+import { Fontisto } from "@expo/vector-icons";
 import TabCategories from "../components/TabCategories";
 import ListCardProduct from "../components/ListCardProduct";
 
@@ -39,11 +39,11 @@ const QuickOrderScreen = (props) => {
             />
           </View>
           {/* đặt nhanh */}
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {/* <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View style={styles.iconWrapper}>
-              <FontAwesome name="dollar" size={22} color={COLORS.light} />
+              <Fontisto name="shopping-bag-1" size={22} color={COLORS.light} />
             </View>
-          </View>
+          </View> */}
         </View>
         {/* search-bar */}
         <View style={{ marginTop: 10, flexDirection: "row" }}>

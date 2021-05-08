@@ -11,6 +11,7 @@ const {
 } = require("../util/common");
 const { getProductCarts } = require("./product-cart");
 const { Guid } = require("js-guid");
+const ProductOrder = require("../models/product-order");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "order";
@@ -165,9 +166,8 @@ const addProductsToOrder = async (req, res, next) => {
   const customerId = req.body.customerId;
   if (listProductForShop && listProductForShop.length > 0) {
     try {
-      let checkSuccess = true;
       listProductForShop.map(async (item) => {
-        let total = 15000;
+        let total = 0;
         const shopId = item[0].shopId;
         item.forEach((prod) => {
           total += +prod.productAmount * +prod.productPrice;
@@ -191,6 +191,94 @@ const addProductsToOrder = async (req, res, next) => {
             (data = "success")
           )
         );
+    } catch (err) {
+      res
+        .status(500)
+        .send(
+          new Response(
+            (isSuccess = false),
+            (errorCode = "DB004"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi không thêm mới được dữ liệu"),
+            (moreInfo = "addProductsToOrder error!"),
+            (data = null)
+          )
+        );
+    }
+  } else {
+    res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
+          (moreInfo = "addProductsToOrder error!"),
+          (data = null)
+        )
+      );
+  }
+};
+
+/**
+ * Hàm thêm sản phẩm từ giỏ hàng nhanh
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+const addQuickCartToOrder = async (req, res, next) => {
+  const quickCart = req.body.quickCart;
+  const customerId = req.body.customerId;
+  const shopId = req.body.shopId;
+  const totalPayment = +req.body.totalPayment - 15000;
+  if (quickCart && quickCart.length > 0 && customerId) {
+    try {
+      let productListOutOfStock = []; //danh sách sản phẩm không còn đủ hàng
+      await Promise.all(
+        quickCart.map(async (item) => {
+          const remainingProduct = await checkExist(
+            "ProductId",
+            item.productId
+          );
+          if (+item.productAmount > +remainingProduct.Amount) {
+            productListOutOfStock.push(remainingProduct);
+          }
+        })
+      );
+      // Check sản phẩm trong giỏ hàng nhanh còn trong kho không, nếu không trả về kết quả
+      if (productListOutOfStock.length > 0) {
+        res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = false),
+              (errorCode = null),
+              (devMsg = `Craete order success.`),
+              (userMsg = `Tạo đơn hàng thành công.`),
+              (moreInfo = null),
+              (data = productListOutOfStock)
+            )
+          );
+      } else {
+        // Nếu sản phẩm trong kho vẫn còn thì thực hiện thêm vào order
+        //Tạo order mới
+        const orderId = await createOrder(customerId, shopId, totalPayment);
+        //Kiểm tra đã tạo thành công order mới chưa, nếu rồi thì thêm các product order vào
+        await addProductOrders(quickCart, orderId);
+        res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = null),
+              (devMsg = `Craete order success.`),
+              (userMsg = `Tạo đơn hàng thành công.`),
+              (moreInfo = null),
+              (data = "Success")
+            )
+          );
+      }
     } catch (err) {
       res
         .status(500)
@@ -499,6 +587,7 @@ module.exports = {
   getOrders,
   getDetailProductOrders,
   addProductsToOrder,
+  addQuickCartToOrder,
   updateOrder,
   cancelOrder,
   deleteOrder,

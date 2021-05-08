@@ -3,6 +3,7 @@ const {
   getOrders,
   getDetailProductOrders,
   addProductsToOrder,
+  addQuickCartToOrder,
   updateOrder,
   cancelOrder,
   deleteOrder,
@@ -15,8 +16,10 @@ const router = express.Router();
 router.get("/orders", getOrders);
 //Lấy danh sách sản phẩm trong đơn hàng, cho phép lọc theo Mã khách hàng, Mã đơn hàng, Mã cửa hàng
 router.get("/orders/detail", getDetailProductOrders);
-//Thực hiện đặt hàng
+//Thực hiện đặt hàng thường
 router.post("/orders", addProductsToOrder);
+// Thực hiện đặt hàng giỏ hàng nhanh
+router.post("/quick/orders", addQuickCartToOrder);
 //Cập nhật lại trạng thái hóa đơn, trừ hủy đơn hàng đã có API khác thay thế
 router.put("/orders", updateOrder);
 //Hủy đơn hàng

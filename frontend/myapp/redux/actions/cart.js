@@ -5,8 +5,9 @@ import { Alert } from "react-native";
 export const GET_CART = "GET_CART";
 export const REMOVE_CART = "REMOVE_CART";
 
-export const ADD_QUICK_CART = "ADD_QUICK_CART";
+export const ADD_UPDATE_QUICK_CART = "ADD_UPDATE_QUICK_CART";
 export const REMOVE_QUICK_CART = "REMOVE_QUICK_CART";
+export const REMOVE_ALL_QUICK_CART = "REMOVE_ALL_QUICK_CART";
 
 export const ADD_SELECTED_PROD = "ADD_SELECTED_PROD";
 export const ADD_ALL_SELECTED_PROD = "ADD_ALL_SELECTED_PROD";
@@ -120,3 +121,49 @@ export const removeAllSelected = () => {
     }
   };
 };
+
+/**
+ * Hàm action thêm mới hoặc cập nhật lại giỏ hàng nhanh
+ * @returns 
+ */
+export const addOrUpdateQuickCart = (product) => {
+  return (dispatch) => {
+    try {
+      dispatch({ type: ADD_UPDATE_QUICK_CART, product: product });
+      return;
+    } catch (err) {
+      throw err;
+    }
+  };
+}
+
+/**
+ * Hàm action thực hiện xóa sản phẩm trong giỏ hàng nhanh
+ * @param {*} productId Id sản phẩm cần xóa
+ * @returns 
+ */
+export const removeProdInQuickCart = (productId) => {
+  return (dispatch) => {
+    try {
+      dispatch({ type: REMOVE_QUICK_CART, productId: productId });
+      return;
+    } catch (err) {
+      throw err;
+    }
+  };
+}
+
+/**
+ * Hàm action thực hiện xóa toàn bộ sản phẩm trong giỏ hàng nhanh
+ * @returns 
+ */
+ export const removeAllQuickCart = () => {
+  return (dispatch) => {
+    try {
+      dispatch({ type: REMOVE_ALL_QUICK_CART});
+      return;
+    } catch (err) {
+      throw err;
+    }
+  };
+}

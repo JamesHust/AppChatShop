@@ -25,6 +25,7 @@ import {
   Ionicons,
   FontAwesome,
   Entypo,
+  FontAwesome5,
 } from "@expo/vector-icons";
 import ModalOrderSuccess from "../components/ModalOrderSuccess";
 import COLORS from "../constants/color";
@@ -35,7 +36,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { showToast, addDotToNumber } from "../utils/Common";
 import * as boardChatActions from "../redux/actions/board-chat";
 import * as cartActions from "../redux/actions/cart";
-import demo from "../data/demo";
 
 const uuidv4 = require("uuid/v4");
 
@@ -1005,12 +1005,12 @@ const ChatScreen = ({ route, navigation }) => {
           <MaterialIcons
             name="call"
             size={28}
-            style={{ marginRight: 15 }}
+            style={{ marginRight: 18 }}
             color={COLORS.red_13}
             onPress={showSuccessNotification}
           />
           {/* Tiến hàng mua hàng */}
-          <FontAwesome
+          <FontAwesome5
             name="shopping-bag"
             size={24}
             color={COLORS.red_13}

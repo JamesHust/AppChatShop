@@ -3,8 +3,10 @@ import { createStackNavigator } from "@react-navigation/stack";
 import UserScreen from "../screens/UserScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
 import WishlistScreen from "../screens/WishlistScreen";
-import MonitorOrderScreen from "../screens/MonitorOrderScreen";
 import LoginScreen from "../screens/LoginScreen";
+import ChangePassScreen from "../screens/ChangePassScreen";
+import MonitorStack from "./MonitorStack";
+import CompleteOrderStack from "./CompleteOrderStack";
 
 //tạo stack đường dẫn
 const Stack = createStackNavigator();
@@ -35,10 +37,26 @@ const ProfileTask = () => (
         headerShown: false,
       })}
     />
-    {/* Màn hình theo dõi đơn hàng */}
+    {/* Màn hình theo dõi đơn hàng đang trong tiến trình*/}
     <Stack.Screen
-      name="MonitorOrder"
-      component={MonitorOrderScreen}
+      name="MonitorStack"
+      component={MonitorStack}
+      options={() => ({
+        headerShown: false,
+      })}
+    />
+    {/* Màn hình theo dõi đơn hàng đã hoàn thành*/}
+    <Stack.Screen
+      name="CompleteOrderStack"
+      component={CompleteOrderStack}
+      options={() => ({
+        headerShown: false,
+      })}
+    />
+    {/* Màn hình thay đổi mật khẩu */}
+    <Stack.Screen
+      name="ChangePassScreen"
+      component={ChangePassScreen}
       options={() => ({
         headerShown: false,
       })}

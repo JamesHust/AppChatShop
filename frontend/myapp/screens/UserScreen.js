@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator
 } from "react-native";
 import { Title, Caption, Text, TouchableRipple } from "react-native-paper";
 import * as authActions from "../redux/actions/auth";
@@ -18,12 +19,16 @@ import COLORS from "../constants/color";
 import myaccount from "../data/myaccount";
 import { useDispatch, useSelector } from "react-redux";
 import { CommonActions, StackActions } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 
 import Share from "react-native-share";
 
 const ProfileScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
+  const [reviews, setReviews] = useState(0);//số lượt đánh giá của khách hàng
+  const [timeOfOrder, setTimeOfOrder] = useState(0);//số lượt đặt hàng thành công của khách hàng
   const dispatch = useDispatch(); //khởi tạo dispatch
+  const customer = useSelector((state) => state.authReducer.customer);
 
   // xử lý chia sẻ profile
   const myCustomShare = async () => {
@@ -61,14 +66,66 @@ const ProfileScreen = ({ navigation }) => {
       ]);
     }
   };
-  
-  const customer = useSelector((state) => state.authReducer.customer);
+
+  // Hàm lấy số lượt đánh giá và lượt đặt hàng thành công
+  const loadRateAndSuccessOrders = useCallback(async () => {
+    setIsLoading(true);
+    //fetching data ở đây
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const response = await fetch(`http://192.168.1.125:3000/api/rates/customers?customerId=${customer.customerId}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "x-access-token": token,
+        },
+      });
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setReviews(resData.data.review);
+          setTimeOfOrder(resData.data.timesOfOrder);
+          setIsLoading(false);
+          return;
+        default:
+          setIsLoading(false);
+          Alert.alert("goFAST", `Lỗi lấy số lượng đánh giá và đặt hàng thành công:`, [
+            {
+              text: "Tải lại",
+              onPress: () => loadRateAndSuccessOrders(),
+            },
+            {
+              text: "OK",
+              style: "cancel",
+            },
+          ]);
+          return;
+      }
+    } catch (err) {
+      setIsLoading(false);
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => loadProducts(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  }, [setIsLoading]);
+
+  //check thay đổi khi tải trang
+  useEffect(() => {
+    loadRateAndSuccessOrders();
+  }, [loadRateAndSuccessOrders, setIsLoading]);
 
   // Check trường hợp đang tải dữ liệu
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header />
         <View style={styles.containerCenter}>
           <ActivityIndicator size="large" color={COLORS.red_13} />
         </View>
@@ -173,12 +230,12 @@ const ProfileScreen = ({ navigation }) => {
             },
           ]}
         >
-          <Title>1000</Title>
+          <Title>{reviews}</Title>
           <Caption style={styles.captionCustom}>Lượt đánh giá</Caption>
         </View>
         {/* Số lượt đặt hàng */}
         <View style={styles.infoBox}>
-          <Title>24</Title>
+          <Title>{timeOfOrder}</Title>
           <Caption style={styles.captionCustom}>Lượt đặt hàng</Caption>
         </View>
       </View>
@@ -187,6 +244,7 @@ const ProfileScreen = ({ navigation }) => {
         style={styles.menuWrapper}
         showsVerticalScrollIndicator={false}
       >
+        {/* Danh sách yêu thích */}
         <TouchableRipple
           onPress={() =>
             navigation.navigate("Wishlist", { idUser: myaccount.id })
@@ -201,9 +259,10 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.menuItemText}>Danh sách yêu thích</Text>
           </View>
         </TouchableRipple>
+        {/* Theo dõi đơn hàng */}
         <TouchableRipple
           onPress={() =>
-            navigation.navigate("MonitorOrder", { idUser: myaccount.id })
+            navigation.navigate("MonitorStack")
           }
         >
           <View style={styles.menuItem}>
@@ -215,6 +274,33 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.menuItemText}>Theo dõi đơn hàng</Text>
           </View>
         </TouchableRipple>
+        {/* Đơn đã hoàn thành */}
+        <TouchableRipple
+          onPress={() =>
+            navigation.navigate("CompleteOrderStack")
+          }
+        >
+          <View style={styles.menuItem}>
+            <MaterialIcons
+              name="history"
+              color={COLORS.red_13}
+              size={25}
+            />
+            <Text style={styles.menuItemText}>Đơn đã hoàn thành</Text>
+          </View>
+        </TouchableRipple>
+        {/* Thay đổi mật khẩu */}
+        <TouchableRipple
+          onPress={() =>
+            navigation.navigate("ChangePassScreen", { idUser: myaccount.id })
+          }
+        >
+          <View style={styles.menuItem}>
+            <MaterialCommunityIcons name="account-key" size={25} color={COLORS.red_13} />
+            <Text style={styles.menuItemText}>Thay đổi mật khẩu</Text>
+          </View>
+        </TouchableRipple>
+        {/* Chia sẻ hồ sơ */}
         <TouchableRipple onPress={myCustomShare}>
           <View style={styles.menuItem}>
             <MaterialCommunityIcons
@@ -225,6 +311,7 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.menuItemText}>Chia sẻ hồ sơ</Text>
           </View>
         </TouchableRipple>
+        {/* Hỗ trợ */}
         <TouchableRipple onPress={() => {}}>
           <View style={styles.menuItem}>
             <MaterialCommunityIcons
@@ -235,12 +322,14 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.menuItemText}>Hỗ trợ</Text>
           </View>
         </TouchableRipple>
+        {/* Cài đặt */}
         <TouchableRipple onPress={() => {}}>
           <View style={styles.menuItem}>
             <Ionicons name="settings-outline" color={COLORS.red_13} size={25} />
             <Text style={styles.menuItemText}>Cài đặt</Text>
           </View>
         </TouchableRipple>
+        {/* Đăng xuất */}
         <TouchableRipple onPress={logoutHandle}>
           <View style={styles.menuItem}>
             <MaterialCommunityIcons

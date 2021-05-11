@@ -15,6 +15,8 @@ import * as cartActions from "../redux/actions/cart";
 import COLORS from "../constants/color";
 import HideWithKeyboard from "react-native-hide-with-keyboard";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
+import Modal from "react-native-modal";
+import { AntDesign } from "@expo/vector-icons";
 
 // Trang đăng nhập
 const LoginScreen = ({ navigation }) => {
@@ -30,6 +32,10 @@ const LoginScreen = ({ navigation }) => {
   });
   const [showPassword, setShowPassword] = useState(true); //biến hiển thị password
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
+  const [notificationModalVisible, setNotificationModalVisible] = useState(
+    false
+  ); //Modal báo tài khoản hoặc mật khẩu sai hoặc hết phiên
+  const [notificationText, setNotificationText] = useState(null); //text thông báo trên modal
   const dispatch = useDispatch(); //khởi tạo dispatch
 
   // Hàm load dữ liệu
@@ -55,16 +61,10 @@ const LoginScreen = ({ navigation }) => {
           );
           return navigation.navigate("Home");
         default:
-          Alert.alert(
-            "goFAST",
-            "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại",
-            [
-              {
-                text: "OK",
-                style: "cancel",
-              },
-            ]
+          setNotificationText(
+            "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại"
           );
+          setNotificationModalVisible(true);
           return;
       }
     } catch (err) {
@@ -91,12 +91,10 @@ const LoginScreen = ({ navigation }) => {
   //hàm xử lý sự kiện khi click đăng nhập
   const submitOnClick = () => {
     if (!data.isValidUser || !data.isValidPassword) {
-      Alert.alert("goFAST", "Vui lòng nhập đúng tài khoản của bạn.", [
-        {
-          text: "OK",
-          style: "cancel",
-        },
-      ]);
+      setNotificationText(
+        "Tài khoản nhập đang bị sai. Vui lòng nhập đúng tài khoản và mật khẩu của bạn."
+      );
+      setNotificationModalVisible(true);
     } else {
       //thực hiện đăng nhập, gửi request lên server để check tài khoản
       fetch("http://192.168.1.125:3000/api/login", {
@@ -128,24 +126,16 @@ const LoginScreen = ({ navigation }) => {
               return navigation.navigate("Home");
             // trường hợp request truyền sang
             case 400:
-              Alert.alert("goFAST", "Dữ liệu truyền sang đang bị trống.", [
-                {
-                  text: "OK",
-                  style: "cancel",
-                },
-              ]);
+              setNotificationText(
+                "Dữ liệu truyền sang đang bị trống. Vui lòng nhập tài khoản của bạn."
+              );
+              setNotificationModalVisible(true);
               return;
             case 404:
-              Alert.alert(
-                "goFAST",
-                "Không tồn tại tài khoản phù hợp. Vui lòng nhập lại.",
-                [
-                  {
-                    text: "OK",
-                    style: "cancel",
-                  },
-                ]
+              setNotificationText(
+                "Không tồn tại tài khoản phù hợp. Vui lòng nhập lại tài khoản của bạn."
               );
+              setNotificationModalVisible(true);
               return;
             case 500:
               Alert.alert("goFAST", "Lỗi hệ thống.", [
@@ -199,8 +189,55 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+  // Modal thông báo tài khoản, mật khẩu nhập đang sai, hoặc hết phiên
+  const NotificationModal = () => {
+    return (
+      <View style={{ ...styles.content, height: 195 }}>
+        <AntDesign
+          name="closecircleo"
+          size={24}
+          color={COLORS.light}
+          style={styles.iconClose}
+          onPress={() => setNotificationModalVisible(false)}
+        />
+        <Text style={styles.contentTitle}>Thông báo 😵</Text>
+        <View
+          style={{
+            backgroundColor: COLORS.light,
+            borderRadius: 15,
+            padding: 15,
+            justifyContent: "space-between",
+            width: 343, 
+            height: 140
+          }}
+        >
+          <Text>{notificationText}</Text>
+          <View
+            style={{
+              marginTop: 15,
+              flexDirection: "row",
+              justifyContent: "flex-end",
+              alignItems: "center",
+            }}
+          >
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setNotificationModalVisible(false)}
+            >
+              <Text style={{ color: COLORS.light }}>Ok</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
+      {/* Modal cảnh báo xóa giỏ hàng khi trong giỏ có sản phẩm của cửa hàng khác */}
+      <Modal isVisible={notificationModalVisible} backdropColor={COLORS.grey_9}>
+        <NotificationModal />
+      </Modal>
       <View style={styles.contentContainer}>
         <Image
           source={require("../assets/banner/banner-5.jpg")}
@@ -248,7 +285,7 @@ const LoginScreen = ({ navigation }) => {
           Yêu cầu: Tên đăng nhập có ít nhất 4 ký tự
         </Text>
         <Text style={styles.textNotice}>
-          Mật khẩu có ít nhất 6 ký tự: có ít nhất 1 chữ hoa, thường, 1 số và 1
+          Mật khẩu có ít nhất 8 ký tự: có ít nhất 1 chữ hoa, thường, 1 số và 1
           ký tự đặc biệt.
         </Text>
       </HideWithKeyboard>
@@ -299,6 +336,40 @@ const styles = StyleSheet.create({
   errorMsg: {
     color: COLORS.red_14,
     fontSize: 14,
+  },
+  content: {
+    backgroundColor: COLORS.red_13,
+    paddingTop: 10,
+    paddingBottom: 5,
+    paddingHorizontal: 5,
+    justifyContent: "center",
+    alignItems: "flex-start",
+    borderRadius: 15,
+    borderColor: COLORS.red_13,
+    height: 290,
+    position: "relative",
+  },
+  contentTitle: {
+    fontSize: 18,
+    marginBottom: 12,
+    marginLeft: 5,
+    color: COLORS.light,
+    fontWeight: "bold",
+  },
+  iconClose: {
+    zIndex: 1,
+    position: "absolute",
+    right: 5,
+    top: 5,
+    zIndex: 99,
+  },
+  button: {
+    paddingHorizontal: 20,
+    paddingVertical: 7,
+    backgroundColor: COLORS.red_13,
+    fontSize: 15,
+    marginLeft: 10,
+    borderRadius: 15,
   },
 });
 

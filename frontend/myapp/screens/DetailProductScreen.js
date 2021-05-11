@@ -435,7 +435,7 @@ const DetailProductScreen = ({ route, navigation }) => {
             name="arrow-back"
             size={28}
             color={COLORS.red_13}
-            onPress={() => navigation.popToTop()}
+            onPress={() => navigation.goBack()}
           />
         </View>
         {/* Thêm hoặc xóa khỏi danh sách yêu thích */}

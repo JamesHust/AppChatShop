@@ -19,7 +19,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 
-const DetailMonitorScreen = ({ route, navigation }) => {
+const CompleteOrderScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
   const [orders, setOrders] = useState([]); //biến chứa danh sách gì từ dân nữa
   const customer = useSelector((state) => state.authReducer.customer);
@@ -43,13 +43,13 @@ const DetailMonitorScreen = ({ route, navigation }) => {
     );
   };
 
-  // Hàm load danh sách đơn hàng đang trong tiến trình
+  // Hàm load danh sách đơn hàng
   const loadOrders = useCallback(async () => {
     setIsLoading(true);
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/process/orders?customerId=${customer.customerId}&status=process`,
+        `http://192.168.1.125:3000/api/process/orders?customerId=${customer.customerId}&status=complete`,
         {
           method: "GET",
           headers: {
@@ -66,8 +66,8 @@ const DetailMonitorScreen = ({ route, navigation }) => {
           setIsLoading(false);
           return;
         case 404:
-          setOrders([]);
           setIsLoading(false);
+          setOrders([]);
           return;
         default:
           setIsLoading(false);
@@ -247,4 +247,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DetailMonitorScreen;
+export default CompleteOrderScreen;

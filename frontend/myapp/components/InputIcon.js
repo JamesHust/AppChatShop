@@ -84,16 +84,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  inputField: {
-    padding: 10,
-    marginTop: 5,
-    marginBottom: 10,
-    width: windowWidth / 1.5,
-    height: windowHeight / 15,
-    fontSize: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
   iconRight: {
     paddingRight: 10,
   },

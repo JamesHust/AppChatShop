@@ -2,6 +2,7 @@ const express = require("express");
 const {
   getOrders,
   getDetailProductOrders,
+  getProcessingOrderByCustomer,
   addProductsToOrder,
   addQuickCartToOrder,
   updateOrder,
@@ -16,6 +17,8 @@ const router = express.Router();
 router.get("/orders", getOrders);
 //Lấy danh sách sản phẩm trong đơn hàng, cho phép lọc theo Mã khách hàng, Mã đơn hàng, Mã cửa hàng
 router.get("/orders/detail", getDetailProductOrders);
+//Lấy danh sách các đơn hàng đang trong tiến trình chưa hoàn thành theo khách hàng.
+router.get("/process/orders", getProcessingOrderByCustomer);
 //Thực hiện đặt hàng thường
 router.post("/orders", addProductsToOrder);
 // Thực hiện đặt hàng giỏ hàng nhanh
@@ -23,7 +26,7 @@ router.post("/quick/orders", addQuickCartToOrder);
 //Cập nhật lại trạng thái hóa đơn, trừ hủy đơn hàng đã có API khác thay thế
 router.put("/orders", updateOrder);
 //Hủy đơn hàng
-router.put("/orders/:orderId", cancelOrder);
+router.put("/cancel/orders", cancelOrder);
 //Xóa đơn hàng theo id, bao gồm xóa tất cả sản phẩm trong đơn
 router.delete("/orders/:orderId", deleteOrder);
 

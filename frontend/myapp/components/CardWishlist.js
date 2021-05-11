@@ -153,7 +153,7 @@ const CartWishList = (props) => {
             </View>
             {/* Giá sản phẩm */}
             <Text style={style.price}>
-              {addDotToNumber(product.purchasePrice)} ₫
+              {addDotToNumber(product.purchasePrice)}₫
             </Text>
           </View>
         </View>
@@ -219,7 +219,7 @@ const style = StyleSheet.create({
     elevation: 5,
     borderRadius: 10,
     backgroundColor: COLORS.light,
-    marginVertical: 5,
+    marginVertical: 10,
     marginHorizontal: 15,
     paddingHorizontal: 10,
   },

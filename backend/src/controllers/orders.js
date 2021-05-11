@@ -1,6 +1,7 @@
 const db = require("../util/database");
 const Response = require("../models/response");
 const DetailProduct = require("../models/detail-product");
+const listOrder = require("../models/order");
 const { updateAmountProduct } = require("./products");
 const { getProductOrders, addProductOrders } = require("./product-order");
 const {
@@ -8,10 +9,12 @@ const {
   getMaxCode,
   checkExist,
   deleteRecord,
+  convertPathFile,
 } = require("../util/common");
 const { getProductCarts } = require("./product-cart");
 const { Guid } = require("js-guid");
 const ProductOrder = require("../models/product-order");
+const Order = require("../models/order");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "order";
@@ -21,6 +24,12 @@ const codePropName = "OrderCode";
 const tableNameReference = "product_order";
 
 //#region region API function - service
+/**
+ * Hàm lấy danh sách order theo mã đơn hàng, mã khách hàng hoặc mã cửa hàng
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
 const getOrders = async (req, res, next) => {
   const orderCode = req.query.orderCode;
   const shopCode = req.query.shopCode;
@@ -70,6 +79,96 @@ const getOrders = async (req, res, next) => {
 };
 
 /**
+ * Lấy các đơn hàng đang trong tiến trình theo từng khách hàng
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+const getProcessingOrderByCustomer = async (req, res, next) => {
+  const customerId = req.query.customerId;
+  const status = req.query.status;
+  if (customerId && status) {
+    try {
+      let sql = "";
+      if (status == "process") {
+        sql = `select * from \`${tableName}\` where CustomerId='${customerId}' and Status IN (0,1,2) order by ModifyDate`;
+      } else {
+        sql = `select * from \`${tableName}\` where CustomerId='${customerId}' and Status IN (3,4,5) order by ModifyDate`;
+      }
+      const result = await db.execute(sql);
+      if (result[0].length > 0) {
+        let listOrder = [];
+        result[0].map((item) => {
+          listOrder.push(
+            new Order(
+              item.OrderId,
+              item.OrderCode,
+              item.CustomerId,
+              item.Total,
+              item.Status,
+              item.CreateDate,
+              item.ModifyDate,
+              item.ShopId
+            )
+          );
+        });
+        res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = ""),
+              (devMsg = ""),
+              (userMsg = ""),
+              (moreInfo = null),
+              (data = listOrder)
+            )
+          );
+      } else {
+        res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = ""),
+              (devMsg = "Data is not exist in database"),
+              (userMsg = "Không tồn đơn hàng đang trong tiến trình của "),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      }
+    } catch (err) {
+      res
+        .status(500)
+        .send(
+          new Response(
+            (isSuccess = false),
+            (errorCode = "DB001"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi không lấy được dữ liệu"),
+            (moreInfo = null),
+            (data = null)
+          )
+        );
+    }
+  } else {
+    res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
+  }
+};
+
+/**
  * Lấy chi tiết đơn hàng
  * Cho phép lọc theo Mã khách hàng, Mã đơn hàng, Mã cửa hàng
  * @param {*} req request
@@ -77,43 +176,53 @@ const getOrders = async (req, res, next) => {
  * @param {*} next next sang middleware khác
  */
 const getDetailProductOrders = async (req, res, next) => {
-  const orderCode = req.query.orderCode;
-  const shopCode = req.query.shopCode;
-  const customerCode = req.query.customerCode;
+  const orderId = req.query.orderId;
+  const shopId = req.query.shopId;
+  const customerId = req.query.customerId;
 
   //khởi tạo câu lệnh sql với từng trường hợp cụ thể
-  const sql = createSqlFilter(orderCode, shopCode, customerCode);
+  const sql = createSqlFilter(orderId, shopId, customerId);
 
   try {
     let result = [];
     const listOrder = await db.execute(sql);
     await Promise.all(
       listOrder[0].map(async (item) => {
-        const productOrder = await getProductsByOrder(item.OrderId);
-        const detailProduct = new DetailProduct(
-          productOrder.ProductId,
-          productOrder.ProductCode,
-          productOrder.ProductName,
-          productOrder.Description,
-          productOrder.Unit,
-          productOrder.ImageUrl,
-          productOrder.ImportPrice,
-          productOrder.PurchasePrice,
-          productOrder.Amount,
-          productOrder.QuantitySold,
-          productOrder.DateOfImport,
-          productOrder.Rating,
-          productOrder.Sale,
-          productOrder.ShopId,
-          productOrder.ShopName,
-          productOrder.CategoryId,
-          productOrder.CategoryName,
-          "",
-          productOrder.OrderId,
-          productOrder.ProductAmount,
-          productOrder.ProductPrice
-        );
-        result.push(detailProduct);
+        const productOrders = await getProductsByOrder(item.OrderId);
+        const checkCancelOrder = await getReasonCancelOrder(item.OrderId);
+        let products = [];
+        productOrders.forEach((product) => {
+          const detailProduct = new DetailProduct(
+            product.ProductId,
+            product.ProductCode,
+            product.ProductName,
+            product.Description,
+            product.Unit,
+            convertPathFile(product.ImageUrl),
+            product.ImportPrice,
+            product.PurchasePrice,
+            product.Amount,
+            product.QuantitySold,
+            product.DateOfImport,
+            product.Rating,
+            product.Sale,
+            product.ShopId,
+            product.ShopName,
+            convertPathFile(product.Avatar),
+            product.CategoryId,
+            product.CategoryName,
+            "",
+            product.OrderId,
+            product.ProductAmount,
+            product.ProductPrice
+          );
+          products.push(detailProduct);
+        });
+        result.push({
+          products: products,
+          order: item,
+          reason: checkCancelOrder
+        });
       })
     );
     if (result.length > 0) {
@@ -364,14 +473,16 @@ const updateOrder = async (req, res, next) => {
  * @param {*} next next sang middleware khác
  */
 const cancelOrder = async (req, res, next) => {
-  const orderId = req.params.orderId;
-  if (orderId) {
+  const orderId = req.body.orderId;
+  const reason = req.body.reason;
+  if (orderId && reason) {
     try {
       const existOrder = await getOrderById(orderId);
       if (existOrder) {
         const result = await Promise.all([
           updateStatusOrder(orderId, 5),
           updateAmountOfMutilProduct(orderId),
+          addReasonForCancelOrder(orderId, reason)
         ]);
         res.send(
           new Response(
@@ -477,9 +588,9 @@ const deleteOrder = async (req, res, next) => {
  */
 const getProductsByOrder = async (orderId) => {
   //tạo câu lệnh sql tương ứng
-  const sql = `select p.*, po.ProductAmount, po.ProductPrice, po.OrderId from product p, ${tableNameReference} po where po.OrderId = '${orderId}' and p.ProductId = po.ProductId;`;
+  const sql = `select p.*, po.ProductAmount, po.ProductPrice, po.OrderId, s.ShopName, s.Avatar from product p, ${tableNameReference} po, shop s where po.OrderId = '${orderId}' and p.ProductId = po.ProductId and p.ShopId = s.ShopId;`;
   const result = await db.execute(sql);
-  return result[0][0];
+  return result[0];
 };
 
 /**
@@ -567,24 +678,61 @@ const updateAmountOfMutilProduct = async (orderId) => {
   return result;
 };
 
-const createSqlFilter = (orderCode, shopCode, customerCode) => {
+/**
+ * Tự động tạo câu lệnh sql lọc theo Id đơn hàng, id cửa hàng và id khách hàng
+ * @param {*} orderId Id đơn hàng
+ * @param {*} shopId Id cửa hàng
+ * @param {*} customerId  Id khách hàng
+ * @returns
+ */
+const createSqlFilter = (orderId, shopId, customerId) => {
   //khởi tạo câu lệnh sql với từng trường hợp cụ thể
   let sql = `select distinct c1.* from \`${tableName}\` c1 `;
-  if (customerCode) {
-    sql += `inner join \`${tableName}\` c2 on c1.CustomerCode like '%${customerCode}%' `;
+  if (customerId) {
+    sql += `inner join \`${tableName}\` c2 on c1.CustomerId like '%${customerId}%' `;
   }
-  if (orderCode) {
-    sql += `inner join \`${tableName}\` c2 on c1.${codePropName} = '${orderCode}' `;
+  if (orderId) {
+    sql += `inner join \`${tableName}\` c2 on c1.OrderId = '${orderId}' `;
   }
-  if (shopCode) {
-    sql += `inner join \`${tableName}\` c3 on c1.ShopCode = '${shopCode}' `;
+  if (shopId) {
+    sql += `inner join \`${tableName}\` c3 on c1.ShopId = '${shopId}' `;
   }
   return sql;
+};
+
+/**
+ * Hàm lấy lý do hủy đơn hàng
+ * @param {*} orderId Id đơn hàng
+ * @returns
+ */
+const getReasonCancelOrder = async (orderId) => {
+  let result = null;
+  const response = await db.execute(
+    `select * from cancel_order where OrderId = '${orderId}'`
+  );
+  if (response[0][0]) {
+    result = response[0][0];
+  }
+  return result;
+};
+
+/**
+ * Hàm thêm lý do cho đơn hàng hủy
+ * @param {*} orderId Id đơn hàng cần hủy
+ * @param {*} reason Lý do hủy
+ * @returns 
+ */
+const addReasonForCancelOrder = async (orderId, reason) => {
+  const result = await db.execute(
+    `insert into cancel_order (OrderId, Reason) values ('${orderId}', '${reason}')`
+  );
+  return result;
 };
 //#endregion
 
 module.exports = {
   getOrders,
+  getProcessingOrderByCustomer,
   getDetailProductOrders,
   addProductsToOrder,
   addQuickCartToOrder,

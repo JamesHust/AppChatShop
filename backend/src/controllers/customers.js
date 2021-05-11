@@ -9,7 +9,7 @@ const {
   checkExist,
   deleteRecord,
 } = require("../util/common");
-const {convertPathFile} = require('../util/common');
+const { convertPathFile } = require("../util/common");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "customer";
@@ -157,6 +157,70 @@ const getCustomerById = async (req, res, next) => {
 };
 
 /**
+ * Lấy số lượt đánh giá và số lượt mua hàng thành công của khách hàng
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+const getRateAndOrders = async (req, res, next) => {
+  const customerId = req.query.customerId;
+  if (customerId) {
+    try {
+      let review = 0;
+      let timesOfOrder = 0;
+      // Lấy số lượt đánh giá của khách hàng
+      const responseRw = await db.execute(
+        `select count(*) as reviews from \`review_product\` where CustomerId = "${customerId}";`
+      );
+      if (responseRw[0][0].reviews) {
+        review = +responseRw[0][0].reviews;
+      }
+      // Lấy số lượt đặt hàng thành công
+      const responseOr = await db.execute(
+        `select count(*) as orders from \`order\` where CustomerId = "${customerId}" and Status ="3";`
+      );
+      if (responseOr[0][0].orders) {
+        timesOfOrder = responseOr[0][0].orders;
+      }
+      res
+        .status(200)
+        .send(
+          new Response(
+            (isSuccess = true),
+            (errorCode = null),
+            (devMsg = null),
+            (userMsg = null),
+            (moreInfo = null),
+            (data = { review: review, timesOfOrder: timesOfOrder })
+          )
+        );
+    } catch (err) {
+      res.send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = "DB001"),
+          (devMsg = err.toString()),
+          (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
+    }
+  } else {
+    res.send(
+      new Response(
+        (isSuccess = true),
+        (errorCode = null),
+        (devMsg = "Params in request is null"),
+        (userMsg = null),
+        (moreInfo = null),
+        (data = null)
+      )
+    );
+  }
+};
+
+/**
  * Tạo tài khoản khách hàng mới
  * @param {*} req request
  * @param {*} res response
@@ -252,12 +316,29 @@ const updateInfoCustomer = async (req, res, next) => {
   let address = req.body.address;
   let email = req.body.email;
   let password = req.body.password;
+  let oldPass = req.body.oldPass;
 
   //check id khách hàng truyền vào rỗng
   if (customerId) {
     try {
       const existCustomer = await checkExist(primaryKeyTable, customerId);
-
+      // Check trường hợp đổi mật khẩu
+      if (oldPass) {
+        if (!bcrypt.compareSync(oldPass, existCustomer.Password)) {
+          return res
+            .status(400)
+            .send(
+              new Response(
+                (isSuccess = true),
+                (errorCode = ""),
+                (devMsg = "Old password is incorrect"),
+                (userMsg = "Mật khẩu cũ xác thực không đúng"),
+                (moreInfo = null),
+                (data = null)
+              )
+            );
+        }
+      }
       //Mã hóa mật khẩu
       var passEncryption = bcrypt.hashSync(password, 8);
 
@@ -285,7 +366,7 @@ const updateInfoCustomer = async (req, res, next) => {
         const result = await db.execute(
           `update ${tableName} set CustomerName = "${customerName}", Avatar = "${avatar}", PhoneNumber = "${phoneNumber}", OtherPhoneNumber = "${otherPhoneNumber}", Address = "${address}", Email = "${email}", Password = "${password}" where ${primaryKeyTable} = "${customerId}"`
         );
-        res.send(
+        return res.send(
           new Response(
             (isSuccess = true),
             (errorCode = ""),
@@ -296,41 +377,47 @@ const updateInfoCustomer = async (req, res, next) => {
           )
         );
       } else {
-        res.send(
+        return res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = false),
+              (errorCode = ""),
+              (devMsg = "Data is not exist in database"),
+              (userMsg =
+                "Không tồn tại khách hàng có mã Id tương ứng trong CSDL"),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      }
+    } catch (err) {
+      return res
+        .status(500)
+        .send(
           new Response(
             (isSuccess = false),
-            (errorCode = ""),
-            (devMsg = "Data is not exist in database"),
-            (userMsg =
-              "Không tồn tại khách hàng có mã Id tương ứng trong CSDL"),
+            (errorCode = "DB002"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi không thêm mới được dữ liệu"),
             (moreInfo = null),
             (data = null)
           )
         );
-      }
-    } catch (err) {
-      res.send(
+    }
+  } else {
+    return res
+      .status(400)
+      .send(
         new Response(
           (isSuccess = false),
-          (errorCode = "DB002"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi không thêm mới được dữ liệu"),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
           (moreInfo = null),
           (data = null)
         )
       );
-    }
-  } else {
-    res.send(
-      new Response(
-        (isSuccess = false),
-        (errorCode = ""),
-        (devMsg = "Params in request is null."),
-        (userMsg = "Dữ liệu truyền sang đang để trống."),
-        (moreInfo = null),
-        (data = null)
-      )
-    );
   }
 };
 
@@ -415,6 +502,7 @@ const getCustomerByEmailOrPhone = async (userName) => {
 module.exports = {
   getCustomers,
   getCustomerById,
+  getRateAndOrders,
   createNewCustomer,
   updateInfoCustomer,
   deleteAccountCustomer,

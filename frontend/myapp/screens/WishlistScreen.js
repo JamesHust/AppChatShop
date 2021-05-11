@@ -6,12 +6,13 @@ import {
   StyleSheet,
   Image,
   ActivityIndicator,
-  Alert
+  Alert,
+  TouchableOpacity,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { AntDesign } from "@expo/vector-icons";
 import COLORS from "../constants/color";
 import ListWishlist from "../components/ListWishlist";
-import { FontAwesome } from "@expo/vector-icons";
 import { screenWidth } from "../utils/Dimentions";
 import { useDispatch, useSelector } from "react-redux";
 import * as wishlistActions from "../redux/actions/wishlist";
@@ -53,23 +54,17 @@ const WishListScreen = ({ navigation }) => {
   // Component header
   const Header = () => {
     return (
-      <View style={styles.header}>
-        {/* Quay về trang đầu */}
-        <View style={styles.flexContainer}>
-          <Icon
-            name="arrow-back"
-            size={28}
-            color={COLORS.red_13}
-            onPress={() => navigation.popToTop()}
-          />
-          <Text style={styles.title}>Danh sách yêu thích</Text>
-        </View>
+      <View style={{marginBottom: 20}}>
+        {/* Header */}
         <View>
-          {/* đặt nhanh */}
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={styles.iconWrapper}>
-              <FontAwesome name="dollar" size={22} color={COLORS.light} />
-            </View>
+          <TouchableOpacity
+            onPress={() => navigation.popToTop()}
+            style={styles.iconBack}
+          >
+            <AntDesign name="arrowleft" size={24} color={COLORS.red_13} />
+          </TouchableOpacity>
+          <View style={styles.title}>
+            <Text style={styles.titleScreen}>Danh sách yêu thích</Text>
           </View>
         </View>
       </View>
@@ -155,17 +150,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  header: {
-    paddingHorizontal: 15,
-    marginTop: 15,
-    paddingBottom: 15,
-    flexDirection: "row",
-    justifyContent: "space-between",
+  iconBack: {
+    position: "absolute",
+    zIndex: 1,
+    top: 15,
+    left: 15,
   },
   title: {
+    marginTop: 12,
+  },
+  titleScreen: {
+    fontSize: 22,
     fontWeight: "bold",
-    fontSize: 20,
-    marginLeft: 10,
+    color: COLORS.dark,
+    textAlign: "center",
   },
   flexContainer: {
     flexDirection: "row",

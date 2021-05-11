@@ -17,6 +17,7 @@ module.exports = class DetailProduct extends Product {
     sale, //giảm giá
     shopId, //id cửa hàng
     shopName, //id cửa hàng
+    shopAvatar, //ảnh avatar cửa hàng
     categoryId, //id loại sản phẩm
     categoryName, //id loại sản phẩm
     cartId, //id giỏ hàng
@@ -46,6 +47,7 @@ module.exports = class DetailProduct extends Product {
     this.productAmount = productAmount;
     this.productPrice = productPrice;
     this.shopName = shopName;
+    this.shopAvatar = shopAvatar;
     this.categoryName = categoryName;
   }
 };

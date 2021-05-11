@@ -3,6 +3,7 @@ const {
   getCustomers,
   createNewCustomer,
   getCustomerById,
+  getRateAndOrders,
   updateInfoCustomer,
   deleteAccountCustomer
 } = require("../controllers/customers");
@@ -12,6 +13,8 @@ const router = express.Router();
 
 //Api lấy danh sách toàn bộ khách hàng
 router.get("/customers", getCustomers);
+// Lấy thông tin số lượng sản phẩm đã đánh giá và số lượng đơn hàng thành công
+router.get("/rates/customers", getRateAndOrders);
 //Api lấy thông tin khách hàng theo id
 router.get("/customers/:customerId", getCustomerById);
 //Api tạo tài khoản khách hàng mới

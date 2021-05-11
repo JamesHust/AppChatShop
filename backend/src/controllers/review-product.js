@@ -123,6 +123,7 @@ const getListFavouriteProduct = async (req, res, next) => {
                 product.Sale,
                 product.ShopId,
                 product.ShopName,
+                "",
                 product.CategoryId,
                 product.CategoryName,
                 product.CartId,

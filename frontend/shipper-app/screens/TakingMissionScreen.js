@@ -8,19 +8,20 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  TextInput,
 } from "react-native";
 import COLORS from "../constants/color";
 import * as Animatable from "react-native-animatable";
-import { Ionicons } from "@expo/vector-icons";
-import orders from "../data/mission_orders";
-import ListMissionOrder from "../components/ListMissionOrder";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import QueueOrder from "../components/QueueOrder";
+import order from "../data/queue_order";
 
-const HomeScreen = ({ navigation }) => {
+const TakingMissionScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
-  const [missions, setMissions] = useState([]); //danh sách nhiệm vụ
+  const [mission, setMission] = useState(null); //danh sách nhiệm vụ
 
   useEffect(() => {
-    setMissions(orders);
+    setMission(order);
   }, []);
 
   // Component header
@@ -65,6 +66,19 @@ const HomeScreen = ({ navigation }) => {
             },
           ]}
         >
+          {/* search-bar */}
+          <View style={{ marginTop: 10, flexDirection: "row" }}>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={21} color={COLORS.dark} />
+              <TextInput
+                placeholder="Tìm kiếm mã hoặc tên sản phẩm"
+                style={{ marginLeft: 5 }}
+              />
+            </View>
+            <View style={styles.sortBtn}>
+              <MaterialIcons name="sort" size={23} color={COLORS.light} />
+            </View>
+          </View>
           <ActivityIndicator size="large" color={COLORS.red_13} />
         </Animatable.View>
       </SafeAreaView>
@@ -72,7 +86,7 @@ const HomeScreen = ({ navigation }) => {
   }
 
   // Xét trường hợp không có nhiệm vụ nào
-  if (!missions || missions.length <= 0) {
+  if (!mission) {
     return (
       <SafeAreaView style={styles.container}>
         <Header />
@@ -83,25 +97,40 @@ const HomeScreen = ({ navigation }) => {
             {
               justifyContent: "flex-start",
               alignItems: "center",
-              paddingTop: 100,
             },
           ]}
         >
+          {/* search-bar */}
+          <View style={{ flexDirection: "row" }}>
+            <View style={styles.searchContainer}>
+              <TextInput placeholder="Tìm kiếm theo mã đơn giao hàng..." />
+            </View>
+            <View style={styles.sortBtn}>
+              <Ionicons name="search" size={21} color={COLORS.light} />
+            </View>
+          </View>
           {/* Nội dung */}
-          <View style={{ alignItems: "center", justifyContent: "center" }}>
+          <View
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              paddingTop: 100,
+            }}
+          >
             <Image
-              source={require("../assets/sun.png")}
+              source={require("../assets/tracking.png")}
               style={{ width: 120, height: 120 }}
               resizeMode="contain"
             />
-            <Text style={styles.titlePage}>Tất cả rõ ràng</Text>
+            <Text style={styles.titlePage}>Tìm kiếm ngay</Text>
             <Text
               style={{
                 fontSize: 16,
                 textAlign: "center",
+                width: 280,
               }}
             >
-              Không có nhiệm vụ
+              Vui lòng nhập mã đơn giao để nhận đơn hàng
             </Text>
           </View>
         </View>
@@ -123,8 +152,18 @@ const HomeScreen = ({ navigation }) => {
           },
         ]}
       >
-        <View style={{flex: 1}}>
-          <ListMissionOrder data={missions} showsVerticalScrollIndicator={false}/>
+        {/* search-bar */}
+        <View style={{ flexDirection: "row" }}>
+          <View style={styles.searchContainer}>
+            <TextInput placeholder="Tìm kiếm theo mã đơn giao hàng..." />
+          </View>
+          <View style={styles.sortBtn}>
+            <Ionicons name="search" size={21} color={COLORS.light} />
+          </View>
+        </View>
+        {/* Phần hiển thị đơn hàng tìm kiếm theo mã giao hàng */}
+        <View>
+          <QueueOrder data={mission}/>
         </View>
       </View>
     </SafeAreaView>
@@ -151,9 +190,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: 15,
     borderTopRightRadius: 15,
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
     marginHorizontal: 5,
-    paddingVertical: 15,
+    paddingVertical: 30,
   },
   textDate: {
     fontSize: 18,
@@ -166,6 +205,25 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: COLORS.dark,
   },
+  searchContainer: {
+    flexDirection: "row",
+    flex: 1,
+    alignItems: "center",
+    backgroundColor: COLORS.grey_3,
+    height: 42,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+  },
+  sortBtn: {
+    marginLeft: 5,
+    height: 42,
+    width: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.red_13,
+    borderRadius: 15,
+  },
+  
 });
 
-export default HomeScreen;
+export default TakingMissionScreen;

@@ -85,47 +85,37 @@ const DrawerContent = (props) => {
           <Drawer.Section style={styles.drawerSection}>
             {/* Trang chủ */}
             <DrawerItem
-              icon={({ color, size }) => (
+              icon={({ color}) => (
                 <AntDesign name="home" color={color} size={22} />
               )}
               label="Trang chủ"
               onPress={() => {
-                props.navigation.navigate("Home");
+                props.navigation.navigate("Mission");
               }}
             />
-            {/* Trang chủ */}
+            {/* Nhận nhiệm vụ */}
             <DrawerItem
-              icon={({ color, size }) => (
-                <MaterialCommunityIcons name="email-receive-outline" size={24} color={color} />
+              icon={({ color}) => (
+                <MaterialCommunityIcons name="email-receive-outline" size={22} color={color} />
               )}
               label="Nhận nhiệm vụ"
               onPress={() => {
-                props.navigation.navigate("Home");
-              }}
-            />
-            {/* Lịch sử giao hàng */}
-            <DrawerItem
-              icon={({ color, size }) => (
-                <MaterialIcons name="history" size={24} color={color} />
-              )}
-              label="Lịch sử giao hàng"
-              onPress={() => {
-                props.navigation.navigate("BookmarkScreen");
+                props.navigation.navigate("TakingMission");
               }}
             />
             {/* Công nợ */}
             <DrawerItem
-              icon={({ color, size }) => (
-                <MaterialIcons name="payment" size={24} color={color} />
+              icon={({ color}) => (
+                <MaterialIcons name="payment" size={22} color={color} />
               )}
               label="Công nợ"
               onPress={() => {
-                props.navigation.navigate("BookmarkScreen");
+                props.navigation.navigate("Debt");
               }}
             />
             {/* Hồ sơ */}
             <DrawerItem
-              icon={({ color, size }) => (
+              icon={({ color}) => (
                 <AntDesign name="user" color={color} size={22} />
               )}
               label="Hồ sơ"
@@ -135,22 +125,22 @@ const DrawerContent = (props) => {
             />
             {/* Cài đặt */}
             <DrawerItem
-              icon={({ color, size }) => (
+              icon={({ color}) => (
                 <AntDesign name="setting" size={22} color={color} />
               )}
               label="Cài đặt"
               onPress={() => {
-                props.navigation.navigate("SettingsScreen");
+                props.navigation.navigate("Setting");
               }}
             />
             {/* Hỗ trợ từ tổng đài */}
             <DrawerItem
-              icon={({ color, size }) => (
-                <MaterialIcons name="support-agent" size={24} color={color} />
+              icon={({ color}) => (
+                <MaterialIcons name="support-agent" size={22} color={color} />
               )}
               label="Support"
               onPress={() => {
-                props.navigation.navigate("SupportScreen");
+                props.navigation.navigate("Support");
               }}
             />
           </Drawer.Section>

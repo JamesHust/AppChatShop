@@ -6,6 +6,10 @@ import {
   TheHeader
 } from './index'
 
+/**
+ * Bố cục giao diện web chính
+ * @returns 
+ */
 const TheLayout = () => {
 
   return (

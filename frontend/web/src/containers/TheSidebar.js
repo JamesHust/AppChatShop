@@ -10,36 +10,30 @@ import {
   CSidebarMinimizer,
   CSidebarNavDropdown,
   CSidebarNavItem,
+  CImg
 } from '@coreui/react'
-
-import CIcon from '@coreui/icons-react'
-
 // sidebar nav config
 import navigation from './_nav'
+import Logo3 from "../assets/logos/logo3.png";
+import Logo2 from "../assets/logos/logo2.png";
 
 const TheSidebar = () => {
   const dispatch = useDispatch()
   const show = useSelector(state => state.sidebarShow)
 
   return (
+    
     <CSidebar
       show={show}
       onShowChange={(val) => dispatch({type: 'set', sidebarShow: val })}
     >
+      {/* Phần logo của web*/}
       <CSidebarBrand className="d-md-down-none" to="/">
-        <CIcon
-          className="c-sidebar-brand-full"
-          name="logo-negative"
-          height={35}
-        />
-        <CIcon
-          className="c-sidebar-brand-minimized"
-          name="sygnet"
-          height={35}
-        />
+        <CImg src={Logo3} width={110} className="c-sidebar-brand-full" />
+        <CImg src={Logo2} width={30} className="c-sidebar-brand-minimized" />
       </CSidebarBrand>
+      {/* Navbar của web */}
       <CSidebarNav>
-
         <CCreateElement
           items={navigation}
           components={{

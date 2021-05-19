@@ -8,6 +8,9 @@ import TheHeaderDropdownTasks from './TheHeaderDropdownTasks'
 import TheLayout from './TheLayout'
 import TheSidebar from './TheSidebar'
 
+/**
+ * Nơi khai báo và export các component
+ */
 export {
   TheContent,
   TheFooter,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,20 +8,72 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
 } from "react-native";
 import COLORS from "../constants/color";
 import * as Animatable from "react-native-animatable";
 import { Ionicons } from "@expo/vector-icons";
 import orders from "../data/mission_orders";
 import ListMissionOrder from "../components/ListMissionOrder";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSelector, useDispatch } from "react-redux";
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({ route, navigation }) => {
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
-  const [missions, setMissions] = useState([]); //danh sách nhiệm vụ
+  const [missions, setMissions] = useState(orders); //danh sách nhiệm vụ
+  const dispatch = useDispatch();
+  const shipper = useSelector((state) => state.authReducer.shipper);
 
-  useEffect(() => {
-    setMissions(orders);
+  // Lấy danh sách nhiệm vụ
+  const getMissions = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const shipperId = await AsyncStorage.getItem("userId");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/delivery/${shipperId}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+        }
+      );
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setMissions(resData.data);
+          setIsLoading(false);
+          return;
+        default:
+          setMissions(null);
+          setIsLoading(false);
+          return;
+      }
+    } catch (err) {
+      setIsLoading(false);
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => getMissions(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
   }, []);
+
+  // Lấy danh sách nhiệm vụ mỗi khi nhận đơn hàng giao mới
+  useEffect(() => {
+    const getReceivedMission = navigation.addListener("focus", () => {
+      getMissions();
+    });
+    return getReceivedMission;
+  }, [navigation]);
 
   // Component header
   const Header = () => {
@@ -123,8 +175,11 @@ const HomeScreen = ({ navigation }) => {
           },
         ]}
       >
-        <View style={{flex: 1}}>
-          <ListMissionOrder data={missions} showsVerticalScrollIndicator={false}/>
+        <View style={{ flex: 1 }}>
+          <ListMissionOrder
+            data={missions}
+            showsVerticalScrollIndicator={false}
+          />
         </View>
       </View>
     </SafeAreaView>

@@ -19,6 +19,7 @@ import Animated from "react-native-reanimated";
 import ImagePicker from "react-native-image-crop-picker";
 import COLORS from "../constants/color";
 import { windowHeight } from "../utils/Dimentions";
+import { useSelector, useDispatch } from "react-redux";
 
 const EditProfileScreen = ({ route, navigation }) => {
   const infoUser = route.params.data; //Thông tin gửi sang
@@ -31,6 +32,7 @@ const EditProfileScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
   const fall = new Animated.Value(1);
   const bs = useRef(0);
+  const customer = useSelector(state => state.authReducer.customer);
 
   LogBox.ignoreAllLogs(); //Ignore all log notifications
 
@@ -146,7 +148,7 @@ const EditProfileScreen = ({ route, navigation }) => {
                 >
                   <ImageBackground
                     source={{
-                      uri: avatar,
+                      uri: customer.avatar,
                     }}
                     style={{ height: 100, width: 100 }}
                     imageStyle={{ borderRadius: 15 }}
@@ -184,7 +186,7 @@ const EditProfileScreen = ({ route, navigation }) => {
                   color: COLORS.dark,
                 }}
               >
-                {nameUser}
+                {customer.customerName}
               </Text>
             </View>
           </View>
@@ -210,7 +212,7 @@ const EditProfileScreen = ({ route, navigation }) => {
             <Feather name="phone" color={COLORS.grey_8} size={20} />
             <TextInput
               placeholder="Số điện thoại"
-              value={phone}
+              defaultValue={customer.phoneNumber}
               placeholderTextColor={COLORS.grey_8}
               keyboardType="number-pad"
               autoCorrect={false}
@@ -227,7 +229,7 @@ const EditProfileScreen = ({ route, navigation }) => {
             <Feather name="phone-call" color={COLORS.grey_8} size={20} />
             <TextInput
               placeholder="Số điện thoại khác"
-              value={phoneOther}
+              defaultValue={customer.otherPhoneNumber}
               placeholderTextColor={COLORS.grey_8}
               keyboardType="number-pad"
               autoCorrect={false}
@@ -244,7 +246,7 @@ const EditProfileScreen = ({ route, navigation }) => {
             <FontAwesome name="envelope-o" color={COLORS.grey_8} size={20} />
             <TextInput
               placeholder="Email"
-              value={email}
+              defaultValue={customer.email}
               placeholderTextColor={COLORS.grey_8}
               keyboardType="email-address"
               autoCorrect={false}
@@ -265,7 +267,7 @@ const EditProfileScreen = ({ route, navigation }) => {
             />
             <TextInput
               placeholder="Địa chỉ"
-              value={address}
+              defaultValue={customer.address}
               placeholderTextColor={COLORS.grey_8}
               autoCorrect={false}
               style={[

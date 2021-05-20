@@ -5,6 +5,7 @@ const {
   getProcessingOrderByCustomer,
   addProductsToOrder,
   addQuickCartToOrder,
+  getOrderReceiveByCode,
   updateOrder,
   cancelOrder,
   deleteOrder,
@@ -29,5 +30,12 @@ router.put("/orders", updateOrder);
 router.put("/cancel/orders", cancelOrder);
 //Xóa đơn hàng theo id, bao gồm xóa tất cả sản phẩm trong đơn
 router.delete("/orders/:orderId", deleteOrder);
+
+/**
+ * router cho app shipper
+ */
+// Lấy đơn hàng nhận cho shipper
+ router.get("/receiver/orders", getOrderReceiveByCode);
+
 
 module.exports = router;

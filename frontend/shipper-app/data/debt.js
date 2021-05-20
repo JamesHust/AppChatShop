@@ -1,11 +1,7 @@
-const debt = [
+const debt = 
   {
     shopName: "BKShop",
-    payment: "400,000",
-  },
-  {
-    shopName: "JamesShop",
-    payment: "330,000",
-  },
-];
+    totalPayment: "400,000",
+  }
+;
 export default debt;

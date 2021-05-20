@@ -7,24 +7,26 @@ import {
   TouchableOpacity,
 } from "react-native";
 import COLORS from "../constants/color";
+import { formatDateTime, showToast } from "../utils/Common";
+import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 
-const QueueOrder = ({ data }) => {
+const QueueOrder = (props) => {
   return (
     <View style={styles.cardOrder}>
       {/* Thông tin cửa hàng */}
       <View style={styles.borderBottom}>
         <Text style={{ fontWeight: "bold", fontSize: 15 }}>
-          12 th5, 03:05PM<Text> - Lấy đơn</Text>
+          {formatDateTime(new Date())}<Text> - Lấy đơn</Text>
         </Text>
         <Text>
-          <Text>{data.shopName}</Text> - {data.shopAddress}
+          <Text>{props.data.shopName}</Text> - {props.data.shopAddress}
           <Text></Text>
         </Text>
       </View>
       {/* Thông tin người nhận */}
       <View style={styles.borderBottom}>
         <Text>
-          <Text>{data.customerName}</Text> - {data.customerAddress}
+          <Text>{props.data.customerName}</Text> - {props.data.customerAddress}
           <Text></Text>
         </Text>
       </View>
@@ -42,6 +44,7 @@ const QueueOrder = ({ data }) => {
             ...styles.buttonAction,
             backgroundColor: COLORS.red_13,
           }}
+          onPress={props.ignoreOrder}
         >
           <Text style={styles.titleButton}>Bỏ qua</Text>
         </TouchableOpacity>
@@ -50,6 +53,7 @@ const QueueOrder = ({ data }) => {
             ...styles.buttonAction,
             backgroundColor: COLORS.green_6,
           }}
+          onPress={props.handlerReceiveOrder}
         >
           <Text style={styles.titleButton}>Chấp nhận</Text>
         </TouchableOpacity>

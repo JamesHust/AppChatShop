@@ -6,6 +6,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Alert,
+  ActivityIndicator,
+  TextInput,
 } from "react-native";
 import {
   Ionicons,
@@ -17,14 +20,280 @@ import {
 } from "@expo/vector-icons";
 import Collapsible from "react-native-collapsible";
 import COLORS from "../constants/color";
-import products from "../data/detail_order";
 import { useNavigation } from "@react-navigation/native";
 import { DataTable } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSelector, useDispatch } from "react-redux";
+import { formatShowDate, addDotToNumber, showToast } from "../utils/Common";
+import Modal from "react-native-modal";
 
 const DetailMissonScreen = (props) => {
   const navigation = useNavigation(); //Cho phép truy cập navigation
-  const [statusDeliver, setStatusDeliver] = useState(0);
+  const [isLoading, setIsLoading] = useState(true); //biến check đang tải dữ liệu
+  const [listProduct, setListProduct] = useState([]);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [visibleReasonModal, setVisibleReasonModal] = useState(false); //Ẩn hiện modal lý do hủy đơn hàng
+  const [visibleNotification, setVisibleNotification] = useState(false);
+  const [notification, setNotification] = useState("");
+  const { data } = props.route.params;
+
+  // hàm lấy chi tiết đơn hàng
+  const loadDetailOrder = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/orders/detail?orderId=${data.orderId}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+        }
+      );
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setListProduct(resData.data[0].products);
+          setIsLoading(false);
+          return;
+        default:
+          setIsLoading(false);
+          Alert.alert("goFAST", `Lỗi lấy chi tiết dữ liệu`, [
+            {
+              text: "Tải lại",
+              onPress: () => loadDetailOrder(),
+            },
+            {
+              text: "OK",
+              style: "cancel",
+            },
+          ]);
+          return;
+      }
+    } catch (err) {
+      setIsLoading(false);
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => loadDetailOrder(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  }, []);
+
+  // Hàm gọi để load chi tiết đơn hàng
+  useEffect(() => {
+    loadDetailOrder();
+  }, []);
+
+  // Hàm xóa đơn hàng đang giao
+  const deleteDeliveryOrder = async () => {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await fetch(
+      `http://192.168.1.125:3000/api/delivery/${data.orderId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "x-access-token": token,
+        },
+      }
+    );
+    return response.status;
+  };
+
+  // Hàm xử lý khi giao hàng thành công
+  const handlerSuccessOrder = async () => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/orders?orderId=${data.orderId}&status=3`,
+        {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+        }
+      );
+      if (response.status === 200) {
+        navigation.navigate("SuccessDelive");
+      } else {
+        showToast("Lỗi hệ thống");
+      }
+    } catch (err) {
+      Alert.alert("goFAST", `Lỗi gửi dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => handlerSuccessOrder(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  };
+
+  // Modal thông báo
+  const NotificationModal = () => {
+    return (
+      <View style={{ ...styles.content, height: 195 }}>
+        <AntDesign
+          name="closecircleo"
+          size={24}
+          color={COLORS.light}
+          style={styles.iconClose}
+          onPress={() => setVisibleNotification(false)}
+        />
+        <Text style={styles.contentTitle}>Thông báo 😵</Text>
+        <View
+          style={{
+            backgroundColor: COLORS.light,
+            borderRadius: 15,
+            padding: 15,
+            justifyContent: "space-between",
+            width: 343,
+            height: 140,
+          }}
+        >
+          <Text>{notification}</Text>
+          <View
+            style={{
+              marginTop: 15,
+              flexDirection: "row",
+              justifyContent: "flex-end",
+              alignItems: "center",
+            }}
+          >
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setVisibleNotification(false)}
+            >
+              <Text style={{ color: COLORS.light }}>Ok</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  // Modal nêu lý do hủy đơn hàng
+  const ReasonModal = () => {
+    const [noteCancelModal, setNoteCancelModal] = useState(); //Nội dung ghi chú trong lý do hủy đơn hàng
+
+    // Hàm thực hiện hủy đơn hàng
+    const cancelOrder = async () => {
+      try {
+        const reason = noteCancelModal;
+        const token = await AsyncStorage.getItem("userToken");
+        const response = await fetch(
+          `http://192.168.1.125:3000/api/delivery/cancel`,
+          {
+            method: "PUT",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "x-access-token": token,
+            },
+            body: JSON.stringify({
+              reason: reason,
+              orderId: data.orderId,
+            }),
+          }
+        );
+        if (response.status) {
+          setVisibleReasonModal(false);
+          navigation.popToTop();
+          showToast("Hủy đơn hàng thành công");
+        } else {
+          showToast("Hủy đơn hàng thất bại");
+        }
+      } catch (err) {
+        Alert.alert("goFAST", `Lỗi hủy đơn hàng: ${err}`, [
+          {
+            text: "Thực hiện lại",
+            onPress: () => cancelOrder(),
+          },
+          {
+            text: "OK",
+            style: "cancel",
+          },
+        ]);
+      }
+    };
+
+    // Hàm xử lý hành động trên modal lý do hủy đơn hàng
+    const handlerAccessCancel = async () => {
+      if (noteCancelModal) {
+        await cancelOrder();
+      } else {
+        setNotification("Vui lòng nhập lý do hủy đơn hàng này!");
+        setVisibleNotification(true);
+      }
+    };
+    return (
+      <View style={{ ...styles.content, height: 212 }}>
+        <AntDesign
+          name="closecircleo"
+          size={24}
+          color={COLORS.light}
+          style={styles.iconClose}
+          onPress={() => setVisibleReasonModal(false)}
+        />
+        <Text style={styles.contentTitle}>Hủy đơn hàng 😧</Text>
+        <View
+          style={{
+            backgroundColor: COLORS.light,
+            borderRadius: 15,
+            padding: 15,
+            justifyContent: "space-between",
+            width: 343,
+            height: 160,
+          }}
+        >
+          <TextInput
+            multiline={true}
+            value={noteCancelModal}
+            style={{
+              backgroundColor: COLORS.grey_3,
+              textAlignVertical: "top",
+              borderRadius: 15,
+              padding: 10,
+            }}
+            numberOfLines={4}
+            placeholder="Nhập lý do hủy..."
+            onChangeText={(value) => setNoteCancelModal(value)}
+          />
+          <View
+            style={{
+              marginTop: 15,
+              flexDirection: "row",
+              justifyContent: "flex-end",
+              alignItems: "center",
+            }}
+          >
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handlerAccessCancel}
+            >
+              <Text style={{ color: COLORS.light }}>Ok</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   // Component header
   const Header = () => {
     return (
@@ -43,15 +312,58 @@ const DetailMissonScreen = (props) => {
           />
         </TouchableOpacity>
         {/* Ngày tháng hiện tại */}
-        <View style={{ flex: 2, alignItems: "center" }}>
-          <Text style={styles.textDate}>BKSHOP_OR00001</Text>
+        <View style={{ flex: 6, alignItems: "center" }}>
+          <Text style={styles.textDate}>{data.orderShipCode}</Text>
         </View>
-        <View style={{ flex: 1 }}></View>
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setVisibleReasonModal(true)}
+          >
+            <MaterialCommunityIcons
+              style={{ marginLeft: 10 }}
+              name="file-cancel"
+              size={28}
+              color={COLORS.light}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
+
+  // Trường hợp đang load dữ liệu
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {/* Header */}
+        <Header />
+        <View
+          style={[
+            styles.footer,
+            {
+              backgroundColor: COLORS.light,
+            },
+          ]}
+        >
+          <View style={styles.containerCenter}>
+            <ActivityIndicator size="large" color={COLORS.red_13} />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
+      {/* Modal lý do hủy đơn hàng */}
+      <Modal isVisible={visibleReasonModal} backdropColor={COLORS.grey_9}>
+        <ReasonModal />
+      </Modal>
+      {/* Modal thông báo không thể hủy đơn hàng */}
+      <Modal isVisible={visibleNotification} backdropColor={COLORS.grey_9}>
+        <NotificationModal />
+      </Modal>
       {/* Header */}
       <Header />
       {/* Nội dung trang */}
@@ -84,7 +396,7 @@ const DetailMissonScreen = (props) => {
                 <Text
                   style={{ marginLeft: 5, fontWeight: "bold", fontSize: 16 }}
                 >
-                  <Text>05:17 PM</Text> -{"  "}
+                  <Text>{formatShowDate(data.receivedTime)}</Text> -{"  "}
                   <Text>
                     Lấy đơn{"   "}
                     <Text style={{ color: COLORS.red_13 }}>Đã chấp nhận</Text>
@@ -108,7 +420,7 @@ const DetailMissonScreen = (props) => {
                         fontSize: 16,
                       }}
                     >
-                      Hưng
+                      {data.customerName}
                     </Text>
                   </View>
                   <View style={styles.circleIcon}>
@@ -122,9 +434,7 @@ const DetailMissonScreen = (props) => {
                     color={COLORS.dark}
                     style={{ paddingLeft: 3, marginRight: 8 }}
                   />
-                  <Text style={{ flex: 1 }}>
-                    22 ngách 20 Ngõ Trại Cá, Trương Định, Hai Bà Trưng, Hà Nội
-                  </Text>
+                  <Text style={{ flex: 1 }}>{data.customerAddress}</Text>
                 </View>
               </View>
               {/* Thông tin cửa hàng */}
@@ -144,7 +454,7 @@ const DetailMissonScreen = (props) => {
                         fontSize: 16,
                       }}
                     >
-                      BKShop
+                      {data.shopName}
                     </Text>
                   </View>
                   <View style={styles.circleIcon}>
@@ -158,9 +468,7 @@ const DetailMissonScreen = (props) => {
                     color={COLORS.dark}
                     style={{ paddingLeft: 3, marginRight: 8 }}
                   />
-                  <Text style={{ flex: 1 }}>
-                    22 ngách 20 Ngõ Trại Cá, Trương Định, Hai Bà Trưng, Hà Nội
-                  </Text>
+                  <Text style={{ flex: 1 }}>{data.shopAddress}</Text>
                 </View>
               </View>
               {/* Chi tiết đơn hàng */}
@@ -186,26 +494,32 @@ const DetailMissonScreen = (props) => {
                     {/* Bảng danh sách đơn hàng */}
                     <DataTable>
                       <DataTable.Header>
-                        <DataTable.Title style={{flex: 1}}>
+                        <DataTable.Title style={{ flex: 1 }}>
                           STT
                         </DataTable.Title>
-                        <DataTable.Title  style={{flex: 2}}>MÃ</DataTable.Title>
-                        <DataTable.Title  style={{flex: 5}}>TÊN SẢN PHẨM</DataTable.Title>
-                        <DataTable.Title numeric style={{flex: 1}}>SL</DataTable.Title>
+                        <DataTable.Title style={{ flex: 2 }}>
+                          MÃ
+                        </DataTable.Title>
+                        <DataTable.Title style={{ flex: 5 }}>
+                          TÊN SẢN PHẨM
+                        </DataTable.Title>
+                        <DataTable.Title numeric style={{ flex: 1 }}>
+                          SL
+                        </DataTable.Title>
                       </DataTable.Header>
                       {/* gen ra danh sách sản phẩm */}
-                      {products.map((item, index) => (
+                      {listProduct.map((item, index) => (
                         <DataTable.Row key={index}>
-                          <DataTable.Cell style={{flex: 1}}>
+                          <DataTable.Cell style={{ flex: 1 }}>
                             {+index + 1}
                           </DataTable.Cell>
-                          <DataTable.Cell  style={{flex: 2}}>
+                          <DataTable.Cell style={{ flex: 2 }}>
                             {item.productCode}
                           </DataTable.Cell>
-                          <DataTable.Cell  style={{flex: 5}}>
+                          <DataTable.Cell style={{ flex: 5 }}>
                             {item.productName}
                           </DataTable.Cell>
-                          <DataTable.Cell numeric style={{flex: 1}}>
+                          <DataTable.Cell numeric style={{ flex: 1 }}>
                             {item.productAmount}
                           </DataTable.Cell>
                         </DataTable.Row>
@@ -226,7 +540,9 @@ const DetailMissonScreen = (props) => {
                       size={20}
                       color={COLORS.dark}
                     />
-                    <Text style={styles.money}>100,000</Text>
+                    <Text style={styles.money}>
+                      {addDotToNumber(data.total)}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -242,7 +558,9 @@ const DetailMissonScreen = (props) => {
                       size={20}
                       color={COLORS.dark}
                     />
-                    <Text style={styles.money}>115,000</Text>
+                    <Text style={styles.money}>
+                      {addDotToNumber(+data.total + +data.shippingCost)}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -258,7 +576,9 @@ const DetailMissonScreen = (props) => {
                       size={20}
                       color={COLORS.dark}
                     />
-                    <Text style={styles.money}>15,000</Text>
+                    <Text style={styles.money}>
+                      {addDotToNumber(data.shippingCost)}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -266,39 +586,22 @@ const DetailMissonScreen = (props) => {
           </View>
         </ScrollView>
         <View>
-          {+statusDeliver > 0 ? (
-            <TouchableOpacity
-              style={{ ...styles.buttonSubmit }}
-              activeOpacity={0.8}
+          <TouchableOpacity
+            style={{ ...styles.buttonSubmit }}
+            activeOpacity={0.8}
+            onPress={handlerSuccessOrder}
+          >
+            <Text
+              style={{
+                color: COLORS.light,
+                textAlign: "center",
+                fontSize: 18,
+                fontWeight: "bold",
+              }}
             >
-              <Text
-                style={{
-                  color: COLORS.light,
-                  textAlign: "center",
-                  fontSize: 18,
-                  fontWeight: "bold",
-                }}
-              >
-                Thành công
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={{ ...styles.buttonSubmit }}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={{
-                  color: COLORS.light,
-                  textAlign: "center",
-                  fontSize: 18,
-                  fontWeight: "bold",
-                }}
-              >
-                Giao hàng
-              </Text>
-            </TouchableOpacity>
-          )}
+              Thành công
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
@@ -315,6 +618,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     height: 60,
+  },
+  containerCenter: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   iconMenu: {
     padding: 10,
@@ -354,7 +662,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     backgroundColor: COLORS.green_5,
     borderRadius: 15,
-    marginTop: 10
+    marginTop: 10,
   },
   detailOrder: {
     backgroundColor: COLORS.grey_3,
@@ -378,10 +686,46 @@ const styles = StyleSheet.create({
   table: {
     padding: 5,
   },
-  money:{
+  money: {
     fontSize: 16,
-    marginLeft: 5
-  }
+    marginLeft: 5,
+  },
+
+  // css cho modal
+  content: {
+    backgroundColor: COLORS.red_13,
+    paddingTop: 10,
+    paddingBottom: 5,
+    paddingHorizontal: 5,
+    justifyContent: "center",
+    alignItems: "flex-start",
+    borderRadius: 15,
+    borderColor: COLORS.red_13,
+    height: 290,
+    position: "relative",
+  },
+  iconClose: {
+    zIndex: 1,
+    position: "absolute",
+    right: 5,
+    top: 5,
+    zIndex: 99,
+  },
+  contentTitle: {
+    fontSize: 18,
+    marginBottom: 12,
+    marginLeft: 5,
+    color: COLORS.light,
+    fontWeight: "bold",
+  },
+  button: {
+    paddingHorizontal: 20,
+    paddingVertical: 7,
+    backgroundColor: COLORS.red_13,
+    fontSize: 15,
+    marginLeft: 10,
+    borderRadius: 15,
+  },
 });
 
 export default DetailMissonScreen;

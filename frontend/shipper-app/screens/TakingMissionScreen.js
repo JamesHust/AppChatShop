@@ -14,15 +14,135 @@ import COLORS from "../constants/color";
 import * as Animatable from "react-native-animatable";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import QueueOrder from "../components/QueueOrder";
-import order from "../data/queue_order";
+import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
+import { showToast } from "../utils/Common";
+import { useSelector, useDispatch } from "react-redux";
 
 const TakingMissionScreen = ({ navigation }) => {
+  const [searchText, setSearchText] = useState();
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
   const [mission, setMission] = useState(null); //danh sách nhiệm vụ
+  const dispatch = useDispatch();
+  const shipper = useSelector((state) => state.authReducer.shipper);
 
+  // Reset lại toàn bộ dữ liệu khi chuyển sang tab khác
   useEffect(() => {
-    setMission(order);
-  }, []);
+    const resetData = navigation.addListener('focus', async () => {
+      setSearchText(null);
+      setMission(null);
+    });
+    return resetData;
+  }, [navigation]);
+
+  // Hàm lấy order theo code
+  const getOrderByCode = async (orderCode) => {
+    setIsLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/receiver/orders?orderCode=${orderCode}&shopId=${shipper.shopId}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+        }
+      );
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setMission(resData.data);
+          setIsLoading(false);
+          return;
+        default:
+          setMission(null);
+          showToast(`Không tìm được đơn hàng có mã ${orderCode}.`);
+          setIsLoading(false);
+          return;
+      }
+    } catch (err) {
+      setIsLoading(false);
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => getOrderByCode(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  };
+
+  // Hàm xử lý khi nhận đơn giao hàng
+  const handlerReceiveOrder = async () => {
+    setIsLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/shippers/receive`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+          body: JSON.stringify({
+            shipperId: shipper.shipperId,
+            orderId: mission.orderId,
+            orderCode: mission.orderCode,
+            shopCode: mission.shopCode,
+          }),
+        }
+      );
+      setMission(null);
+      switch (response.status) {
+        case 200:
+          setSearchText(null);
+          setIsLoading(false);
+          showToast(`Nhận đơn hàng thành công.`);
+          return;
+        default:
+          setIsLoading(false);
+          showToast(`Không thể nhận đơn hàng này.`);
+          return;
+      }
+    } catch (err) {
+      setIsLoading(false);
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => handlerReceiveOrder(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  };
+
+  // Hàm xử lý khi chọn search
+  const handlerSearch = async () => {
+    const orderCode = searchText;
+    if (orderCode) {
+      await getOrderByCode(orderCode);
+    } else {
+      showToast("Vui lòng nhập mã đơn hàng cần nhận!");
+    }
+  };
+
+  // Bỏ qua hóa đơn
+  const ignoreOrder = () => {
+    setIsLoading(true);
+    setMission(null);
+    setSearchText("");
+    setIsLoading(false);
+  };
 
   // Component header
   const Header = () => {
@@ -66,19 +186,6 @@ const TakingMissionScreen = ({ navigation }) => {
             },
           ]}
         >
-          {/* search-bar */}
-          <View style={{ marginTop: 10, flexDirection: "row" }}>
-            <View style={styles.searchContainer}>
-              <Ionicons name="search" size={21} color={COLORS.dark} />
-              <TextInput
-                placeholder="Tìm kiếm mã hoặc tên sản phẩm"
-                style={{ marginLeft: 5 }}
-              />
-            </View>
-            <View style={styles.sortBtn}>
-              <MaterialIcons name="sort" size={23} color={COLORS.light} />
-            </View>
-          </View>
           <ActivityIndicator size="large" color={COLORS.red_13} />
         </Animatable.View>
       </SafeAreaView>
@@ -103,11 +210,20 @@ const TakingMissionScreen = ({ navigation }) => {
           {/* search-bar */}
           <View style={{ flexDirection: "row" }}>
             <View style={styles.searchContainer}>
-              <TextInput placeholder="Tìm kiếm theo mã đơn giao hàng..." />
+              <TextInput
+                placeholder="Tìm kiếm theo mã đơn giao hàng..."
+                onChangeText={(text) => setSearchText(text)}
+                onSubmitEditing={handlerSearch}
+                defaultValue={searchText}
+              />
             </View>
-            <View style={styles.sortBtn}>
+            <TouchableOpacity
+              style={styles.sortBtn}
+              activeOpacity={0.8}
+              onPress={handlerSearch}
+            >
               <Ionicons name="search" size={21} color={COLORS.light} />
-            </View>
+            </TouchableOpacity>
           </View>
           {/* Nội dung */}
           <View
@@ -155,15 +271,28 @@ const TakingMissionScreen = ({ navigation }) => {
         {/* search-bar */}
         <View style={{ flexDirection: "row" }}>
           <View style={styles.searchContainer}>
-            <TextInput placeholder="Tìm kiếm theo mã đơn giao hàng..." />
+            <TextInput
+              placeholder="Tìm kiếm theo mã đơn giao hàng..."
+              onChangeText={(text) => setSearchText(text)}
+              onSubmitEditing={handlerSearch}
+              defaultValue={searchText}
+            />
           </View>
-          <View style={styles.sortBtn}>
+          <TouchableOpacity
+            style={styles.sortBtn}
+            activeOpacity={0.8}
+            onPress={handlerSearch}
+          >
             <Ionicons name="search" size={21} color={COLORS.light} />
-          </View>
+          </TouchableOpacity>
         </View>
         {/* Phần hiển thị đơn hàng tìm kiếm theo mã giao hàng */}
         <View>
-          <QueueOrder data={mission}/>
+          <QueueOrder
+            data={mission}
+            ignoreOrder={ignoreOrder}
+            handlerReceiveOrder={handlerReceiveOrder}
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -223,7 +352,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.red_13,
     borderRadius: 15,
   },
-  
 });
 
 export default TakingMissionScreen;

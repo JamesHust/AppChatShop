@@ -58,7 +58,7 @@ const ProfileScreen = ({ navigation }) => {
       dispatch(authActions.logout());
       navigation.dispatch(StackActions.popToTop());
     } catch (err) {
-      Alert.alert("goFAST", `Có lỗi không mong muốn: ${e}`, [
+      Alert.alert("goFAST", `Có lỗi không mong muốn: ${err}`, [
         {
           text: "OK",
           style: "cancel",

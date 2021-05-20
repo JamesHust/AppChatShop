@@ -79,6 +79,7 @@ const deleteRecord = async (primaryKeyName, valueKey) => {
 
 /**
  * Chuyển format datetime thành kiểu có thể insert được database
+ * chuyển từ dạng text
  * @param {*} dateTime Dữ liệu ngày tháng truy xuất từ database. VD: 2021-03-28T17:00:00.000Z => 2021-03-28 00:00:00
  */
 const formatDateTimeInsertDB = (dateTime) => {
@@ -88,6 +89,17 @@ const formatDateTimeInsertDB = (dateTime) => {
 };
 
 /**
+ * Chuyển format datetime thành kiểu có thể insert được database
+ * chuyển từ dạng Date()
+ * @param {*} dateTime 
+ * @returns 
+ */
+const formatTimeToInsertDB = (dateTime) => {
+  var dateString = dateTime.getFullYear() + "-" + ("0" + (dateTime.getMonth()+1)).slice(-2) + "-" + ("0" + dateTime.getDate()).slice(-2) + " " + ("0" + dateTime.getHours()).slice(-2) + ":" + ("0" + dateTime.getMinutes()).slice(-2) + ":" + ("0" + dateTime.getSeconds()).slice(-2);
+  return dateString;
+}
+
+/**
  * Hàm chuyển sang http tương ứng truy xuất tới file ở mục public
  * @param {*} path 
  */
@@ -95,11 +107,13 @@ const convertPathFile = (path) => {
   return `http://${config.node_ip}:${config.node_port}/public/${path}`;
 }
 
+
 module.exports = {
   generateNewCode,
   getMaxCode,
   checkExist,
   deleteRecord,
   formatDateTimeInsertDB,
+  formatTimeToInsertDB,
   convertPathFile
 };

@@ -3,23 +3,27 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import COLORS from "../constants/color";
 import { Entypo, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { formatShowDate } from "../utils/Common";
 
 const MissionOrder = ({ data }) => {
   const navigation = useNavigation(); //Cho phép truy cập navigation
+  const receivedTime = data.receivedTime
+    ? formatShowDate(data.receivedTime)
+    : "00:00 00/00/0000";
   return (
     <TouchableOpacity
       style={styles.cardOrder}
       activeOpacity={0.8}
       onPress={() =>
         navigation.navigate("DetailMission", {
-          orderShipCode: data.orderShipCode,
+          data: data,
         })
       }
     >
       {/* Thông tin cửa hàng */}
       <View style={styles.borderBottom}>
         <Text style={{ fontWeight: "bold", fontSize: 15 }}>
-          12 th5, 03:05PM
+          {receivedTime}
           <Text>
             {" "}
             - <Text style={{ color: COLORS.red_13 }}>Đã chấp nhận</Text>

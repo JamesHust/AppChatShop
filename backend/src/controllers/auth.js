@@ -1,10 +1,12 @@
 /**
  * Controller phục vụ login, tạo token và refreshToken - làm mới token khi hết hạn
+ * phục vụ cho khách hàng
  * Createby: MTHUNG - 17/04/2020
  */
 const jwtHelper = require("../util/jwt.helper");
 const { getCustomerByEmailOrPhone } = require("../controllers/customers");
 const { getAdminByEmailOrPhone } = require("../controllers/admins");
+const { getShipperByEmailOrPhone } = require("../controllers/shippers");
 const { checkExist } = require("../util/common");
 const { getToken } = require("../controllers/tokens");
 const Response = require("../models/response");
@@ -44,117 +46,174 @@ const loginAuth = async (req, res, next) => {
   try {
     const actor = req.body.actor;
     const dataUser = req.body.dataUser;
-    // Xét 2 trường hợp đăng nhập cho admin và customer
-    if (actor === "customer" && dataUser.username && dataUser.password) {
-      const customer = await getCustomerByEmailOrPhone(dataUser.username);
-      // Xét tồn tại khách hàng
-      if (customer) {
-        // So sánh với mật khẩu đã được mã hóa
-        if (bcrypt.compareSync(dataUser.password, customer.password)) {
-          const userData = {
-            id: customer.customerId,
-            phone: customer.phoneNumber,
-            email: customer.email,
-            password: customer.password,
-            actorCurrent: actor,
-          };
-          // thực hiện tạo token
-          const accessToken = await jwtHelper.generateToken(
-            userData,
-            accessTokenSecret,
-            accessTokenLife
-          );
-          //Thực hiện tạo refresh token
-          const refreshToken = await jwtHelper.generateToken(
-            userData,
-            refreshTokenSecret,
-            refreshTokenLife
-          );
-          // Lưu lại 2 mã access & Refresh token trên db
-          await createTokenDB(userData.id, accessToken, refreshToken);
+    if (actor && dataUser.username && dataUser.password) {
+      switch (actor) {
+        case "customer":
+          const customer = await getCustomerByEmailOrPhone(dataUser.username);
+          // Xét tồn tại khách hàng
+          if (customer) {
+            // So sánh với mật khẩu đã được mã hóa
+            if (bcrypt.compareSync(dataUser.password, customer.password)) {
+              const userData = {
+                id: customer.customerId,
+                phone: customer.phoneNumber,
+                email: customer.email,
+                password: customer.password,
+                actorCurrent: actor,
+              };
+              // thực hiện tạo token
+              const accessToken = await jwtHelper.generateToken(
+                userData,
+                accessTokenSecret,
+                accessTokenLife
+              );
+              //Thực hiện tạo refresh token
+              const refreshToken = await jwtHelper.generateToken(
+                userData,
+                refreshTokenSecret,
+                refreshTokenLife
+              );
+              // Lưu lại 2 mã access & Refresh token trên db
+              await createTokenDB(userData.id, accessToken, refreshToken);
 
-          return res.status(200).send(
-            new Response(
-              (isSuccess = true),
-              (errorCode = null),
-              (devMsg = "Login successed!"),
-              (userMsg = "Đăng nhập thành công"),
-              (moreInfo = null),
-              (data = {
-                customer: customer,
-                accessToken: accessToken,
-              })
-            )
-          );
-        }
-      }
-      return res
-        .status(404)
-        .send(
-          new Response(
-            (isSuccess = false),
-            (errorCode = null),
-            (devMsg = "Login failed!"),
-            (userMsg = "Đăng nhập thất bại"),
-            (moreInfo = null),
-            (data = null)
-          )
-        );
-    } else if (actor === "admin" && dataUser.username && dataUser.password) {
-      const admin = await getAdminByEmailOrPhone(dataUser.username);
-      // Xét tồn tại khách hàng
-      if (admin) {
-        // So sánh với mật khẩu đã được mã hóa
-        if (bcrypt.compareSync(dataUser.password, admin.password)) {
-          const userData = {
-            id: admin.adminId,
-            phone: admin.phoneNumber,
-            email: admin.email,
-            password: admin.password,
-            actorCurrent: actor,
-          };
-          // thực hiện tạo token
-          const accessToken = await jwtHelper.generateToken(
-            userData,
-            accessTokenSecret,
-            accessTokenLife
-          );
-          //Thực hiện tạo refresh token
-          const refreshToken = await jwtHelper.generateToken(
-            userData,
-            refreshTokenSecret,
-            refreshTokenLife
-          );
-          // Lưu lại 2 mã access & Refresh token trên db
-          await createTokenDB(userData._id, accessToken, refreshToken);
+              return res.status(200).send(
+                new Response(
+                  (isSuccess = true),
+                  (errorCode = null),
+                  (devMsg = "Login successed!"),
+                  (userMsg = "Đăng nhập thành công"),
+                  (moreInfo = null),
+                  (data = {
+                    customer: customer,
+                    accessToken: accessToken,
+                  })
+                )
+              );
+            }
+          }
+          return res
+            .status(404)
+            .send(
+              new Response(
+                (isSuccess = false),
+                (errorCode = null),
+                (devMsg = "Login failed!"),
+                (userMsg = "Đăng nhập thất bại"),
+                (moreInfo = null),
+                (data = null)
+              )
+            );
+        case "admin":
+          const admin = await getAdminByEmailOrPhone(dataUser.username);
+          // Xét tồn tại khách hàng
+          if (admin) {
+            // So sánh với mật khẩu đã được mã hóa
+            if (bcrypt.compareSync(dataUser.password, admin.password)) {
+              const userData = {
+                id: admin.adminId,
+                phone: admin.phoneNumber,
+                email: admin.email,
+                password: admin.password,
+                actorCurrent: actor,
+              };
+              // thực hiện tạo token
+              const accessToken = await jwtHelper.generateToken(
+                userData,
+                accessTokenSecret,
+                accessTokenLife
+              );
+              //Thực hiện tạo refresh token
+              const refreshToken = await jwtHelper.generateToken(
+                userData,
+                refreshTokenSecret,
+                refreshTokenLife
+              );
+              // Lưu lại 2 mã access & Refresh token trên db
+              await createTokenDB(userData.id, accessToken, refreshToken);
 
-          return res.status(200).send(
-            new Response(
-              (isSuccess = true),
-              (errorCode = null),
-              (devMsg = "Login successed!"),
-              (userMsg = "Đăng nhập thành công"),
-              (moreInfo = null),
-              (data = {
-                customer: customer,
-                accessToken: accessToken,
-              })
-            )
-          );
-        }
+              return res.status(200).send(
+                new Response(
+                  (isSuccess = true),
+                  (errorCode = null),
+                  (devMsg = "Login successed!"),
+                  (userMsg = "Đăng nhập thành công"),
+                  (moreInfo = null),
+                  (data = {
+                    customer: customer,
+                    accessToken: accessToken,
+                  })
+                )
+              );
+            }
+          }
+          return res
+            .status(404)
+            .send(
+              new Response(
+                (isSuccess = false),
+                (errorCode = null),
+                (devMsg = "Login failed!"),
+                (userMsg = "Đăng nhập thất bại"),
+                (moreInfo = null),
+                (data = null)
+              )
+            );
+        case "shipper":
+          const shipper = await getShipperByEmailOrPhone(dataUser.username);
+          // Xét tồn tại shipper
+          if (shipper) {
+            // So sánh với mật khẩu (mật khẩu shipper không được mã hóa)
+            if (dataUser.password === shipper.password) {
+              const userData = {
+                id: shipper.shipperId,
+                phone: shipper.phoneNumber,
+                email: shipper.email,
+                password: shipper.password,
+                actorCurrent: actor,
+              };
+              // thực hiện tạo token
+              const accessToken = await jwtHelper.generateToken(
+                userData,
+                accessTokenSecret,
+                accessTokenLife
+              );
+              //Thực hiện tạo refresh token
+              const refreshToken = await jwtHelper.generateToken(
+                userData,
+                refreshTokenSecret,
+                refreshTokenLife
+              );
+              // Lưu lại 2 mã access & Refresh token trên db
+              await createTokenDB(userData.id, accessToken, refreshToken);
+
+              return res.status(200).send(
+                new Response(
+                  (isSuccess = true),
+                  (errorCode = null),
+                  (devMsg = "Login successed!"),
+                  (userMsg = "Đăng nhập thành công"),
+                  (moreInfo = null),
+                  (data = {
+                    shipper: shipper,
+                    accessToken: accessToken,
+                  })
+                )
+              );
+            }
+          }
+          return res
+            .status(404)
+            .send(
+              new Response(
+                (isSuccess = false),
+                (errorCode = null),
+                (devMsg = "Login failed!"),
+                (userMsg = "Đăng nhập thất bại"),
+                (moreInfo = null),
+                (data = null)
+              )
+            );
       }
-      return res
-        .status(404)
-        .send(
-          new Response(
-            (isSuccess = false),
-            (errorCode = null),
-            (devMsg = "Login failed!"),
-            (userMsg = "Đăng nhập thất bại"),
-            (moreInfo = null),
-            (data = null)
-          )
-        );
     } else {
       return res
         .status(400)
@@ -316,14 +375,19 @@ const refreshTokenToLogin = async (req, res, next) => {
               )
             );
         } else {
+          // trường hợp là khách hàng
           if (decoded.data._actorCurrent === "customer") {
             user = await checkExist("CustomerId", decoded.data._id);
-            user.Avatar = convertPathFile(user.Avatar);
           }
           // if (decoded._actorCurrent === "admin") {
           //   user = await checkExist("AdminId", decoded.data._id);
           // }
+          // trường hợp là shipper
+          if (decoded.data._actorCurrent === "shipper") {
+            user = await checkExist("ShipperId", decoded.data._id);
+          }
           if (user) {
+            user.Avatar = convertPathFile(user.Avatar);
             return res.status(200).send(
               new Response(
                 (isSuccess = true),
@@ -332,7 +396,7 @@ const refreshTokenToLogin = async (req, res, next) => {
                 (userMsg = "Đăng nhập thành công"),
                 (moreInfo = null),
                 (data = {
-                  customer: user,
+                  user: user,
                   accessToken: token,
                 })
               )

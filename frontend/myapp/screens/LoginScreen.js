@@ -57,7 +57,7 @@ const LoginScreen = ({ navigation }) => {
           const resData = await res.json();
           dispatch(authActions.storageToken(resData.data));
           dispatch(
-            cartActions.getOldCart(resData.data.customer.CustomerId, userToken)
+            cartActions.getOldCart(resData.data.user.CustomerId, userToken)
           );
           return navigation.navigate("Home");
         default:

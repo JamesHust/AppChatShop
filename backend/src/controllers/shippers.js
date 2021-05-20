@@ -7,6 +7,7 @@ const {
   getMaxCode,
   checkExist,
   deleteRecord,
+  convertPathFile,
 } = require("../util/common");
 
 //khai báo các biến toàn cục dùng chung
@@ -461,6 +462,32 @@ const deleteAccountShipper = async (req, res, next) => {
 //#endregion
 
 //#region Private Function
+/**
+ * Lấy thông tin shipper theo email hoặc số điện thoại
+ * @param {*} userName tên đăng nhập
+ */
+ const getShipperByEmailOrPhone = async (userName) => {
+  let result = null;
+  const sql = `select * from ${tableName} where PhoneNumber = "${userName}" OR Email = "${userName}";`;
+  const shipper = await db.execute(sql);
+  if (shipper) {
+    result = new Shipper(
+      shipper[0][0].ShipperId,
+      shipper[0][0].ShipperCode,
+      shipper[0][0].ShipperName,
+      convertPathFile(shipper[0][0].Avatar),
+      shipper[0][0].PhoneNumber,
+      shipper[0][0].Address,
+      shipper[0][0].Email,
+      shipper[0][0].Password,
+      shipper[0][0].BasicSalary,
+      shipper[0][0].Rating,
+      shipper[0][0].ChatId,
+      shipper[0][0].ShopId
+    );
+  }
+  return result;
+};
 //#endregion
 
 //export controller
@@ -471,4 +498,5 @@ module.exports = {
   addNewAccountShipper,
   updateInfoAccountShipper,
   deleteAccountShipper,
+  getShipperByEmailOrPhone
 };

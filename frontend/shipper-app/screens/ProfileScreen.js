@@ -9,19 +9,20 @@ import {
   TouchableOpacity,
   LogBox,
 } from "react-native";
-import { MaterialCommunityIcons, FontAwesome, Ionicons, Feather } from "@expo/vector-icons";
+import {
+  MaterialCommunityIcons,
+  FontAwesome,
+  Ionicons,
+  Feather,
+  Entypo,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import COLORS from "../constants/color";
+import { useSelector, useDispatch } from "react-redux";
+import { formatShowDate, addDotToNumber, showToast } from "../utils/Common";
 
 const EditProfileScreen = ({ route, navigation }) => {
-  // Nội dung header của bottom sheet
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <View style={styles.panelHeader}>
-        <View style={styles.panelHandle} />
-      </View>
-    </View>
-  );
-
+  const shipper = useSelector((state) => state.authReducer.shipper);
   return (
     <SafeAreaView style={styles.container}>
       <TouchableOpacity
@@ -36,7 +37,7 @@ const EditProfileScreen = ({ route, navigation }) => {
           style={styles.iconMenu}
         />
       </TouchableOpacity>
-      <View style={{ marginTop: 0}}>
+      <View style={{ marginTop: 0 }}>
         <View>
           <View style={{ alignItems: "center" }}>
             {/* Ảnh avatar */}
@@ -51,7 +52,9 @@ const EditProfileScreen = ({ route, navigation }) => {
             >
               <ImageBackground
                 source={{
-                  uri: "https://i.pinimg.com/564x/d9/a3/47/d9a3471dd0da18bcd855be72abaf7589.jpg",
+                  uri: shipper.avatar
+                    ? shipper.avatar
+                    : "https://lh4.googleusercontent.com/w6GWZF8osSNKfUK0KSOrIGX_c_E_xJB8cj5ZmJkYnWmqWaeEk1HncCOaUnGAAXXaCPT_YWIyZLRwaURYxS1Vj2AS3BBUe5ohizQHiNbk6wCTq0sYFb8Zj0bEl-H3X04fLKolp--B",
                 }}
                 style={{ height: 100, width: 100 }}
                 imageStyle={{ borderRadius: 15 }}
@@ -66,19 +69,19 @@ const EditProfileScreen = ({ route, navigation }) => {
                 color: COLORS.dark,
               }}
             >
-              Thế Hưng
+              {shipper.shipperName}
             </Text>
           </View>
         </View>
         {/* Thông tin chi tiết */}
-        {/* Họ tên */}
-        <View style={styles.action}>
-          <FontAwesome name="user-o" color={COLORS.grey_8} size={20} />
+        {/* Mã shipper */}
+        <View style={{...styles.action, marginTop: 30}}>
+          <Entypo name="code" color={COLORS.grey_8} size={20} />
           <TextInput
             editable={false}
             selectTextOnFocus={false}
-            placeholder="Họ tên"
-            value="Thế Hưng"
+            placeholder="Mã shipper"
+            value={shipper.shipperCode}
             placeholderTextColor={COLORS.grey_8}
             autoCorrect={false}
             style={[
@@ -96,26 +99,7 @@ const EditProfileScreen = ({ route, navigation }) => {
             editable={false}
             selectTextOnFocus={false}
             placeholder="Số điện thoại"
-            value="0966073028"
-            placeholderTextColor={COLORS.grey_8}
-            keyboardType="number-pad"
-            autoCorrect={false}
-            style={[
-              styles.textInput,
-              {
-                color: COLORS.grey_6,
-              },
-            ]}
-          />
-        </View>
-        {/* Số điện thoại khác */}
-        <View style={styles.action}>
-          <Feather name="phone-call" color={COLORS.grey_8} size={20} />
-          <TextInput
-            editable={false}
-            selectTextOnFocus={false}
-            placeholder="Số điện thoại khác"
-            value="0977251512"
+            value={shipper.phoneNumber}
             placeholderTextColor={COLORS.grey_8}
             keyboardType="number-pad"
             autoCorrect={false}
@@ -134,7 +118,7 @@ const EditProfileScreen = ({ route, navigation }) => {
             editable={false}
             selectTextOnFocus={false}
             placeholder="Email"
-            value="hungjame99@gmail.com"
+            value={shipper.email}
             placeholderTextColor={COLORS.grey_8}
             keyboardType="email-address"
             autoCorrect={false}
@@ -157,8 +141,27 @@ const EditProfileScreen = ({ route, navigation }) => {
             editable={false}
             selectTextOnFocus={false}
             placeholder="Địa chỉ"
-            value="22 Ngách 20 Ngõ Trại Cá, Trương Định, Hai Bà Trưng, Hà Nội"
+            value={shipper.address}
             placeholderTextColor={COLORS.grey_8}
+            autoCorrect={false}
+            style={[
+              styles.textInput,
+              {
+                color: COLORS.grey_6,
+              },
+            ]}
+          />
+        </View>
+        {/* Lương cứng */}
+        <View style={styles.action}>
+          <MaterialIcons name="attach-money" color={COLORS.grey_8} size={20} />
+          <TextInput
+            editable={false}
+            selectTextOnFocus={false}
+            placeholder="Lương cứng"
+            value={addDotToNumber(shipper.basicSalary)}
+            placeholderTextColor={COLORS.grey_8}
+            keyboardType="number-pad"
             autoCorrect={false}
             style={[
               styles.textInput,
@@ -179,7 +182,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    marginTop: 15
+    marginTop: 15,
   },
   commandButton: {
     padding: 15,
@@ -250,9 +253,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   buttonMenu: {
-    position: 'absolute',
+    position: "absolute",
     top: 5,
-    left: 5
+    left: 5,
   },
   iconMenu: {
     padding: 10,

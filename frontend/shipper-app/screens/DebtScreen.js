@@ -6,6 +6,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
+  Alert
 } from "react-native";
 import {
   Ionicons,
@@ -21,11 +23,156 @@ import { useNavigation } from "@react-navigation/native";
 import { DataTable } from "react-native-paper";
 import debt from "../data/debt";
 import history from "../data/history";
+import cancel from "../data/cancel_orders";
+import { useSelector, useDispatch } from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { formatShowDate, addDotToNumber, showToast } from "../utils/Common";
 
 const DebtScreen = (props) => {
   const navigation = useNavigation(); //Cho phép truy cập navigation
+  const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
   const [isCollapseHistory, setIsCollapseHistory] = useState(true);
-  const [isCollapseDebt, setIsCollapseDebt] = useState(true);
+  const [isCollapseDebt, setIsCollapseDebt] = useState(false);
+  const [isCollapseCancelOrder, setIsCollapseCancelOrder] = useState(true);
+  const [debtData, setDebtData] = useState();
+  const [historyData, setHistoryData] = useState();
+  const [cancelOrderData, setCancelOrderData] = useState();
+  const shipper = useSelector(state => state.authReducer.shipper);
+
+  // Làm lấy dữ liệu công nợ phải trả cho cửa hàng
+  const getDebtData = async () => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const shipperId = await AsyncStorage.getItem("userId");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/debt/delivery?shopId=${shipper.shopId}&shipperId=${shipperId}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+        }
+      );
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setDebtData(resData.data);
+          return;
+        default:
+          setDebtData(null);
+          return;
+      }
+    } catch (err) {
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => getDebtData(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  };
+
+  // Làm lấy dữ liệu công nợ phải trả cho cửa hàng
+  const getCancelOrderData = async () => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const shipperId = await AsyncStorage.getItem("userId");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/detail/delivery?shopId=${shipper.shopId}&shipperId=${shipperId}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+        }
+      );
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setCancelOrderData(resData.data);
+          return;
+        default:
+          setCancelOrderData(null);
+          return;
+      }
+    } catch (err) {
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => getCancelOrderData(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  };
+
+  // Lấy lịch sử giao hàng thành công trong ngày
+  const getHistoryData = async () => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const shipperId = await AsyncStorage.getItem("userId");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/history/delivery?shopId=${shipper.shopId}&shipperId=${shipperId}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+        }
+      );
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setHistoryData(resData.data);
+          return;
+        default:
+          setHistoryData(null);
+          return;
+      }
+    } catch (err) {
+      Alert.alert("goFAST", `Lỗi tải dữ liệu: ${err}`, [
+        {
+          text: "Tải lại",
+          onPress: () => getHistoryData(),
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  };
+
+  // Hàm xử lý bất đồng bộ gọi lên server nhiều lần để lấy dữ liệu
+  const getData = useCallback(async () => {
+    setIsLoading(true);
+    await getDebtData();
+    await getCancelOrderData();
+    await getHistoryData()
+    setIsLoading(false);
+  }, []);
+
+  // Theo dõi chuyển tab để lấy lại danh sách dữ liệu
+  useEffect(() => {
+    const getListData = navigation.addListener("focus", () => {
+      getData();
+    });
+    return getListData;
+  }, [navigation]);
+
   // Component header
   const Header = () => {
     return (
@@ -51,6 +198,29 @@ const DebtScreen = (props) => {
       </View>
     );
   };
+
+  // Trường hợp đang load dữ liệu
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {/* Header */}
+        <Header />
+        <View
+          style={[
+            styles.footer,
+            {
+              backgroundColor: COLORS.light,
+            },
+          ]}
+        >
+          <View style={styles.containerCenter}>
+            <ActivityIndicator size="large" color={COLORS.red_13} />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -80,7 +250,7 @@ const DebtScreen = (props) => {
                   activeOpacity={0.6}
                   onPress={() => setIsCollapseDebt(!isCollapseDebt)}
                 >
-                  <Text style={styles.title}>DANH SÁCH CÔNG NỢ</Text>
+                  <Text style={styles.title}>CÔNG NỢ</Text>
                   <MaterialIcons
                     name={
                       isCollapseDebt
@@ -88,13 +258,13 @@ const DebtScreen = (props) => {
                         : "keyboard-arrow-down"
                     }
                     size={24}
-                    color={COLORS.dark}
+                    color={COLORS.light}
                   />
                 </TouchableOpacity>
                 <Collapsible collapsed={isCollapseDebt}>
                   <View style={styles.table}>
                     {/* Bảng danh sách công nợ */}
-                    {debt ? (
+                    {debtData ? (
                       <DataTable>
                         <DataTable.Header>
                           <DataTable.Title style={{ flex: 1 }}>
@@ -107,20 +277,15 @@ const DebtScreen = (props) => {
                             TRẢ QUÁN
                           </DataTable.Title>
                         </DataTable.Header>
-                        {/* gen ra danh sách sản phẩm */}
-                        {debt.map((item, index) => (
-                          <DataTable.Row key={index}>
-                            <DataTable.Cell style={{ flex: 1 }}>
-                              {+index + 1}
-                            </DataTable.Cell>
-                            <DataTable.Cell style={{ flex: 2 }}>
-                              {item.shopName}
-                            </DataTable.Cell>
-                            <DataTable.Cell style={{ flex: 1 }}>
-                              {item.payment}
-                            </DataTable.Cell>
-                          </DataTable.Row>
-                        ))}
+                        <DataTable.Row>
+                          <DataTable.Cell style={{ flex: 1 }}>1</DataTable.Cell>
+                          <DataTable.Cell style={{ flex: 2 }}>
+                            {debtData.shopName}
+                          </DataTable.Cell>
+                          <DataTable.Cell style={{ flex: 1 }}>
+                            {addDotToNumber(debtData.totalPayment)}
+                          </DataTable.Cell>
+                        </DataTable.Row>
                       </DataTable>
                     ) : (
                       <Text style={{ textAlign: "center" }}>
@@ -130,14 +295,101 @@ const DebtScreen = (props) => {
                   </View>
                 </Collapsible>
               </View>
-              {/* Lịch sử giao hàng trong ngày */}
+              {/* Danh sách đơn hàng bị hủy và phải hoàn trả sản phẩm */}
+              <View style={styles.detailOrder}>
+                <TouchableOpacity
+                  style={styles.titleItem}
+                  activeOpacity={0.6}
+                  onPress={() =>
+                    setIsCollapseCancelOrder(!isCollapseCancelOrder)
+                  }
+                >
+                  <Text style={styles.title}>DANH SÁCH HOÀN ĐƠN</Text>
+                  <MaterialIcons
+                    name={
+                      isCollapseCancelOrder
+                        ? "keyboard-arrow-right"
+                        : "keyboard-arrow-down"
+                    }
+                    size={24}
+                    color={COLORS.light}
+                  />
+                </TouchableOpacity>
+                <Collapsible collapsed={isCollapseCancelOrder}>
+                  <View style={styles.table}>
+                    {/* Bảng danh sách hoàn đơn */}
+                    {cancelOrderData ? (
+                      <>
+                        {cancelOrderData.map((item, index) => (
+                          <View key={index}>
+                            <View
+                              style={styles.titleItemChild}
+                              activeOpacity={0.6}
+                              key={item.orderShipCode}
+                            >
+                              <AntDesign
+                                name="plussquare"
+                                size={18}
+                                color={COLORS.dark}
+                              />
+                              <Text
+                                style={{
+                                  ...styles.title,
+                                  color: COLORS.dark,
+                                  marginLeft: 5,
+                                }}
+                              >
+                                {item.orderShipCode}
+                              </Text>
+                            </View>
+                            <View style={styles.table}>
+                              {/* Bảng danh sách sản phẩm cần hoàn*/}
+                              <DataTable>
+                                <DataTable.Header>
+                                  <DataTable.Title style={{ flex: 1 }}>
+                                    STT
+                                  </DataTable.Title>
+                                  <DataTable.Title style={{ flex: 2 }}>
+                                    MÃ SẢN PHẨM
+                                  </DataTable.Title>
+                                  <DataTable.Title style={{ flex: 1 }}>
+                                    SỐ LƯỢNG
+                                  </DataTable.Title>
+                                </DataTable.Header>
+                                {item.products.map((val, index) => (
+                                  <DataTable.Row key={val.productCode}>
+                                    <DataTable.Cell style={{ flex: 1 }}>
+                                      {+index + 1}
+                                    </DataTable.Cell>
+                                    <DataTable.Cell style={{ flex: 2 }}>
+                                      {val.productCode}
+                                    </DataTable.Cell>
+                                    <DataTable.Cell style={{ flex: 1 }}>
+                                      {val.productAmount}
+                                    </DataTable.Cell>
+                                  </DataTable.Row>
+                                ))}
+                              </DataTable>
+                            </View>
+                          </View>
+                        ))}
+                      </>
+                    ) : (
+                      <Text style={{ textAlign: "center" }}>
+                        Hiện không có đơn cần hoàn
+                      </Text>
+                    )}
+                  </View>
+                </Collapsible>
+              </View>
+              {/* Lịch sử giao hàng thành công trong ngày */}
               <View style={styles.detailOrder}>
                 <TouchableOpacity
                   style={styles.titleItem}
                   activeOpacity={0.6}
                   onPress={() => setIsCollapseHistory(!isCollapseHistory)}
                 >
-                  <Text style={styles.title}>LỊCH SỬ GIAO HÀNG</Text>
+                  <Text style={styles.title}>LỊCH SỬ GIAO HÀNG THÀNH CÔNG</Text>
                   <MaterialIcons
                     name={
                       isCollapseHistory
@@ -145,7 +397,7 @@ const DebtScreen = (props) => {
                         : "keyboard-arrow-down"
                     }
                     size={24}
-                    color={COLORS.dark}
+                    color={COLORS.light}
                   />
                 </TouchableOpacity>
                 <Collapsible collapsed={isCollapseHistory}>
@@ -166,23 +418,31 @@ const DebtScreen = (props) => {
                           NHẬN
                         </DataTable.Title>
                       </DataTable.Header>
-                      {/* gen ra danh sách sản phẩm */}
-                      {history.map((item, index) => (
-                        <DataTable.Row key={index}>
-                          <DataTable.Cell style={{ flex: 1 }}>
-                            {+index + 1}
-                          </DataTable.Cell>
-                          <DataTable.Cell style={{ flex: 5 }}>
-                            {item.orderShipCode}
-                          </DataTable.Cell>
-                          <DataTable.Cell style={{ flex: 2 }}>
-                            {item.payment}
-                          </DataTable.Cell>
-                          <DataTable.Cell numeric style={{ flex: 2 }}>
-                            15,000
-                          </DataTable.Cell>
-                        </DataTable.Row>
-                      ))}
+                      {/* gen ra danh sách đơn hàng */}
+                      {historyData ? (
+                        <>
+                          {historyData.map((item, index) => (
+                            <DataTable.Row key={index}>
+                              <DataTable.Cell style={{ flex: 1 }}>
+                                {+index + 1}
+                              </DataTable.Cell>
+                              <DataTable.Cell style={{ flex: 5 }}>
+                                {item.orderShipCode}
+                              </DataTable.Cell>
+                              <DataTable.Cell style={{ flex: 2 }}>
+                                {addDotToNumber(item.payment)}
+                              </DataTable.Cell>
+                              <DataTable.Cell numeric style={{ flex: 2 }}>
+                                {addDotToNumber(item.shippingCost)}
+                              </DataTable.Cell>
+                            </DataTable.Row>
+                          ))}
+                        </>
+                      ) : (
+                        <Text style={{ textAlign: "center" }}>
+                          Không có lịch sử nào trong ngày hôm nay
+                        </Text>
+                      )}
                     </DataTable>
                   </View>
                 </Collapsible>
@@ -205,6 +465,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     height: 60,
+  },
+  containerCenter: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   iconMenu: {
     padding: 10,
@@ -254,7 +519,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: COLORS.grey_3,
+    backgroundColor: COLORS.red_13,
+    paddingHorizontal: 5,
+    borderBottomColor: COLORS.grey_4,
+    borderBottomWidth: 1,
+  },
+  titleItemChild: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.grey_5,
     paddingHorizontal: 5,
     borderBottomColor: COLORS.grey_4,
     borderBottomWidth: 1,
@@ -264,6 +537,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     paddingVertical: 8,
     paddingLeft: 5,
+    color: COLORS.light,
   },
   table: {
     padding: 5,

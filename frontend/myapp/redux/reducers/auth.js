@@ -12,6 +12,7 @@ const initialState = {
     email: "", //địa chỉ email
     password: "", //mật khẩu
     chatId: "", //id chat
+    avatar: ""
   },
   admin: {
     adminId: "",

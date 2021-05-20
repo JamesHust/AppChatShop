@@ -118,18 +118,21 @@ const DetailMonitorScreen = ({ route, navigation }) => {
       try {
         const reason = noteCancelModal;
         const token = await AsyncStorage.getItem("userToken");
-        const response = await fetch(`http://192.168.1.125:3000/api/cancel/orders`, {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "x-access-token": token,
-          },
-          body: JSON.stringify({
-            reason: reason,
-            orderId: orderId,
-          }),
-        });
+        const response = await fetch(
+          `http://192.168.1.125:3000/api/cancel/orders`,
+          {
+            method: "PUT",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "x-access-token": token,
+            },
+            body: JSON.stringify({
+              reason: reason,
+              orderId: orderId,
+            }),
+          }
+        );
         switch (response.status) {
           case 200:
             setCurrentPosition(3);
@@ -143,7 +146,7 @@ const DetailMonitorScreen = ({ route, navigation }) => {
         Alert.alert("goFAST", `Lỗi hủy đơn hàng: ${err}`, [
           {
             text: "Thực hiện lại",
-            onPress: () => handleCancelOrder(),
+            onPress: () => cancelOrder(),
           },
           {
             text: "OK",

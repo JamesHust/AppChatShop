@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import HomeScreen from "../screens/HomeScreen";
 import DetailMissionScreen from "../screens/DetailMissionScreen";
+import SuccessDelive from "../screens/SuccessDelive";
 
 // Tạo đường dẫn cho các screen
 const Stack = createStackNavigator();
@@ -21,6 +22,12 @@ const MissionStack = () => {
       <Stack.Screen
         name="DetailMission"
         component={DetailMissionScreen}
+        options={{ header: () => null }}
+      />
+      {/* Màn hình giao hàng thành công */}
+      <Stack.Screen
+        name="SuccessDelive"
+        component={SuccessDelive}
         options={{ header: () => null }}
       />
     </Stack.Navigator>

@@ -18,6 +18,7 @@ import { MaterialIcons, AntDesign } from "@expo/vector-icons";
 import { addDotToNumber, formatShowDate } from "../utils/Common";
 import { screenWidth } from "../utils/Dimentions";
 import Modal from "react-native-modal";
+import { showToast } from "../utils/Common";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 
 // style cho steps

@@ -1,27 +1,48 @@
 import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import {
   useTheme,
   Avatar,
   Title,
   Caption,
-  Paragraph,
   Drawer,
   Text,
   TouchableRipple,
   Switch,
 } from "react-native-paper";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
+import { useDispatch, useSelector } from "react-redux";
 import {
   MaterialCommunityIcons,
   MaterialIcons,
   AntDesign,
+  Octicons,
 } from "@expo/vector-icons";
 import COLORS from "../constants/color";
+import * as authActions from "../redux/actions/auth";
+import { StackActions } from "@react-navigation/native";
 
 const DrawerContent = (props) => {
   const [activeOn, setActiveOn] = useState(false);
   const paperTheme = useTheme();
+  const dispatch = useDispatch(); //khởi tạo dispatch
+  const shipper = useSelector((state) => state.authReducer.shipper);
+
+  // hàm xử lý sự kiện đăng xuất
+  const logoutHandler = () => {
+    try {
+      dispatch(authActions.logout());
+      props.navigation.dispatch(StackActions.popToTop());
+    } catch (err) {
+      Alert.alert("goFAST", `Có lỗi không mong muốn: ${err}`, [
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
+    }
+  };
+
   return (
     <View style={{ flex: 1 }}>
       {/* Phần nội dung drawer */}
@@ -29,63 +50,57 @@ const DrawerContent = (props) => {
         <View style={styles.drawerContent}>
           {/* Phần thông tin vắn tài khoản */}
           <View style={styles.userInfoSection}>
-            <View style={{ flexDirection: "row", marginTop: 15 }}>
+            <View style={{ flexDirection: "row", marginTop: 15, alignItems: 'center' }}>
               <Avatar.Image
                 source={{
-                  uri: "https://i.pinimg.com/564x/d9/a3/47/d9a3471dd0da18bcd855be72abaf7589.jpg",
+                  uri: shipper.avatar
+                    ? shipper.avatar
+                    : "https://lh4.googleusercontent.com/w6GWZF8osSNKfUK0KSOrIGX_c_E_xJB8cj5ZmJkYnWmqWaeEk1HncCOaUnGAAXXaCPT_YWIyZLRwaURYxS1Vj2AS3BBUe5ohizQHiNbk6wCTq0sYFb8Zj0bEl-H3X04fLKolp--B",
                 }}
-                size={55}
+                size={75}
               />
               <View style={{ marginLeft: 15, flexDirection: "column" }}>
-                <Title style={styles.title}>Thế Hưng</Title>
-                <Caption style={styles.caption}>@shipper</Caption>
+                <Title style={styles.title}>{shipper.shipperName}</Title>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Caption style={styles.caption}>@shipper</Caption>
+                  {/* Đánh giá */}
+                  <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 10 }}>
+                    <AntDesign name="star" size={15} color={COLORS.amber} />
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        color: COLORS.dark,
+                        marginLeft: 5,
+                        fontSize: 13,
+                      }}
+                    >
+                      {shipper.rating}
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginTop: 5
+                  }}
+                >
+                  <Octicons
+                    name="primitive-dot"
+                    size={15}
+                    color={COLORS.green_13}
+                    style={{ marginRight: 5 }}
+                  />
+                  <Text style={{...styles.caption, fontSize: 14}}>Đang hoạt động</Text>
+                </View>
               </View>
             </View>
           </View>
-          {/* Đánh giá , đơn hoàn thành trong ngày */}
-          <Drawer.Section>
-            <View style={styles.row}>
-              {/* Đánh giá */}
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text
-                  style={{
-                    fontWeight: "bold",
-                    color: COLORS.dark,
-                    marginRight: 5,
-                    fontSize: 15,
-                  }}
-                >
-                  4.8
-                </Text>
-                <AntDesign name="star" size={16} color={COLORS.amber} />
-              </View>
-              {/* Số đơn hoàn thành trong ngày */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginLeft: 20,
-                }}
-              >
-                <Text
-                  style={{
-                    fontWeight: "bold",
-                    color: COLORS.dark,
-                    marginRight: 5,
-                    fontSize: 15,
-                  }}
-                >
-                  16
-                </Text>
-                <Text style={styles.caption}>Đơn hàng hoàn thành</Text>
-              </View>
-            </View>
-          </Drawer.Section>
           {/* Các tab */}
           <Drawer.Section style={styles.drawerSection}>
             {/* Trang chủ */}
             <DrawerItem
-              icon={({ color}) => (
+              icon={({ color }) => (
                 <AntDesign name="home" color={color} size={22} />
               )}
               label="Trang chủ"
@@ -95,8 +110,12 @@ const DrawerContent = (props) => {
             />
             {/* Nhận nhiệm vụ */}
             <DrawerItem
-              icon={({ color}) => (
-                <MaterialCommunityIcons name="email-receive-outline" size={22} color={color} />
+              icon={({ color }) => (
+                <MaterialCommunityIcons
+                  name="email-receive-outline"
+                  size={22}
+                  color={color}
+                />
               )}
               label="Nhận nhiệm vụ"
               onPress={() => {
@@ -105,7 +124,7 @@ const DrawerContent = (props) => {
             />
             {/* Công nợ */}
             <DrawerItem
-              icon={({ color}) => (
+              icon={({ color }) => (
                 <MaterialIcons name="payment" size={22} color={color} />
               )}
               label="Công nợ"
@@ -115,7 +134,7 @@ const DrawerContent = (props) => {
             />
             {/* Hồ sơ */}
             <DrawerItem
-              icon={({ color}) => (
+              icon={({ color }) => (
                 <AntDesign name="user" color={color} size={22} />
               )}
               label="Hồ sơ"
@@ -125,7 +144,7 @@ const DrawerContent = (props) => {
             />
             {/* Cài đặt */}
             <DrawerItem
-              icon={({ color}) => (
+              icon={({ color }) => (
                 <AntDesign name="setting" size={22} color={color} />
               )}
               label="Cài đặt"
@@ -135,7 +154,7 @@ const DrawerContent = (props) => {
             />
             {/* Hỗ trợ từ tổng đài */}
             <DrawerItem
-              icon={({ color}) => (
+              icon={({ color }) => (
                 <MaterialIcons name="support-agent" size={22} color={color} />
               )}
               label="Support"
@@ -145,7 +164,7 @@ const DrawerContent = (props) => {
             />
           </Drawer.Section>
           {/* Phần switch trạng thái hoạt động */}
-          <Drawer.Section title="Hoạt động">
+          {/* <Drawer.Section title="Hoạt động">
             <TouchableRipple
               onPress={() => {
                 setActiveOn(!activeOn);
@@ -154,11 +173,11 @@ const DrawerContent = (props) => {
               <View style={styles.preference}>
                 <Text>Trạng thái</Text>
                 <View pointerEvents="none">
-                  <Switch value={activeOn} color={COLORS.red_13}/>
+                  <Switch value={activeOn} color={COLORS.red_13} />
                 </View>
               </View>
             </TouchableRipple>
-          </Drawer.Section>
+          </Drawer.Section> */}
         </View>
       </DrawerContentScrollView>
       {/* Phần footer của drawer - Đăng xuất */}
@@ -172,6 +191,7 @@ const DrawerContent = (props) => {
             />
           )}
           label="Đăng xuất"
+          onPress={logoutHandler}
         />
       </Drawer.Section>
     </View>
@@ -183,7 +203,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userInfoSection: {
-    paddingLeft: 20,
+    paddingLeft: 18,
+    borderBottomColor: COLORS.grey_3,
+    paddingBottom: 20,
+    borderBottomWidth: 1
   },
   title: {
     fontSize: 20,
@@ -210,7 +233,7 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   bottomDrawerSection: {
-    borderTopColor: "#f4f4f4",
+    borderTopColor: COLORS.grey_4,
     borderTopWidth: 1,
   },
   preference: {

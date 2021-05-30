@@ -14,17 +14,6 @@ const initialState = {
     chatId: "", //id chat
     avatar: ""
   },
-  admin: {
-    adminId: "",
-    adminCode: "",
-    adminName: "",
-    phoneNumber: "",
-    email: "", //địa chỉ email
-    address: "", //địa chỉ thường trú
-    password: "", //mật khẩu
-    chatId: "", //id chat
-    shopId: "",
-  },
 };
 
 export default (state = initialState, action) => {

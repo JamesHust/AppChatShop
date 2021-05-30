@@ -17,7 +17,7 @@ import {
 
 const TheHeader = () => {
   const dispatch = useDispatch();
-  const sidebarShow = useSelector((state) => state.sidebarShow);
+  const sidebarShow = useSelector((state) => state.navReducer.sidebarShow);
 
   // Hàm cho phép toggle sidebar web
   const toggleSidebar = () => {

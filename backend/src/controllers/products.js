@@ -1,4 +1,5 @@
 const db = require("../util/database");
+const fs = require("fs");
 const Product = require("../models/product");
 const Response = require("../models/response");
 const { Guid } = require("js-guid");
@@ -8,7 +9,8 @@ const {
   checkExist,
   deleteRecord,
   formatDateTimeInsertDB,
-  convertPathFile
+  convertPathFile,
+  formatTimeToInsertDB,
 } = require("../util/common");
 const Shop = require("../models/shop");
 const Category = require("../models/category");
@@ -146,41 +148,47 @@ const getRandomProducts = (req, res, next) => {
           );
           products.push(product);
         });
-        res.status(200).send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = null),
-            (userMsg = null),
-            (moreInfo = null),
-            (data = products)
-          )
-        );
+        res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = null),
+              (devMsg = null),
+              (userMsg = null),
+              (moreInfo = null),
+              (data = products)
+            )
+          );
       } else {
-        res.status(404).send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = "Data is empty."),
-            (userMsg = null),
-            (moreInfo = null),
-            (data = null)
-          )
-        );
+        res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = null),
+              (devMsg = "Data is empty."),
+              (userMsg = null),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
       }
     })
     .catch((err) => {
       console.log("errorr: " + err);
-      res.status(500).send(
-        new Response(
-          (isSuccess = false),
-          (errorCode = "DB001"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
-          (moreInfo = null),
-          (data = null)
-        )
-      );
+      res
+        .status(500)
+        .send(
+          new Response(
+            (isSuccess = false),
+            (errorCode = "DB001"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
+            (moreInfo = null),
+            (data = null)
+          )
+        );
     });
 };
 
@@ -332,136 +340,60 @@ const searchProduct = async (req, res, next) => {
             );
             products.push(product);
           });
-          res.status(200).send(
-            new Response(
-              (isSuccess = true),
-              (errorCode = null),
-              (devMsg = null),
-              (userMsg = null),
-              (moreInfo = null),
-              (data = products)
-            )
-          );
+          res
+            .status(200)
+            .send(
+              new Response(
+                (isSuccess = true),
+                (errorCode = null),
+                (devMsg = null),
+                (userMsg = null),
+                (moreInfo = null),
+                (data = products)
+              )
+            );
         } else {
-          res.status(404).send(
-            new Response(
-              (isSuccess = true),
-              (errorCode = null),
-              (devMsg = "Data is empty."),
-              (userMsg = `Không tìm thấy kết quả với từ khóa "${searchText}"`),
-              (moreInfo = null),
-              (data = null)
-            )
-          );
+          res
+            .status(404)
+            .send(
+              new Response(
+                (isSuccess = true),
+                (errorCode = null),
+                (devMsg = "Data is empty."),
+                (userMsg = `Không tìm thấy kết quả với từ khóa "${searchText}"`),
+                (moreInfo = null),
+                (data = null)
+              )
+            );
         }
       });
     } catch (err) {
-      res.status(500).send(
-        new Response(
-          (isSuccess = false),
-          (errorCode = "DB001"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
-          (moreInfo = null),
-          (data = null)
-        )
-      );
-    }
-  } else {
-    res.status(400).send(
-      new Response(
-        (isSuccess = true),
-        (errorCode = null),
-        (devMsg = "Params in request is null"),
-        (userMsg = null),
-        (moreInfo = null),
-        (data = null)
-      )
-    );
-  }
-};
-
-/**
- * Thêm sản phẩm mới
- * @param {*} req request
- * @param {*} res response
- * @param {*} next next sang middleware khác
- */
-const addNewProduct = async (req, res, next) => {
-  //lấy các giá trị request
-  const productId = Guid.newGuid().toString();
-  let productCode = null;
-  const productName = req.body.productName;
-  const description =
-    req.body.description === undefined ? "" : req.body.description;
-  const unit = req.body.unit;
-  const imageUrl = req.body.imageUrl;
-  const importPrice = req.body.importPrice;
-  const purchasePrice = req.body.purchasePrice;
-  const amount = req.body.amount;
-  const quantitySold = req.body.quantitySold;
-  const dateOfImport = new Date().toISOString().slice(0, 10);
-  const shopId = req.body.shopId;
-  const categoryId = req.body.categoryId;
-
-  //Lấy mã code lớn nhất và tạo mã code mới khi thêm mới sản phẩm
-  const maxCode = await getMaxCode(objName);
-  productCode = generateNewCode(maxCode);
-
-  //check request có trường rỗng
-  if (
-    productId &&
-    productCode &&
-    productName &&
-    unit &&
-    imageUrl &&
-    importPrice &&
-    purchasePrice &&
-    amount &&
-    quantitySold &&
-    dateOfImport &&
-    shopId &&
-    categoryId
-  ) {
-    //thực hiện insert database
-    db.execute(
-      `insert into ${tableName} (ProductId, ProductCode, ProductName, Description, Unit, ImageUrl, ImportPrice, PurchasePrice, Amount, QuantitySold, DateOfImport, Rating, Sale, ShopId, CategoryId) values ('${productId}', '${productCode}', '${productName}', '${description}', '${unit}', '${imageUrl}', '${importPrice}', '${purchasePrice}', '${amount}', '${quantitySold}', '${dateOfImport}', 0.0, 0, '${shopId}', '${categoryId}')`
-    )
-      .then((result) => {
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = ""),
-            (devMsg = ""),
-            (userMsg = ""),
-            (moreInfo = null),
-            (data = result)
-          )
-        );
-      })
-      .catch((err) => {
-        res.send(
+      res
+        .status(500)
+        .send(
           new Response(
             (isSuccess = false),
-            (errorCode = "DB004"),
+            (errorCode = "DB001"),
             (devMsg = err.toString()),
-            (userMsg = "Lỗi không thêm mới được dữ liệu"),
+            (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
             (moreInfo = null),
             (data = null)
           )
         );
-      });
+    }
   } else {
-    res.send(
-      new Response(
-        (isSuccess = false),
-        (errorCode = ""),
-        (devMsg = "Params in request is null."),
-        (userMsg = "Dữ liệu truyền sang đang để trống."),
-        (moreInfo = null),
-        (data = null)
-      )
-    );
+    res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = true),
+          (errorCode = null),
+          (devMsg = "Params in request is null"),
+          (userMsg = null),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
   }
 };
 
@@ -617,6 +549,313 @@ const deleteProduct = async (req, res, next) => {
 };
 //#endregion
 
+//#region API for Admin
+/**
+ * Cập nhật thông tin sản phẩm cho admin
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+const updateInfoProductAdmin = async (req, res, next) => {
+  //lấy các giá trị request
+  const dataReq = JSON.parse(req.body.product);
+  let productId = dataReq.productId;
+  let productName = dataReq.productName;
+  let description = dataReq.description;
+  let unit = dataReq.unit;
+  let importPrice = dataReq.importPrice;
+  let purchasePrice = dataReq.purchasePrice;
+  let amount = dataReq.amount;
+  let quantitySold = dataReq.quantitySold;
+  let haveImport = dataReq.haveImport;
+  let rating = dataReq.rating;
+  let categoryId = dataReq.categoryId;
+  let sale = dataReq.sale;
+  let dateOfImport = null;
+  let imageUrl = null;
+
+  //check id sản phẩm truyền vào rỗng
+  if (productId) {
+    try {
+      const existProduct = await checkExist(primaryKeyTable, productId);
+      //check tồn tại sản phẩm có id tương ứng
+      if (existProduct) {
+        // Cập nhật lại ngày nhập sản phẩm
+        if (!haveImport) {
+          dateOfImport = formatDateTimeInsertDB(
+            existProduct.DateOfImport.toISOString()
+          );
+        } else {
+          dateOfImport = formatTimeToInsertDB(new Date());
+        }
+
+        // Lấy đường dẫn cho ảnh
+        if (req.file) {
+          imageUrl = `products/${req.nameFileImg}`;
+          // thực hiện xóa file cũ
+          const pathImg = `./public/${existProduct.ImageUrl}`;
+          if (existProduct.ImageUrl) {
+            fs.unlinkSync(pathImg);
+          }
+        } else {
+          imageUrl = existProduct.ImageUrl;
+        }
+
+        productName =
+          !productName || productName === ""
+            ? existProduct.ProductName
+            : productName;
+        description =
+          !description || description === ""
+            ? existProduct.Description
+            : description;
+        unit = !unit || unit === "" ? existProduct.Unit : unit;
+
+        importPrice =
+          !importPrice || importPrice === ""
+            ? existProduct.ImportPrice
+            : importPrice.split(".").join("");
+        purchasePrice =
+          !purchasePrice || purchasePrice === ""
+            ? existProduct.PurchasePrice
+            : purchasePrice.split(".").join("");
+        amount = !amount || amount === "" ? existProduct.Amount : amount;
+        quantitySold =
+          !quantitySold || quantitySold === ""
+            ? existProduct.QuantitySold
+            : quantitySold;
+        rating = !rating || rating === "" ? existProduct.Rating : rating;
+        categoryId =
+          !categoryId || categoryId === ""
+            ? existProduct.CategoryId
+            : categoryId;
+        sale = !sale ? existProduct.Sale : sale;
+
+        //cập nhật database
+        let result = await db.execute(
+          `update ${tableName} set ProductName = "${productName}", Description = "${description}", Unit = "${unit}", ImageUrl = "${imageUrl}", ImportPrice = "${importPrice}", PurchasePrice = "${purchasePrice}", Amount = "${amount}", QuantitySold = '${quantitySold}', DateOfImport = '${dateOfImport}', Rating = ${rating}, CategoryId = "${categoryId}", Sale = ${sale} where ${primaryKeyTable} = "${productId}"`
+        );
+        res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = ""),
+              (devMsg = ""),
+              (userMsg = ""),
+              (moreInfo = null),
+              (data = result)
+            )
+          );
+      } else {
+        res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = ""),
+              (devMsg = `Cannot found product have id='${productId}' in the database.`),
+              (userMsg = `Không tồn tại sản phẩm có id=${productId} cần cập nhật.`),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      }
+    } catch (err) {
+      res
+        .status(500)
+        .send(
+          new Response(
+            (isSuccess = false),
+            (errorCode = "DB002"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi không cập nhật được dữ liệu"),
+            (moreInfo = null),
+            (data = null)
+          )
+        );
+    }
+  } else {
+    res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
+  }
+};
+
+/**
+ * Hàm nhập thêm sản phẩm đã có trong kho của admin
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+const importMoreProductAdmin = async (req, res, next) => {
+  const importAmount = req.body.importAmount;
+  const productId = req.body.productId;
+  const dateOfImport = formatTimeToInsertDB(new Date());
+  if (importAmount && productId && dateOfImport) {
+    const existProduct = await checkExist(primaryKeyTable, productId);
+    if (existProduct) {
+      const amount = +importAmount + +existProduct.Amount;
+      const sql = `update ${tableName} set Amount = ${amount}, DateOfImport ='${dateOfImport}' where ${primaryKeyTable} = "${productId}"`;
+      await db.execute(sql);
+      res
+        .status(200)
+        .send(
+          new Response(
+            (isSuccess = true),
+            (errorCode = ""),
+            (devMsg = ""),
+            (userMsg = ""),
+            (moreInfo = null),
+            (data = "success")
+          )
+        );
+    } else {
+      res
+        .status(404)
+        .send(
+          new Response(
+            (isSuccess = true),
+            (errorCode = ""),
+            (devMsg = `Cannot found product have id='${productId}' in the database.`),
+            (userMsg = `Không tồn tại sản phẩm có id=${productId} cần cập nhật.`),
+            (moreInfo = null),
+            (data = null)
+          )
+        );
+    }
+  } else {
+    res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
+  }
+};
+
+/**
+ * Hàm thêm mới sản phẩm của admin
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+const importNewProductAdmin = async (req, res, next) => {
+  //lấy các giá trị request
+  const dataReq = JSON.parse(req.body.product);
+  const productId = Guid.newGuid().toString();
+  let productCode = null;
+  let productName = dataReq.productName;
+  let description = dataReq.description;
+  let unit = dataReq.unit;
+  let importPrice = dataReq.importPrice;
+  let purchasePrice = dataReq.purchasePrice;
+  let amount = dataReq.amount;
+  let quantitySold = dataReq.quantitySold;
+  let rating = dataReq.rating;
+  let categoryId = dataReq.categoryId;
+  let sale = dataReq.sale;
+  let dateOfImport = formatTimeToInsertDB(new Date());
+  let imageUrl = `products/${req.nameFileImg}`;
+  let shopId = dataReq.shopId;
+
+  //Lấy mã code lớn nhất và tạo mã code mới khi thêm mới sản phẩm
+  const maxCode = await getMaxCode(objName);
+  productCode = generateNewCode(maxCode);
+
+  //check dữ liệu truyền vào rỗng
+  if (productId) {
+    try {
+      if (
+        req.file &&
+        productId &&
+        productCode &&
+        productName &&
+        unit &&
+        importPrice &&
+        purchasePrice &&
+        amount &&
+        categoryId &&
+        shopId &&
+        dateOfImport
+      ) {
+        //cập nhật database
+        await db.execute(
+          `insert into ${tableName} (ProductId, ProductCode, ProductName, Description, Unit, ImageUrl, ImportPrice, PurchasePrice, Amount, QuantitySold, DateOfImport, Rating, Sale, ShopId, CategoryId) values ('${productId}', '${productCode}', '${productName}', '${description}', '${unit}', '${imageUrl}', '${importPrice}', '${purchasePrice}', '${amount}', '${quantitySold}', '${dateOfImport}', 0.0, ${sale}, '${shopId}', '${categoryId}')`
+        );
+        res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = ""),
+              (devMsg = ""),
+              (userMsg = ""),
+              (moreInfo = null),
+              (data = "success")
+            )
+          );
+      } else {
+        res
+          .status(400)
+          .send(
+            new Response(
+              (isSuccess = false),
+              (errorCode = ""),
+              (devMsg = "Params in request is null."),
+              (userMsg = "Dữ liệu truyền sang đang để trống."),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      }
+    } catch (err) {
+      res
+        .status(500)
+        .send(
+          new Response(
+            (isSuccess = false),
+            (errorCode = "DB002"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi không cập nhật được dữ liệu"),
+            (moreInfo = null),
+            (data = null)
+          )
+        );
+    }
+  } else {
+    res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
+  }
+};
+
+//#endregion
+
 //#region Private Function
 /**
  * Hàm tạo câu lệnh sql tương ứng
@@ -684,6 +923,93 @@ const updateAmountProduct = async (productId, quantityExported) => {
   }
   return result;
 };
+
+//#endregion
+
+//#region Test
+// /**
+//  * Thêm sản phẩm mới
+//  * @param {*} req request
+//  * @param {*} res response
+//  * @param {*} next next sang middleware khác
+//  */
+//  const addNewProduct = async (req, res, next) => {
+//   //lấy các giá trị request
+//   const productId = Guid.newGuid().toString();
+//   let productCode = null;
+//   const productName = req.body.productName;
+//   const description =
+//     req.body.description === undefined ? "" : req.body.description;
+//   const unit = req.body.unit;
+//   const imageUrl = req.body.imageUrl;
+//   const importPrice = req.body.importPrice;
+//   const purchasePrice = req.body.purchasePrice;
+//   const amount = req.body.amount;
+//   const quantitySold = req.body.quantitySold;
+//   const dateOfImport = new Date().toISOString().slice(0, 10);
+//   const shopId = req.body.shopId;
+//   const categoryId = req.body.categoryId;
+
+//   //Lấy mã code lớn nhất và tạo mã code mới khi thêm mới sản phẩm
+//   const maxCode = await getMaxCode(objName);
+//   productCode = generateNewCode(maxCode);
+
+//   //check request có trường rỗng
+//   if (
+//     productId &&
+//     productCode &&
+//     productName &&
+//     unit &&
+//     imageUrl &&
+//     importPrice &&
+//     purchasePrice &&
+//     amount &&
+//     quantitySold &&
+//     dateOfImport &&
+//     shopId &&
+//     categoryId
+//   ) {
+//     //thực hiện insert database
+//     db.execute(
+//       `insert into ${tableName} (ProductId, ProductCode, ProductName, Description, Unit, ImageUrl, ImportPrice, PurchasePrice, Amount, QuantitySold, DateOfImport, Rating, Sale, ShopId, CategoryId) values ('${productId}', '${productCode}', '${productName}', '${description}', '${unit}', '${imageUrl}', '${importPrice}', '${purchasePrice}', '${amount}', '${quantitySold}', '${dateOfImport}', 0.0, 0, '${shopId}', '${categoryId}')`
+//     )
+//       .then((result) => {
+//         res.send(
+//           new Response(
+//             (isSuccess = true),
+//             (errorCode = ""),
+//             (devMsg = ""),
+//             (userMsg = ""),
+//             (moreInfo = null),
+//             (data = result)
+//           )
+//         );
+//       })
+//       .catch((err) => {
+//         res.send(
+//           new Response(
+//             (isSuccess = false),
+//             (errorCode = "DB004"),
+//             (devMsg = err.toString()),
+//             (userMsg = "Lỗi không thêm mới được dữ liệu"),
+//             (moreInfo = null),
+//             (data = null)
+//           )
+//         );
+//       });
+//   } else {
+//     res.send(
+//       new Response(
+//         (isSuccess = false),
+//         (errorCode = ""),
+//         (devMsg = "Params in request is null."),
+//         (userMsg = "Dữ liệu truyền sang đang để trống."),
+//         (moreInfo = null),
+//         (data = null)
+//       )
+//     );
+//   }
+// };
 //#endregion
 
 //export controller
@@ -692,8 +1018,11 @@ module.exports = {
   getRandomProducts,
   getProductById,
   searchProduct,
-  addNewProduct,
+  // addNewProduct,
   updateInfoProduct,
   deleteProduct,
   updateAmountProduct,
+  updateInfoProductAdmin,
+  importMoreProductAdmin,
+  importNewProductAdmin,
 };

@@ -19,7 +19,7 @@ import Logo2 from "../assets/logos/logo2.png";
 
 const TheSidebar = () => {
   const dispatch = useDispatch()
-  const show = useSelector(state => state.sidebarShow)
+  const show = useSelector(state => state.navReducer.sidebarShow)
 
   return (
     

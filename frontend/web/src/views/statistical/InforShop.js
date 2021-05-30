@@ -18,32 +18,136 @@ import {
   CLabel,
   CInput,
   CInputFile,
+  CTooltip,
 } from "@coreui/react";
 import CIcon from "@coreui/icons-react";
 import COLORS from "../../constants/colors";
 import { borderCustom } from "../../constants/common";
 
 // Thông tin cửa hàng
-const InforShop = () => {
+const InforShop = ({ data, reload }) => {
   const [showModalUpdateShop, setShowModalUpdateShop] = useState(false);
-  const [fileImage, setFileImage] = useState(
-    "https://i.pinimg.com/564x/a6/93/de/a693deeb3c809a0786e98b7f19421829.jpg"
-  );
-
   // Modal cập nhật thông tin cửa hàng
   const UpdateInfoShopModal = () => {
+    const [infoShop, setInfoShop] = useState({
+      shopId: data.shopId,
+      shopCode: data.shopCode,
+      shopName: "",
+      avatar: data.avatar,
+      phoneNumber: "",
+      otherPhoneNumber: "",
+      address: "",
+      email: "",
+      openTime: "",
+      closeTime: "",
+      rating: 0.0,
+      chatId: "",
+    });
+    const [validText, setValidText] = useState("");
+
+    // hàm check validate cho form cập nhật thông tin cửa hàng
+    const checkValidForm = () => {
+      const file = document.querySelector("input[type=file]").files[0];
+      if (
+        infoShop.shopName ||
+        infoShop.phoneNumber ||
+        infoShop.otherPhoneNumber ||
+        infoShop.address ||
+        infoShop.email ||
+        infoShop.openTime ||
+        infoShop.openTime === "00:00" ||
+        infoShop.closeTime ||
+        infoShop.closeTime === "00:00" ||
+        file
+      ) {
+        const shopName = document.getElementById("nf-name").value;
+        const phoneNumber = document.getElementById("nf-phone").value;
+        const address = document.getElementById("nf-address").value;
+        const email = document.getElementById("nf-email").value;
+        const openTime = document.getElementById("nf-openTime").value;
+        const closeTime = document.getElementById("nf-closeTime").value;
+        if (
+          shopName &&
+          phoneNumber &&
+          address &&
+          email &&
+          openTime &&
+          openTime !== "00:00" &&
+          closeTime &&
+          closeTime !== "00:00"
+        ) {
+          setValidText("");
+          return true;
+        } else {
+          setValidText(
+            "Không được để trống các trường bắt buộc. Vui lòng nhập đầy đủ."
+          );
+          return false;
+        }
+      } else {
+        setValidText("Bạn chưa thực sự thay đổi thông tin cửa hàng.");
+        return false;
+      }
+    };
+
+    // Hàm xử lý cập nhật thông tin shop
+    const handlerUpdateInfoShop = async () => {
+      if (checkValidForm()) {
+        try {
+          const token = localStorage.getItem("token");
+          const formData = new FormData();
+          const productImage = document.querySelector("input[type=file]");
+          formData.append("file", productImage.files[0]);
+          formData.append(
+            "shop",
+            JSON.stringify({
+              shopId: data.shopId,
+              shopName: infoShop.shopName,
+              phoneNumber: infoShop.phoneNumber,
+              otherPhoneNumber: infoShop.otherPhoneNumber,
+              address: infoShop.address,
+              email: infoShop.email,
+              openTime: infoShop.openTime,
+              closeTime: infoShop.closeTime,
+            })
+          );
+          const response = await fetch(`http://192.168.1.125:3000/api/shops`, {
+            method: "PUT",
+            headers: {
+              Accept: "application/json",
+              "x-access-token": token,
+            },
+            body: formData,
+          });
+          switch (response.status) {
+            case 200:
+              await reload();
+              setShowModalUpdateShop(!showModalUpdateShop);
+              return;
+            default:
+              alert("Lỗi không cập nhật được thông tin cửa hàng");
+              return;
+          }
+        } catch (err) {
+          alert(`Lỗi tải dữ liệu: ${err}`);
+        }
+      }
+    };
     // Hàm xử lý hiển thị khi chọn file
     const previewFile = () => {
-      setFileImage("");
+      setInfoShop({ ...infoShop, avatar: "" });
       var file = document.querySelector("input[type=file]").files[0];
       var reader = new FileReader();
       reader.onloadend = function () {
-        setFileImage(reader.result);
+        setInfoShop({ ...infoShop, avatar: reader.result });
       };
       if (file) {
         reader.readAsDataURL(file);
       } else {
-        setFileImage("https://image.flaticon.com/icons/png/512/16/16410.png");
+        setInfoShop({
+          ...infoShop,
+          avatar: "https://image.flaticon.com/icons/png/512/16/16410.png",
+        });
       }
     };
 
@@ -58,17 +162,18 @@ const InforShop = () => {
         show={showModalUpdateShop}
         onClose={() => setShowModalUpdateShop(!showModalUpdateShop)}
         size="lg"
+        color="warning"
       >
         <CModalHeader closeButton>
           <CModalTitle>Cập nhật thông tin cửa hàng</CModalTitle>
         </CModalHeader>
-        <CModalBody>
+        <CModalBody className="pb-5">
           <CForm action="" method="post">
             <CRow>
               <CCol md="3">
                 {/* Ảnh đại diện - thương hiệu cửa hàng */}
                 <CImg
-                  src={fileImage}
+                  src={infoShop.avatar}
                   className="border"
                   style={{ borderRadius: 15, width: "100%" }}
                 />
@@ -76,7 +181,8 @@ const InforShop = () => {
                 <div className="w-100 d-flex justify-content-center mt-2">
                   <CButton
                     className="btn-pill mx-auto"
-                    color="info"
+                    style={{ height: 35 }}
+                    color="warning"
                     onClick={chooseImgHanler}
                     variant="outline"
                   >
@@ -93,25 +199,42 @@ const InforShop = () => {
                 <CRow>
                   {/* Mã CH */}
                   <CCol>
-                    <CFormGroup>
-                      <CLabel htmlFor="nf-code">Mã CH</CLabel>
-                      <CInput
-                        type="text"
-                        id="nf-code"
-                        name="nf-code"
-                        defaultValue="BKSHOP"
-                      />
-                    </CFormGroup>
+                    <CTooltip
+                      content="Trường này không được phép cập nhật"
+                      placement="right-end"
+                    >
+                      <CFormGroup>
+                        <CLabel htmlFor="nf-code">
+                          Mã cửa hàng <span className="text-danger">(*)</span>
+                        </CLabel>
+                        <CInput
+                          disabled
+                          style={{ backgroundColor: COLORS.light }}
+                          type="text"
+                          id="nf-code"
+                          name="nf-code"
+                          defaultValue={data.shopCode}
+                        />
+                      </CFormGroup>
+                    </CTooltip>
                   </CCol>
                   {/* Tên cửa hàng */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-name">Tên cửa hàng</CLabel>
+                      <CLabel htmlFor="nf-name">
+                        Tên cửa hàng <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
                         type="text"
                         id="nf-name"
                         name="nf-name"
-                        defaultValue="BKShop"
+                        defaultValue={data.shopName}
+                        onChange={(event) =>
+                          setInfoShop({
+                            ...infoShop,
+                            shopName: event.target.value,
+                          })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
@@ -120,12 +243,20 @@ const InforShop = () => {
                   {/* Số điện thoại */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-phone">Số điện thoại</CLabel>
+                      <CLabel htmlFor="nf-phone">
+                        Số điện thoại <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        type="text"
+                        type="number"
                         id="nf-phone"
                         name="nf-phone"
-                        defaultValue="0966073028"
+                        defaultValue={data.phoneNumber}
+                        onChange={(event) =>
+                          setInfoShop({
+                            ...infoShop,
+                            phoneNumber: event.target.value,
+                          })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
@@ -136,72 +267,113 @@ const InforShop = () => {
                         Số điện thoại khác
                       </CLabel>
                       <CInput
-                        type="text"
+                        type="number"
                         id="nf-otherPhone"
                         name="nf-otherPhone"
-                        defaultValue="0911264086"
+                        defaultValue={data.otherPhoneNumber}
+                        onChange={(event) =>
+                          setInfoShop({
+                            ...infoShop,
+                            otherPhoneNumber: event.target.value,
+                          })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
                 </CRow>
                 <CFormGroup>
-                  <CLabel htmlFor="nf-address">Địa chỉ</CLabel>
+                  <CLabel htmlFor="nf-address">
+                    Địa chỉ <span className="text-danger">(*)</span>
+                  </CLabel>
                   <CInput
                     type="text"
                     id="nf-address"
                     name="nf-address"
-                    defaultValue="22 ngách 20, Ngõ Trại Cá, Trương Định, Hai Bà Trưng, Hà Nội"
+                    defaultValue={data.address}
+                    onChange={(event) =>
+                      setInfoShop({ ...infoShop, address: event.target.value })
+                    }
                   />
                 </CFormGroup>
                 <CRow>
                   {/* Email */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-email">Email</CLabel>
+                      <CLabel htmlFor="nf-email">
+                        Email <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
                         type="email"
                         id="nf-email"
                         name="nf-email"
-                        defaultValue="hungjame99@gmail.com"
+                        defaultValue={data.email}
+                        onChange={(event) =>
+                          setInfoShop({
+                            ...infoShop,
+                            email: event.target.value,
+                          })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
                   {/* Rating */}
                   <CCol>
-                    <CFormGroup>
-                      <CLabel htmlFor="nf-rating">Đánh giá</CLabel>
-                      <CInput
-                        disabled
-                        type="text"
-                        id="nf-rating"
-                        name="nf-rating"
-                        defaultValue="4.9"
-                      />
-                    </CFormGroup>
+                    <CTooltip
+                      content="Trường này không được phép cập nhật"
+                      placement="right-end"
+                    >
+                      <CFormGroup>
+                        <CLabel htmlFor="nf-rating">Đánh giá</CLabel>
+                        <CInput
+                          disabled
+                          style={{ backgroundColor: COLORS.light }}
+                          type="text"
+                          id="nf-rating"
+                          name="nf-rating"
+                          defaultValue={Math.round(data.rating * 100) / 100}
+                        />
+                      </CFormGroup>
+                    </CTooltip>
                   </CCol>
                 </CRow>
                 <CRow>
                   {/* Thời gian mở cửa */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-opneTime">Mở cửa lúc</CLabel>
+                      <CLabel htmlFor="nf-openTime">
+                        Mở cửa lúc <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        type="text"
-                        id="nf-opneTime"
-                        name="nf-opneTime"
-                        defaultValue="08:00 AM"
+                        type="time"
+                        id="nf-openTime"
+                        name="nf-openTime"
+                        defaultValue={data.openTime}
+                        onChange={(event) =>
+                          setInfoShop({
+                            ...infoShop,
+                            openTime: event.target.value,
+                          })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
                   {/* Thời gian đóng cửa */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-closeTime">Đóng cửa lúc</CLabel>
+                      <CLabel htmlFor="nf-closeTime">
+                        Đóng cửa lúc <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        type="text"
+                        type="time"
                         id="nf-closeTime"
                         name="nf-closeTime"
-                        defaultValue="09:00 PM"
+                        defaultValue={data.closeTime}
+                        onChange={(event) =>
+                          setInfoShop({
+                            ...infoShop,
+                            closeTime: event.target.value,
+                          })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
@@ -209,12 +381,24 @@ const InforShop = () => {
               </CCol>
             </CRow>
           </CForm>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 12,
+              left: 215,
+              color: "red",
+              width: "82%",
+            }}
+          >
+            {validText}
+          </div>
         </CModalBody>
         <CModalFooter>
           <CButton
-            color="primary"
+            color="warning"
+            style={{ color: COLORS.light }}
             shape="pill"
-            onClick={() => setShowModalUpdateShop(!showModalUpdateShop)}
+            onClick={handlerUpdateInfoShop}
           >
             Cập nhật
           </CButton>{" "}
@@ -229,6 +413,7 @@ const InforShop = () => {
       </CModal>
     );
   };
+
   return (
     <>
       <CCard style={{ ...borderCustom }}>
@@ -240,7 +425,7 @@ const InforShop = () => {
             {/* Ảnh đại diện - thương hiệu cửa hàng */}
             <CCol md="5">
               <CImg
-                src="https://i.pinimg.com/564x/a6/93/de/a693deeb3c809a0786e98b7f19421829.jpg"
+                src={data.avatar}
                 width="100%"
                 className="border"
                 style={{ borderRadius: 15 }}
@@ -249,7 +434,7 @@ const InforShop = () => {
             <CCol md="7">
               {/* Tên cửa hàng */}
               <CRow>
-                <h4 style={{ paddingLeft: 10 }}>BKShop</h4>
+                <h4 style={{ paddingLeft: 10 }}>{data.shopName}</h4>
               </CRow>
               {/* Mã cửa hàng */}
               <CRow style={{ marginBottom: 5 }}>
@@ -257,7 +442,7 @@ const InforShop = () => {
                   <CIcon name="cil-barcode" />
                 </CCol>
                 <CCol md="10" style={{ color: COLORS.dark, paddingTop: 2 }}>
-                  BKSHOP
+                  {data.shopCode}
                 </CCol>
               </CRow>
               {/* Số điện thoại */}
@@ -266,7 +451,7 @@ const InforShop = () => {
                   <CIcon name="cil-phone" />
                 </CCol>
                 <CCol md="10" style={{ color: COLORS.dark, paddingTop: 2 }}>
-                  0966073028
+                  {data.phoneNumber}
                 </CCol>
               </CRow>
               {/* Số điện thoại khác */}
@@ -275,7 +460,7 @@ const InforShop = () => {
                   <CIcon name="cil-screen-smartphone" />
                 </CCol>
                 <CCol md="10" style={{ color: COLORS.dark, paddingTop: 2 }}>
-                  0773288995
+                  {data.otherPhoneNumber}
                 </CCol>
               </CRow>
               {/* Địa chỉ */}
@@ -284,7 +469,7 @@ const InforShop = () => {
                   <CIcon name="cil-address-book" />
                 </CCol>
                 <CCol md="10" style={{ color: COLORS.dark, paddingTop: 2 }}>
-                  22 ngách 20 Ngõ Trại Cá, Trương Định, Hai Bà Trưng, Hà Nội
+                  {data.address}
                 </CCol>
               </CRow>
               {/* Email */}
@@ -293,7 +478,7 @@ const InforShop = () => {
                   <CIcon name="cil-envelope-closed" />
                 </CCol>
                 <CCol md="10" style={{ color: COLORS.dark, paddingTop: 2 }}>
-                  hungjame99@gmail.com
+                  {data.email}
                 </CCol>
               </CRow>
               {/* Thời gian mở cửa */}
@@ -302,7 +487,7 @@ const InforShop = () => {
                   <CIcon name="cil-clock" />
                 </CCol>
                 <CCol md="10" style={{ color: COLORS.dark, paddingTop: 2 }}>
-                  08:00 AM
+                  {data.openTime}
                 </CCol>
               </CRow>
               {/* Thời gian đóng cửa */}
@@ -311,7 +496,7 @@ const InforShop = () => {
                   <CIcon name="cil-clock" />
                 </CCol>
                 <CCol md="10" style={{ color: COLORS.dark, paddingTop: 2 }}>
-                  09:00 PM
+                  {data.closeTime}
                 </CCol>
               </CRow>
             </CCol>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   CCard,
   CCardBody,
@@ -21,67 +21,219 @@ import {
 // import COLORS from "../../constants/colors";
 import { title, borderCustom } from "../../constants/common";
 import ListShipper from "./ListShipper";
-import COLORS from "src/constants/colors";
+import { useSelector } from "react-redux";
 
 const Shippers = () => {
   const [showModalAddAccount, setShowModalAddAccount] = useState(false);
-  const [dataNewAccount, setDataNewAccount] = useState({
-    shipperId: "",
-    shipperCode: "",
-    shipperName: "",
-    avatar: "https://image.flaticon.com/icons/png/512/16/16410.png",
-    phoneNumber: "",
-    email: "",
-    address: "",
-    password: "",
-    chatId: "",
-    shopId: "",
-  });
+  const childRef = useRef();
+  const admin = useSelector((state) => state.authReducer.admin);
 
-  // Hàm xử lý hiển thị khi chọn ảnh mới
-  const previewFile = () => {
-    setDataNewAccount({
-      ...dataNewAccount,
-      avatar: "",
-    });
-    var file = document.querySelector("input[type=file]").files[0];
-    var reader = new FileReader();
-    reader.onloadend = function () {
-      setDataNewAccount({
-        ...dataNewAccount,
-        avatar: reader.result,
-      });
-    };
-    if (file) {
-      reader.readAsDataURL(file);
-    } else {
-      setDataNewAccount({
-        ...dataNewAccount,
-        avatar: "https://image.flaticon.com/icons/png/512/16/16410.png",
-      });
-    }
-  };
-
-  // Hàm gọi để xử lý chọn file ảnh
-  const chooseImgHanler = () => {
-    const imageFile = document.getElementById("imgProd");
-    imageFile.click();
+  // hàm xử lý khi chọn thêm shipper
+  const handlerOnClickAdd = () => {
+    setShowModalAddAccount(true);
   };
 
   // Modal thêm mới nhân viên
   const ImportNewShipperModal = () => {
+    const [dataNewAccount, setDataNewAccount] = useState({
+      shipperId: "",
+      shipperCode: "",
+      shipperName: "",
+      avatar: "https://image.flaticon.com/icons/png/512/16/16410.png",
+      phoneNumber: "",
+      email: "",
+      address: "",
+      password: "",
+      basicSalary: "",
+      chatId: "",
+      shopId: admin.shopId,
+    });
+    const [validTextImportNew, setValidTextImportNew] = useState("");
+
+    // reset lại dữ liệu khi đóng form
+    const resetData = () => {
+      document.getElementById("imgShipperNew").value = "";
+      setDataNewAccount({
+        shipperId: "",
+        shipperCode: "",
+        shipperName: "",
+        avatar: "https://image.flaticon.com/icons/png/512/16/16410.png",
+        phoneNumber: "",
+        email: "",
+        address: "",
+        password: "",
+        basicSalary: "",
+        chatId: "",
+        shopId: admin.shopId,
+      });
+    };
+
+    // Hàm check validate form
+    const checkValidImportNew = () => {
+      var file = document.querySelector("input[id='imgShipperNew']").files[0];
+      if (file) {
+        const shipperName = document.getElementById("nf-nameNew").value;
+        const shipperCode = document.getElementById("nf-idCardCodeNew").value;
+        const email = document.getElementById("nf-emailNew").value;
+        const phoneNumber = document.getElementById("nf-phoneNew").value;
+        const password = document.getElementById("nf-passNew").value;
+        const basicSalary = document.getElementById("nf-basicSalaryNew").value;
+        const address = document.getElementById("nf-addressNew").value;
+        if (
+          shipperName &&
+          shipperCode &&
+          basicSalary &&
+          phoneNumber &&
+          password &&
+          email &&
+          address
+        ) {
+          // Validate mật khẩu
+          const regexPass =
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+          if (!regexPass.test(password)) {
+            setValidTextImportNew(
+              "Mật khẩu phải có ít nhất một chữ hoa, một chữ thường, một ký tự và một số."
+            );
+            return false;
+          }
+          // Validate cho email
+          const regexEmail =
+            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+          if (!regexEmail.test(email)) {
+            setValidTextImportNew(
+              "Email không đúng định dạng. Vui lòng nhập lại."
+            );
+            return false;
+          }
+          // Validate cho CMND
+          if (shipperCode.length !== 12) {
+            setValidTextImportNew(
+              "Mã căn cước/chứng minh nhân dân phải gồm 12 số."
+            );
+            return false;
+          }
+          // Validate cho số điện thoại
+          const regexPhone = /^(()?\d{3}())?(-|\s)?\d{3}(-|\s)?\d{4}$/;
+          if (!regexPhone.test(phoneNumber)) {
+            setValidTextImportNew("Số điện thoại không hợp lệ.");
+            return false;
+          }
+          setValidTextImportNew("");
+          return true;
+        } else {
+          setValidTextImportNew(
+            "Các trường bắt buộc không được phép để trống. Vui lòng nhập đầy đủ."
+          );
+          return false;
+        }
+      } else {
+        setValidTextImportNew("Vui lòng chọn ảnh đại diện.");
+        return false;
+      }
+    };
+
+    // hàm xử lý thêm shipper mới
+    const handlerInsertNew = async () => {
+      if (checkValidImportNew()) {
+        try {
+          const token = localStorage.getItem("token");
+          const formData = new FormData();
+          const productImage = document.querySelector(
+            "input[id='imgShipperNew']"
+          );
+          formData.append("file", productImage.files[0]);
+          formData.append(
+            "shipper",
+            JSON.stringify({
+              shipperName: document.getElementById("nf-nameNew").value,
+              shipperCode: document.getElementById("nf-idCardCodeNew").value,
+              email: document.getElementById("nf-emailNew").value,
+              phoneNumber: document.getElementById("nf-phoneNew").value,
+              password: document.getElementById("nf-passNew").value,
+              basicSalary: document.getElementById("nf-basicSalaryNew").value,
+              address: document.getElementById("nf-addressNew").value,
+              roleAction: admin.role,
+              shopId: admin.shopId
+            })
+          );
+          const response = await fetch(`http://192.168.1.125:3000/api/shippers`, {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "x-access-token": token,
+            },
+            body: formData,
+          });
+          switch (response.status) {
+            case 200:
+              childRef.current.reload();
+              setShowModalAddAccount(!showModalAddAccount);
+              return;
+            case 401:
+              alert("Bạn không có quyền thực hiện hành động này.");
+              setShowModalAddAccount(!showModalAddAccount);
+              return;
+            case 403:
+              setValidTextImportNew(
+                "Email hoặc Số điện thoại hoặc Mã CCCD/CMND đã bị trùng."
+              );
+              return;
+            default:
+              alert("Lỗi không cập nhật được thông tin sản phẩm");
+              return;
+          }
+        } catch (err) {
+          alert(`Lỗi tải dữ liệu: ${err}`);
+        }
+      }
+    };
+
+    // Hàm xử lý hiển thị khi chọn ảnh mới
+    const previewFile = () => {
+      setDataNewAccount({
+        ...dataNewAccount,
+        avatar: "",
+      });
+      var file = document.querySelector("input[id='imgShipperNew']").files[0];
+      var reader = new FileReader();
+      reader.onloadend = function () {
+        setDataNewAccount({
+          ...dataNewAccount,
+          avatar: reader.result,
+        });
+      };
+      if (file) {
+        reader.readAsDataURL(file);
+      } else {
+        setDataNewAccount({
+          ...dataNewAccount,
+          avatar: "https://image.flaticon.com/icons/png/512/16/16410.png",
+        });
+      }
+    };
+
+    // Hàm gọi để xử lý chọn file ảnh
+    const chooseImgHanler = () => {
+      const imageFile = document.getElementById("imgShipperNew");
+      imageFile.click();
+    };
+
     return (
       <CModal
         style={{ ...borderCustom }}
         show={showModalAddAccount}
-        onClose={() => setShowModalAddAccount(!showModalAddAccount)}
+        onClose={() => {
+          setShowModalAddAccount(!showModalAddAccount);
+          resetData();
+        }}
         size="lg"
         color="success"
       >
         <CModalHeader closeButton>
           <CModalTitle>Thêm shipper mới</CModalTitle>
         </CModalHeader>
-        <CModalBody>
+        <CModalBody className="pb-5">
           <CForm action="" method="post">
             <CRow>
               <CCol md="3">
@@ -105,7 +257,7 @@ const Shippers = () => {
                 <CInputFile
                   onChange={previewFile}
                   style={{ display: "none" }}
-                  id="imgProd"
+                  id="imgShipperNew"
                 />
               </CCol>
               <CCol md="9">
@@ -113,12 +265,14 @@ const Shippers = () => {
                   <CCol>
                     {/* Tên shipper */}
                     <CFormGroup>
-                      <CLabel htmlFor="nf-name">Tên shipper</CLabel>
+                      <CLabel htmlFor="nf-nameNew">
+                        Tên shipper <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
                         type="text"
-                        id="nf-name"
-                        name="nf-name"
-                        placeholder="Nhập tên nhân viên"
+                        id="nf-nameNew"
+                        name="nf-nameNew"
+                        placeholder="Nhập tên shipper"
                         defaultValue={dataNewAccount.shipperName}
                       />
                     </CFormGroup>
@@ -126,14 +280,15 @@ const Shippers = () => {
                   <CCol>
                     {/* Mã shipper */}
                     <CFormGroup>
-                      <CLabel htmlFor="nf-code">Mã shipper/CMND</CLabel>
+                      <CLabel htmlFor="nf-idCardCodeNew">
+                        Mã shipper/CMND <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        disabled
-                        style={{ backgroundColor: COLORS.light }}
-                        type="text"
-                        id="nf-code"
-                        name="nf-code"
-                        placeholder="Nhập mã sản phẩm"
+                        type="number"
+                        min={0}
+                        id="nf-idCardCodeNew"
+                        name="nf-idCardCodeNew"
+                        placeholder="Nhập mã shipper/CMND"
                         defaultValue={dataNewAccount.shipperCode}
                       />
                     </CFormGroup>
@@ -141,77 +296,115 @@ const Shippers = () => {
                 </CRow>
                 <CRow>
                   <CCol>
-                    {/* Địa chỉ */}
-                    <CFormGroup>
-                      <CLabel htmlFor="nf-address">Địa chỉ</CLabel>
-                      <CInput
-                        type="text"
-                        id="nf-address"
-                        name="nf-address"
-                        placeholder="Nhập địa chỉ"
-                        defaultValue={dataNewAccount.address}
-                      />
-                    </CFormGroup>
-                  </CCol>
-                  <CCol>
                     {/* Email */}
                     <CFormGroup>
-                      <CLabel htmlFor="nf-email">Email</CLabel>
+                      <CLabel htmlFor="nf-emailNew">
+                        Email <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
                         type="email"
-                        id="nf-email"
-                        name="nf-email"
+                        id="nf-emailNew"
+                        name="nf-emailNew"
                         placeholder="Nhập email"
                         defaultValue={dataNewAccount.email}
                       />
                     </CFormGroup>
                   </CCol>
-                </CRow>
-                <CRow>
                   {/* Số điện thoại */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-phone">Số điện thoại</CLabel>
+                      <CLabel htmlFor="nf-phoneNew">
+                        Số điện thoại <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        type="text"
-                        id="nf-phone"
-                        name="nf-phone"
+                        type="number"
+                        min={0}
+                        id="nf-phoneNew"
+                        name="nf-phoneNew"
                         placeholder="Nhập số điện thoại"
                         defaultValue={dataNewAccount.phoneNumber}
                       />
                     </CFormGroup>
                   </CCol>
+                </CRow>
+                <CRow>
                   {/* Mật khẩu */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-pass">Mật khẩu</CLabel>
+                      <CLabel htmlFor="nf-passNew">
+                        Mật khẩu <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        type="text"
-                        id="nf-pass"
-                        name="nf-pass"
+                        type="password"
+                        id="nf-passNew"
+                        name="nf-passNew"
                         placeholder="Nhập mật khẩu"
                         defaultValue={dataNewAccount.password}
                       />
                     </CFormGroup>
                   </CCol>
+                  {/* Số điện thoại */}
+                  <CCol>
+                    <CFormGroup>
+                      <CLabel htmlFor="nf-basicSalaryNew">
+                        Lương cơ bản <span className="text-danger">(*)</span>
+                      </CLabel>
+                      <CInput
+                        type="number"
+                        min={0}
+                        step={1000}
+                        id="nf-basicSalaryNew"
+                        name="nf-basicSalaryNew"
+                        placeholder="Nhập lương cơ bản"
+                        defaultValue={dataNewAccount.basicSalary}
+                      />
+                    </CFormGroup>
+                  </CCol>
                 </CRow>
+                {/* Địa chỉ */}
+                <CFormGroup>
+                  <CLabel htmlFor="nf-addressNew">
+                    Địa chỉ <span className="text-danger">(*)</span>
+                  </CLabel>
+                  <CInput
+                    type="text"
+                    id="nf-addressNew"
+                    name="nf-addressNew"
+                    placeholder="Nhập địa chỉ"
+                    defaultValue={dataNewAccount.address}
+                  />
+                </CFormGroup>
               </CCol>
             </CRow>
           </CForm>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 12,
+              left: 215,
+              color: "red",
+              width: "82%",
+            }}
+          >
+            {validTextImportNew}
+          </div>
         </CModalBody>
         <CModalFooter>
           <CButton
             color="success"
             className="mr-2"
             shape="pill"
-            onClick={() => setShowModalAddAccount(!showModalAddAccount)}
+            onClick={handlerInsertNew}
           >
             Thêm mới
           </CButton>
           <CButton
             color="secondary"
             shape="pill"
-            onClick={() => setShowModalAddAccount(!showModalAddAccount)}
+            onClick={() => {
+              setShowModalAddAccount(!showModalAddAccount);
+              resetData();
+            }}
           >
             Hủy
           </CButton>
@@ -225,16 +418,12 @@ const Shippers = () => {
       <ImportNewShipperModal />
       <CCardHeader className="d-flex align-items-center justify-content-between">
         <div style={{ ...title }}>Danh sách nhân viên giao hàng</div>
-        <CButton
-          color="success"
-          shape="pill"
-          onClick={() => setShowModalAddAccount(true)}
-        >
+        <CButton color="success" shape="pill" onClick={handlerOnClickAdd}>
           Thêm shipper mới
         </CButton>
       </CCardHeader>
       <CCardBody>
-        <ListShipper />
+        <ListShipper ref={childRef} />
       </CCardBody>
     </CCard>
   );

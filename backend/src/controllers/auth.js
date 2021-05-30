@@ -139,7 +139,7 @@ const loginAuth = async (req, res, next) => {
                   (userMsg = "Đăng nhập thành công"),
                   (moreInfo = null),
                   (data = {
-                    customer: customer,
+                    admin: admin,
                     accessToken: accessToken,
                   })
                 )

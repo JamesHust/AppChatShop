@@ -57,7 +57,7 @@ const checkExist = async (primaryKeyName, valueKey) => {
   const response = await db.execute(
     `select * from \`${tableName}\` where ${primaryKeyName} = "${valueKey}"`
   );
-  if(response[0][0]){
+  if (response[0][0]) {
     result = response[0][0];
   }
   return result;
@@ -83,30 +83,42 @@ const deleteRecord = async (primaryKeyName, valueKey) => {
  * @param {*} dateTime Dữ liệu ngày tháng truy xuất từ database. VD: 2021-03-28T17:00:00.000Z => 2021-03-28 00:00:00
  */
 const formatDateTimeInsertDB = (dateTime) => {
-  const date = dateTime.split("T")[0];
-  const time = dateTime.split("T")[1].split(".")[0];
-  return `${date} ${time}`;
+  if (dateTime) {
+    const date = dateTime.split("T")[0];
+    const time = dateTime.split("T")[1].split(".")[0];
+    return `${date} ${time}`;
+  } else return null;
 };
 
 /**
  * Chuyển format datetime thành kiểu có thể insert được database
  * chuyển từ dạng Date()
- * @param {*} dateTime 
- * @returns 
+ * @param {*} dateTime
+ * @returns
  */
 const formatTimeToInsertDB = (dateTime) => {
-  var dateString = dateTime.getFullYear() + "-" + ("0" + (dateTime.getMonth()+1)).slice(-2) + "-" + ("0" + dateTime.getDate()).slice(-2) + " " + ("0" + dateTime.getHours()).slice(-2) + ":" + ("0" + dateTime.getMinutes()).slice(-2) + ":" + ("0" + dateTime.getSeconds()).slice(-2);
+  var dateString =
+    dateTime.getFullYear() +
+    "-" +
+    ("0" + (dateTime.getMonth() + 1)).slice(-2) +
+    "-" +
+    ("0" + dateTime.getDate()).slice(-2) +
+    " " +
+    ("0" + dateTime.getHours()).slice(-2) +
+    ":" +
+    ("0" + dateTime.getMinutes()).slice(-2) +
+    ":" +
+    ("0" + dateTime.getSeconds()).slice(-2);
   return dateString;
-}
+};
 
 /**
  * Hàm chuyển sang http tương ứng truy xuất tới file ở mục public
- * @param {*} path 
+ * @param {*} path
  */
 const convertPathFile = (path) => {
   return `http://${config.node_ip}:${config.node_port}/public/${path}`;
-}
-
+};
 
 module.exports = {
   generateNewCode,
@@ -115,5 +127,5 @@ module.exports = {
   deleteRecord,
   formatDateTimeInsertDB,
   formatTimeToInsertDB,
-  convertPathFile
+  convertPathFile,
 };

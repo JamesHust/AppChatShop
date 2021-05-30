@@ -4,11 +4,15 @@ const {
   getProductById,
   getRandomProducts,
   searchProduct,
-  addNewProduct,
+  // addNewProduct,
   updateInfoProduct,
   deleteProduct,
+  updateInfoProductAdmin,
+  importMoreProductAdmin,
+  importNewProductAdmin,
 } = require("../controllers/products");
 const { isAuth } = require("../middlewares/auth");
+const { uploadImageProduct } = require("../uploads/multer");
 
 //create router for object: product
 const router = express.Router();
@@ -21,10 +25,25 @@ router.get("/products/random/:numProducts", getRandomProducts);
 router.get("/products/:productId", getProductById);
 //Tìm kiếm sản phẩm theo tên hoặc theo mã sản phẩm
 router.get("/search/products", searchProduct);
-//Thêm sản phẩm mới
-router.post("/products", isAuth, addNewProduct);
+// //Thêm sản phẩm mới
+// router.post("/products", isAuth, addNewProduct);
 //Cập nhật thông tin sản phẩm
 router.put("/products/:productId", isAuth, updateInfoProduct);
+
+/**
+ * Route cho admin
+ */
+//Cập nhật thông tin sản phẩm
+router.put(
+  "/admin/products",
+  isAuth,
+  uploadImageProduct.single("file"),
+  updateInfoProductAdmin
+);
+// Nhập thêm sản phẩm đã có trong kho
+router.put("/admin/import", isAuth, importMoreProductAdmin);
+// Thêm sản phẩm mới
+router.post("/products", isAuth, uploadImageProduct.single("file"), importNewProductAdmin);
 //Xóa sản phẩm
 router.delete("/products/:productId", isAuth, deleteProduct);
 

@@ -7,6 +7,7 @@ const {
     updateInfoShop,
     deleteShop,
 } = require("../controllers/shops");
+const { uploadImageShop } = require("../uploads/multer");
 
 //create router for object: admin
 const router = express.Router();
@@ -20,7 +21,7 @@ router.get("/search/shops", searchShop);
 //Thêm shop mới
 router.post("/shops", addNewShop);
 //Cập nhật thông tin cửa hàng
-router.put("/shops/:shopId", updateInfoShop);
+router.put("/shops", uploadImageShop.single("file"), updateInfoShop);
 //Xóa dữ liệu cửa hàng
 router.delete("/shops/:shopId", deleteShop);
 

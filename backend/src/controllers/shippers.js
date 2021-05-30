@@ -2,6 +2,8 @@ const db = require("../util/database");
 const Shipper = require("../models/shipper");
 const Response = require("../models/response");
 const { Guid } = require("js-guid");
+const fs = require("fs");
+const bcrypt = require("bcrypt");
 const {
   generateNewCode,
   getMaxCode,
@@ -31,7 +33,7 @@ const getShippers = (req, res, next) => {
   let sql = `select * from ${tableName} `;
   //xét trường hợp có thêm tham số lấy theo Id cửa hàng
   if (shopId) {
-    sql += `where ${primaryKeyTable} = '${shopId}';`;
+    sql += `where ShopId = '${shopId}';`;
   }
 
   //thực hiện lấy danh sách shipper
@@ -44,50 +46,58 @@ const getShippers = (req, res, next) => {
             item.ShipperId,
             item.ShipperCode,
             item.ShipperName,
+            convertPathFile(item.Avatar),
             item.PhoneNumber,
             item.Address,
             item.Email,
             item.Password,
+            item.BasicSalary,
             item.Rating,
             item.ChatId,
             item.ShopId
           );
           shippers.push(shipper);
         });
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = null),
-            (userMsg = null),
-            (moreInfo = null),
-            (data = shippers)
-          )
-        );
+        res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = null),
+              (devMsg = null),
+              (userMsg = null),
+              (moreInfo = null),
+              (data = shippers)
+            )
+          );
       } else {
-        res.send(
+        res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = null),
+              (devMsg = "Data is empty."),
+              (userMsg = "Không tồn tại dữ liệu trong cơ sở dữ liệu."),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      }
+    })
+    .catch((err) => {
+      res
+        .status(500)
+        .send(
           new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = "Data is empty."),
-            (userMsg = "Không tồn tại dữ liệu trong cơ sở dữ liệu."),
+            (isSuccess = false),
+            (errorCode = "DB001"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
             (moreInfo = null),
             (data = null)
           )
         );
-      }
-    })
-    .catch((err) => {
-      res.send(
-        new Response(
-          (isSuccess = false),
-          (errorCode = "DB001"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
-          (moreInfo = null),
-          (data = null)
-        )
-      );
     });
 };
 
@@ -254,21 +264,55 @@ const searchAccountShipper = async (req, res, next) => {
  * @param {*} next next sang middleware khác
  */
 const addNewAccountShipper = async (req, res, next) => {
+  const dataReq = JSON.parse(req.body.shipper);
   //lấy các giá trị request
   const shipperId = Guid.newGuid().toString();
-  let shipperCode = null;
-  const shipperName = req.body.shipperName;
-  const phoneNumber = req.body.phoneNumber;
-  const address = req.body.address;
-  const email = req.body.email;
-  const password = req.body.password;
-  const rating = req.body.rating === undefined ? 0 : req.body.rating;
+  const shipperCode = dataReq.shipperCode;
+  const shipperName = dataReq.shipperName;
+  const phoneNumber = dataReq.phoneNumber;
+  const address = dataReq.address;
+  const email = dataReq.email;
+  const password = dataReq.password;
+  const basicSalary = dataReq.basicSalary;
+  const rating = dataReq.rating === undefined ? 0 : dataReq.rating;
   const chatId = Guid.newGuid().toString();
-  const shopId = req.body.shopId;
+  const shopId = dataReq.shopId;
+  const roleAction = dataReq.roleAction;
 
-  //Lấy mã code lớn nhất và tạo mã code mới khi thêm mới tài khoản shipper
-  const maxCode = await getMaxCode(objName);
-  shipperCode = generateNewCode(maxCode);
+  // Check quyền
+  if (roleAction != 1) {
+    return res
+      .status(401)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "You are not authorized to perform this action."),
+          (userMsg = "Bạn không có quyền thực hiện hành động này."),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
+  }
+
+  //check tồn tại tài khoản
+  const result = await db.execute(
+    `select * from shipper where shipperCode = '${shipperCode}' or Email = '${email}' or PhoneNumber = '${phoneNumber}'`
+  );
+  if (result[0].length > 0) {
+    return res
+      .status(403)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "You are not authorized to perform this action."),
+          (userMsg = "Email hoặc Số điện thoại hoặc Mã CCCD/CMND đã bị trùng."),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
+  }
 
   //check request có trường rỗng
   if (
@@ -279,48 +323,60 @@ const addNewAccountShipper = async (req, res, next) => {
     address &&
     email &&
     password &&
+    basicSalary &&
     chatId &&
-    shopId
+    shopId &&
+    req.file
   ) {
+    //Mã hóa mật khẩu
+    var passEncryption = bcrypt.hashSync(password, 8);
+    const avatar = `shippers/${req.nameFileImg}`;
+
     //thực hiện insert database
     db.execute(
-      `insert into ${tableName} (ShipperId, ShipperCode, ShipperName, PhoneNumber, Address, Email, Password, Rating, ChatId, ShopId) values ('${shipperId}', '${shipperCode}', '${shipperName}', '${phoneNumber}', '${address}', '${email}', '${password}', ${rating}, '${chatId}', '${shopId}')`
+      `insert into ${tableName} (ShipperId, ShipperCode, ShipperName, Avatar, PhoneNumber, Address, Email, Password, BasicSalary, Rating, ChatId, ShopId) values ('${shipperId}', '${shipperCode}', '${shipperName}', '${avatar}', '${phoneNumber}', '${address}', '${email}', '${passEncryption}', '${basicSalary}', ${rating}, '${chatId}', '${shopId}')`
     )
       .then((result) => {
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = ""),
-            (devMsg = ""),
-            (userMsg = ""),
-            (moreInfo = null),
-            (data = result)
-          )
-        );
+        return res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = ""),
+              (devMsg = ""),
+              (userMsg = ""),
+              (moreInfo = null),
+              (data = result)
+            )
+          );
       })
       .catch((err) => {
-        res.send(
-          new Response(
-            (isSuccess = false),
-            (errorCode = "DB004"),
-            (devMsg = err.toString()),
-            (userMsg = "Lỗi không thêm mới được dữ liệu"),
-            (moreInfo = null),
-            (data = null)
-          )
-        );
+        res
+          .status(500)
+          .send(
+            new Response(
+              (isSuccess = false),
+              (errorCode = "DB004"),
+              (devMsg = err.toString()),
+              (userMsg = "Lỗi không thêm mới được dữ liệu"),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
       });
   } else {
-    res.send(
-      new Response(
-        (isSuccess = false),
-        (errorCode = ""),
-        (devMsg = "Params in request is null."),
-        (userMsg = "Dữ liệu truyền sang đang để trống."),
-        (moreInfo = null),
-        (data = null)
-      )
-    );
+    res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
   }
 };
 
@@ -331,83 +387,98 @@ const addNewAccountShipper = async (req, res, next) => {
  * @param {*} next next sang middleware khác
  */
 const updateInfoAccountShipper = async (req, res, next) => {
+  const dataReq = JSON.parse(req.body.shipper);
   //lấy các giá trị request
-  let shipperId = req.params.shipperId;
-  let shipperName = req.body.shipperName;
-  let phoneNumber = req.body.phoneNumber;
-  let email = req.body.email;
-  let address = req.body.address;
-  let password = req.body.password;
-  let rating = req.body.rating;
+  let shipperId = dataReq.shipperId;
+  let shipperName = dataReq.shipperName;
+  let address = dataReq.address;
+  let basicSalary = dataReq.basicSalary;
+  let rating = dataReq.rating;
 
   //check id shipper truyền vào rỗng
   if (shipperId) {
     try {
       const existAccountShipper = await checkExist(primaryKeyTable, shipperId);
+
       //check tồn tại account admin có id tương ứng
       if (existAccountShipper) {
-        shipperName =
-          shipperName === undefined
-            ? existAccountShipper.ShipperName
-            : shipperName;
-        phoneNumber =
-          phoneNumber === undefined
-            ? existAccountShipper.PhoneNumber
-            : phoneNumber;
-        email = email === undefined ? existAccountShipper.Email : email;
-        address = address === undefined ? existAccountShipper.Address : address;
-        password =
-          password === undefined ? existAccountShipper.Password : password;
-        rating = rating === undefined ? existAccountShipper.Rating : rating;
+        // Lấy đường dẫn cho ảnh
+        if (req.file) {
+          avatar = `shippers/${req.nameFileImg}`;
+          // thực hiện xóa file cũ
+          const pathImg = `./public/${existAccountShipper.Avatar}`;
+          if (existAccountShipper.Avatar) {
+            fs.unlinkSync(pathImg);
+          }
+        } else {
+          avatar = existAccountShipper.Avatar;
+        }
+
+        shipperName = shipperName
+          ? shipperName
+          : existAccountShipper.ShipperName;
+        address = address ? address : existAccountShipper.Address;
+        basicSalary = basicSalary
+          ? basicSalary
+          : existAccountShipper.BasicSalary;
+        rating = rating ? rating : existAccountShipper.Rating;
         //cập nhật database
         const result = await db.execute(
-          `update ${tableName} set ShipperName = "${shipperName}", PhoneNumber = "${phoneNumber}", Address = "${address}", Email = "${email}", Password = "${password}", Rating = ${rating} where ${primaryKeyTable} = "${shipperId}"`
+          `update ${tableName} set ShipperName = "${shipperName}", Address = "${address}", BasicSalary = "${basicSalary}", Rating = ${rating}, Avatar = '${avatar}' where ${primaryKeyTable} = "${shipperId}"`
         );
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = ""),
-            (devMsg = ""),
-            (userMsg = ""),
-            (moreInfo = null),
-            (data = result)
-          )
-        );
+        res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = ""),
+              (devMsg = ""),
+              (userMsg = ""),
+              (moreInfo = null),
+              (data = result)
+            )
+          );
       } else {
-        res.send(
+        res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = false),
+              (errorCode = ""),
+              (devMsg = `Cannot found account of shipper have id='${shipperId}' in the database.`),
+              (userMsg = `Không tồn tại tài khoản shipper có id=${shipperId} cần cập nhật.`),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      }
+    } catch (err) {
+      res
+        .status(500)
+        .send(
           new Response(
             (isSuccess = false),
-            (errorCode = ""),
-            (devMsg = `Cannot found account of shipper have id='${shipperId}' in the database.`),
-            (userMsg = `Không tồn tại tài khoản shipper có id=${shipperId} cần cập nhật.`),
+            (errorCode = "DB002"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi không cập nhật được dữ liệu"),
             (moreInfo = null),
             (data = null)
           )
         );
-      }
-    } catch (err) {
-      res.send(
+    }
+  } else {
+    res
+      .status(400)
+      .send(
         new Response(
           (isSuccess = false),
-          (errorCode = "DB002"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi không cập nhật được dữ liệu"),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
           (moreInfo = null),
           (data = null)
         )
       );
-    }
-  } else {
-    res.send(
-      new Response(
-        (isSuccess = false),
-        (errorCode = ""),
-        (devMsg = "Params in request is null."),
-        (userMsg = "Dữ liệu truyền sang đang để trống."),
-        (moreInfo = null),
-        (data = null)
-      )
-    );
   }
 };
 
@@ -419,44 +490,89 @@ const updateInfoAccountShipper = async (req, res, next) => {
  */
 const deleteAccountShipper = async (req, res, next) => {
   //lấy các giá trị request
-  let shipperId = req.params.shipperId;
+  const shipperId = req.body.shipperId;
+  const roleAction = req.body.roleAction;
 
-  if (shipperId) {
-    try {
-      const result = await deleteRecord(primaryKeyTable, shipperId);
-      res.send(
-        new Response(
-          (isSuccess = true),
-          (errorCode = ""),
-          (devMsg = ""),
-          (userMsg = ""),
-          (moreInfo = null),
-          (data = result)
-        )
-      );
-    } catch (err) {
-      res.send(
+  // Check quyền
+  if (roleAction != 1) {
+    return res
+      .status(401)
+      .send(
         new Response(
           (isSuccess = false),
-          (errorCode = "DB003"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi không xóa được dữ liệu"),
+          (errorCode = ""),
+          (devMsg = "You are not authorized to perform this action."),
+          (userMsg = "Bạn không có quyền thực hiện hành động này."),
           (moreInfo = null),
           (data = null)
         )
       );
+  }
+
+  if (shipperId) {
+    try {
+      const existAccountShipper = await checkExist(primaryKeyTable, shipperId);
+      if (existAccountShipper) {
+        // thực hiện xóa file ảnh cũ
+        const pathImg = `./public/${existAccountShipper.Avatar}`;
+        if (existAccountShipper.Avatar) {
+          fs.unlinkSync(pathImg);
+        }
+        // Xóa trong CSDL
+        const result = await deleteRecord(primaryKeyTable, shipperId);
+        return res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = ""),
+              (devMsg = ""),
+              (userMsg = ""),
+              (moreInfo = null),
+              (data = result)
+            )
+          );
+      } else {
+        res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = false),
+              (errorCode = ""),
+              (devMsg = `Cannot found account of shipper have id='${shipperId}' in the database.`),
+              (userMsg = `Không tồn tại tài khoản shipper có id=${shipperId} cần cập nhật.`),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      }
+    } catch (err) {
+      return res
+        .status(500)
+        .send(
+          new Response(
+            (isSuccess = false),
+            (errorCode = "DB003"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi không xóa được dữ liệu"),
+            (moreInfo = null),
+            (data = null)
+          )
+        );
     }
   } else {
-    res.send(
-      new Response(
-        (isSuccess = false),
-        (errorCode = ""),
-        (devMsg = "Params in request is null."),
-        (userMsg = "Dữ liệu truyền sang đang để trống."),
-        (moreInfo = null),
-        (data = null)
-      )
-    );
+    res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
   }
 };
 //#endregion
@@ -466,7 +582,7 @@ const deleteAccountShipper = async (req, res, next) => {
  * Lấy thông tin shipper theo email hoặc số điện thoại
  * @param {*} userName tên đăng nhập
  */
- const getShipperByEmailOrPhone = async (userName) => {
+const getShipperByEmailOrPhone = async (userName) => {
   let result = null;
   const sql = `select * from ${tableName} where PhoneNumber = "${userName}" OR Email = "${userName}";`;
   const shipper = await db.execute(sql);
@@ -498,5 +614,5 @@ module.exports = {
   addNewAccountShipper,
   updateInfoAccountShipper,
   deleteAccountShipper,
-  getShipperByEmailOrPhone
+  getShipperByEmailOrPhone,
 };

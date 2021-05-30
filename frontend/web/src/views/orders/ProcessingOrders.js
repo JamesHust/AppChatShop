@@ -14,6 +14,8 @@ import { title, borderCustom } from "../../constants/common";
 import ProcessOrders from "./ProcessOrders";
 import WaitingOrders from "./WaitingOrders";
 import ShippingOrders from "./ShippingOrders";
+import CancelOrders from "./CancelOrders";
+import DeliveredOrders from "./DeliveredOrders";
 
 const ProcessingOrders = () => {
   return (
@@ -31,6 +33,12 @@ const ProcessingOrders = () => {
             <CNavItem>
               <CNavLink data-tab="ship">Đang giao hàng</CNavLink>
             </CNavItem>
+            <CNavItem>
+              <CNavLink data-tab="delivered">Đã giao hàng</CNavLink>
+            </CNavItem>
+            <CNavItem>
+              <CNavLink data-tab="cancel">Bị hủy</CNavLink>
+            </CNavItem>
           </CNav>
           <CTabContent>
             <CTabPane data-tab="wait">
@@ -41,6 +49,12 @@ const ProcessingOrders = () => {
             </CTabPane>
             <CTabPane data-tab="ship">
               <ShippingOrders />
+            </CTabPane>
+            <CTabPane data-tab="delivered">
+              <DeliveredOrders />
+            </CTabPane>
+            <CTabPane data-tab="cancel">
+              <CancelOrders />
             </CTabPane>
           </CTabContent>
         </CTabs>

@@ -1,4 +1,10 @@
-import React, { useState } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import {
   CButton,
   CDataTable,
@@ -16,67 +22,25 @@ import {
   CInput,
   CModalFooter,
   CSelect,
+  CSpinner,
+  CTooltip,
 } from "@coreui/react";
 import { borderCustom } from "../../constants/common";
+import { addDotToNumber, formatDateInput } from "../../utils/Common";
 import COLORS from "src/constants/colors";
+import { useSelector } from "react-redux";
 
-const Employees = () => {
-  const usersData = [
-    {
-      adminId: "b7215975-0efb-4bf3-be8d-a710ca3e42b2",
-      adminCode: "038099002000",
-      adminName: "ThaoVan",
-      phoneNumber: "0911088111",
-      email: "tvan@gmail.com",
-      address: "Cầu Giấy, Hà Nội",
-      password: "1234567",
-      birthday: "1999-11-23",
-      gender: 2,
-      homeTown: "Thị trấn Bến Sung, Như Thanh, Thanh Hóa",
-      avatar:
-        "https://i.pinimg.com/564x/97/03/53/970353e234af430a7cd7f3ebacdb7b96.jpg",
-      chatId: "ccc8108b-5752-4ebc-a4d9-0b17181401f1",
-      shopId: "b6d85673-f0bb-4fd0-aa8c-e8a8c99b880c",
-    },
-    {
-      adminId: "d49d19bb-515a-4037-b3d6-8734bc24a99a",
-      adminCode: "038099112200",
-      adminName: "THưng",
-      phoneNumber: "0977028052",
-      email: "thung@gmail.com",
-      address: "Hai Bà Trưng, Hà Nội",
-      password: "123456",
-      birthday: "1999-12-8",
-      gender: 1,
-      homeTown: "Thị trấn Bến Sung, Như Thanh, Thanh Hóa",
-      avatar:
-        "https://i.pinimg.com/564x/97/03/53/970353e234af430a7cd7f3ebacdb7b96.jpg",
-      chatId: "5b6df969-94af-4b0f-9494-fe3441e4b978",
-      shopId: "b6d85673-f0bb-4fd0-aa8c-e8a8c99b880c",
-    },
-    {
-      adminId: "e9441fbe-4138-47ba-bf04-477c01b0f3e7",
-      adminCode: "038099002001",
-      adminName: "BIGBOSS",
-      phoneNumber: "0978785786",
-      email: "bigboss@gmail.com",
-      address: "Ba Đình, Hà Nội",
-      password: "123456",
-      birthday: "2000-5-17",
-      gender: 1,
-      homeTown: "Thị trấn Bến Sung, Như Thanh, Thanh Hóa",
-      avatar:
-        "https://i.pinimg.com/564x/97/03/53/970353e234af430a7cd7f3ebacdb7b96.jpg",
-      chatId: "3766e5fc-6e5d-4a77-9b63-6aade98b62dd",
-      shopId: "b6d85673-f0bb-4fd0-aa8c-e8a8c99b880c",
-    },
-  ];
+const ListEmployee = (props, ref) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [employees, setEmployees] = useState([]);
   const [dataUpdateAccount, setDataUpdateAccount] = useState({
     adminId: "",
     adminCode: "",
+    iDCardCode: "",
     adminName: "",
     phoneNumber: "",
     email: "",
+    basicSalary: "0",
     address: "",
     password: "",
     birthday: "",
@@ -88,47 +52,75 @@ const Employees = () => {
   });
   const [showModalUpdateAccount, setShowModalUpdateAccount] = useState(false);
   const [showModalConfirm, setShowModalConfirm] = useState(false);
+  const [idSelectedDelete, setIdSelectedDelete] = useState("");
+  const admin = useSelector((state) => state.authReducer.admin);
+  const gender = useSelector((state) => state.constantReducer.gender);
+
+  // Hàm lấy danh sách nhân viên
+  const getEmployees = useCallback(async () => {
+    setIsLoading(true);
+    //fetching data ở đây
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://192.168.1.125:3000/api/employees?shopId=${admin.shopId}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+        }
+      );
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setEmployees(resData.data);
+          setIsLoading(false);
+          return;
+        default:
+          setIsLoading(false);
+          alert("Lỗi lấy danh sách nhân viên.");
+          return;
+      }
+    } catch (err) {
+      setIsLoading(false);
+      alert(`Lỗi tải danh sách nhân viên: ${err}`);
+    }
+  }, [admin]);
+
+  // Hàm thực hiện reload khi component cha yêu cầu
+  useImperativeHandle(ref, () => {
+    return {
+      reload: async () => {
+        await getEmployees();
+      },
+    };
+  });
+
+  // Hàm theo dõi để lấy danh sách nhân viên
+  useEffect(() => {
+    getEmployees();
+  }, [getEmployees]);
+
+  // Hàm lấy giới tính
+  const getGender = (genderNum) => {
+    const findGender = gender.find((i) => i.typeGender === genderNum);
+    return findGender.genderName;
+  };
 
   // Config các cột cho bảng dữ liệu
   const fields = [
-    { key: "adminCode", label: "Mã NV/CCCD", _style: { width: "10%" } },
-    { key: "adminName", label: "Tên nhân viên", _style: { width: "15%" } },
+    { key: "adminCode", label: "Mã NV", _style: { width: "8%" } },
+    { key: "iDCardCode", label: "Mã CCCD/CMND", _style: { width: "10%" } },
+    { key: "adminName", label: "Tên nhân viên", _style: { width: "12%" } },
     { key: "phoneNumber", label: "Số điện thoại", _style: { width: "10%" } },
-    { key: "address", label: "Địa chỉ", _style: { width: "30%" } },
+    { key: "address", label: "Địa chỉ", _style: { width: "25%" } },
     { key: "gender", label: "Giới tính", _style: { width: "10%" } },
     { key: "email", label: "Email", _style: { width: "15%" } },
-    { key: "password", label: "Mật khẩu", _style: { width: "10%" } },
+    { key: "basicSalary", label: "Lương cơ bản", _style: { width: "10%" } },
   ];
-
-  // Hàm xử lý hiển thị khi chọn ảnh mới
-  const previewFile = () => {
-    setDataUpdateAccount({
-      ...dataUpdateAccount,
-      avatar: "",
-    });
-    var file = document.querySelector("input[type=file]").files[0];
-    var reader = new FileReader();
-    reader.onloadend = function () {
-      setDataUpdateAccount({
-        ...dataUpdateAccount,
-        avatar: reader.result,
-      });
-    };
-    if (file) {
-      reader.readAsDataURL(file);
-    } else {
-      setDataUpdateAccount({
-        ...dataUpdateAccount,
-        avatar: "https://image.flaticon.com/icons/png/512/16/16410.png",
-      });
-    }
-  };
-
-  // Hàm gọi để xử lý chọn file ảnh
-  const chooseImgHanler = () => {
-    const imageFile = document.getElementById("imgProd");
-    imageFile.click();
-  };
 
   // Hàm xử lý khi chọn 1 hàng
   const handlerClickRow = (item) => {
@@ -138,6 +130,127 @@ const Employees = () => {
 
   // Modal cập nhật thông tin nhân viên
   const UpdateInfoEmployeeModal = () => {
+    const [infoEmployee, setInfoEmployee] = useState({
+      adminId: dataUpdateAccount.adminId,
+      adminCode: dataUpdateAccount.adminCode,
+      iDCardCode: dataUpdateAccount.iDCardCode,
+      adminName: "",
+      phoneNumber: "",
+      email: "",
+      address: "",
+      password: "",
+      birthday: "",
+      gender: 0,
+      homeTown: "",
+      avatar: dataUpdateAccount.avatar,
+      basicSalary: "",
+      chatId: "",
+      shopId: dataUpdateAccount.shopId,
+    });
+    const [validFormText, setValidFormText] = useState("");
+
+    // check validate cho form cập nhật
+    const checkValidForm = () => {
+      var file = document.querySelector("input[id='imgEmployee']").files[0];
+      if (
+        infoEmployee.adminName ||
+        infoEmployee.basicSalary ||
+        infoEmployee.homeTown ||
+        infoEmployee.address ||
+        file
+      ) {
+        const adminName = document.getElementById("nf-name").value;
+        const basicSalary = document.getElementById("nf-basicSalary").value;
+        const homeTown = document.getElementById("nf-homeTown").value;
+        const address = document.getElementById("nf-address").value;
+        if (adminName && basicSalary && homeTown && address) {
+          setValidFormText("");
+          return true;
+        } else {
+          setValidFormText(
+            "Các trường bắt buộc không được để trống. Vui lòng nhập đầy đủ."
+          );
+          return false;
+        }
+      } else {
+        setValidFormText("Bạn chưa thực sự thay đổi thông tin để cập nhật.");
+        return false;
+      }
+    };
+
+    // Hàm thực hiện thay đổi
+    const handlerUpdateInfo = async () => {
+      if (checkValidForm()) {
+        try {
+          const token = localStorage.getItem("token");
+          const formData = new FormData();
+          const avatarAdmin = document.querySelector("input[id='imgEmployee']");
+          formData.append("file", avatarAdmin.files[0]);
+          formData.append(
+            "admin",
+            JSON.stringify({
+              adminId: infoEmployee.adminId,
+              adminName: infoEmployee.adminName,
+              gender: infoEmployee.gender,
+              birthday: infoEmployee.birthday,
+              address: infoEmployee.address,
+              homeTown: infoEmployee.homeTown,
+              basicSalary: infoEmployee.basicSalary,
+            })
+          );
+          const response = await fetch(`http://192.168.1.125:3000/api/admins`, {
+            method: "PUT",
+            headers: {
+              Accept: "application/json",
+              "x-access-token": token,
+            },
+            body: formData,
+          });
+          switch (response.status) {
+            case 200:
+              await getEmployees();
+              setShowModalUpdateAccount(!showModalUpdateAccount);
+              break;
+            default:
+              alert("Có lỗi xảy ra khi cập nhật thông tin nhân viên.");
+              break;
+          }
+        } catch (err) {
+          alert(`Có lỗi xảy ra khi cập nhật thông tin nhân viên: ${err}.`);
+        }
+      }
+    };
+
+    // Hàm xử lý hiển thị khi chọn ảnh mới
+    const previewFile = () => {
+      setInfoEmployee({
+        ...infoEmployee,
+        avatar: "",
+      });
+      var file = document.querySelector("input[id='imgEmployee']").files[0];
+      var reader = new FileReader();
+      reader.onloadend = function () {
+        setInfoEmployee({
+          ...infoEmployee,
+          avatar: reader.result,
+        });
+      };
+      if (file) {
+        reader.readAsDataURL(file);
+      } else {
+        setInfoEmployee({
+          ...infoEmployee,
+          avatar: "https://image.flaticon.com/icons/png/512/16/16410.png",
+        });
+      }
+    };
+
+    // Hàm gọi để xử lý chọn file ảnh
+    const chooseImgHanler = () => {
+      const imageFile = document.getElementById("imgEmployee");
+      imageFile.click();
+    };
+
     return (
       <CModal
         style={{ ...borderCustom }}
@@ -149,13 +262,13 @@ const Employees = () => {
         <CModalHeader closeButton>
           <CModalTitle>Cập nhật thông tin nhân viên</CModalTitle>
         </CModalHeader>
-        <CModalBody>
+        <CModalBody className="pb-5">
           <CForm action="" method="post">
             <CRow>
               <CCol md="3">
                 {/* Ảnh mẫu đại diện tài khoản */}
                 <CImg
-                  src={dataUpdateAccount.avatar}
+                  src={infoEmployee.avatar}
                   className="border"
                   style={{ borderRadius: 15, width: "100%" }}
                 />
@@ -173,36 +286,96 @@ const Employees = () => {
                 <CInputFile
                   onChange={previewFile}
                   style={{ display: "none" }}
-                  id="imgProd"
+                  id="imgEmployee"
                 />
               </CCol>
               <CCol md="9">
                 <CRow>
                   <CCol>
+                    {/* Mã nhân viên */}
+                    <CTooltip
+                      content="Trường này không được phép cập nhật"
+                      placement="right-end"
+                    >
+                      <CFormGroup>
+                        <CLabel htmlFor="nf-code">
+                          Mã nhân viên <span className="text-danger">(*)</span>
+                        </CLabel>
+                        <CInput
+                          disabled
+                          style={{ backgroundColor: COLORS.light }}
+                          type="text"
+                          id="nf-code"
+                          name="nf-code"
+                          placeholder="Nhập mã sản phẩm"
+                          defaultValue={dataUpdateAccount.adminCode}
+                        />
+                      </CFormGroup>
+                    </CTooltip>
+                  </CCol>
+                  <CCol>
+                    {/* CCCD/CMND */}
+                    <CTooltip
+                      content="Trường này không được phép cập nhật"
+                      placement="right-end"
+                    >
+                      <CFormGroup>
+                        <CLabel htmlFor="nf-code">
+                          Mã CCCD/CMND <span className="text-danger">(*)</span>
+                        </CLabel>
+                        <CInput
+                          disabled
+                          style={{ backgroundColor: COLORS.light }}
+                          type="number"
+                          id="nf-idCardCode"
+                          name="nf-idCardCode"
+                          placeholder="Nhập mã căn cước/chứng minh nhân dân"
+                          defaultValue={dataUpdateAccount.iDCardCode}
+                        />
+                      </CFormGroup>
+                    </CTooltip>
+                  </CCol>
+                </CRow>
+                <CRow>
+                  <CCol>
                     {/* Tên nhân viên */}
                     <CFormGroup>
-                      <CLabel htmlFor="nf-name">Tên nhân viên</CLabel>
+                      <CLabel htmlFor="nf-name">
+                        Tên nhân viên <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
                         type="text"
                         id="nf-name"
                         name="nf-name"
                         placeholder="Nhập tên nhân viên"
                         defaultValue={dataUpdateAccount.adminName}
+                        onChange={(event) =>
+                          setInfoEmployee({
+                            ...infoEmployee,
+                            adminName: event.target.value,
+                          })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
+                  {/* Ngày sinh */}
                   <CCol>
-                    {/* Mã nhân viên */}
                     <CFormGroup>
-                      <CLabel htmlFor="nf-code">Mã sản phẩm</CLabel>
+                      <CLabel htmlFor="nf-birthday">Ngày sinh</CLabel>
                       <CInput
-                        disabled
-                        style={{ backgroundColor: COLORS.light }}
-                        type="text"
-                        id="nf-code"
-                        name="nf-code"
-                        placeholder="Nhập mã sản phẩm"
-                        defaultValue={dataUpdateAccount.adminCode}
+                        type="date"
+                        id="nf-birthday"
+                        name="nf-birthday"
+                        placeholder="Nhập ngày sinh"
+                        defaultValue={formatDateInput(
+                          dataUpdateAccount.birthday
+                        )}
+                        onChange={(event) =>
+                          setInfoEmployee({
+                            ...infoEmployee,
+                            birthday: event.target.value,
+                          })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
@@ -217,91 +390,146 @@ const Employees = () => {
                         name="nf-gender"
                         aria-label="Chọn giới tính"
                         defaultValue={dataUpdateAccount.gender}
+                        onChange={(event) =>
+                          setInfoEmployee({
+                            ...infoEmployee,
+                            gender: event.target.value,
+                          })
+                        }
                       >
-                        <option value="1">Nam</option>
-                        <option value="2">Nữ</option>
-                        <option value="3">Khác</option>
+                        {gender.map((i) => (
+                          <option value={i.typeGender} key={i.typeGender}>
+                            {i.genderName}
+                          </option>
+                        ))}
                       </CSelect>
                     </CFormGroup>
                   </CCol>
-                  {/* Ngày sinh */}
+
                   <CCol>
+                    {/* Lương cơ bản */}
                     <CFormGroup>
-                      <CLabel htmlFor="nf-birthday">Ngày sinh</CLabel>
+                      <CLabel htmlFor="nf-basicSalary">
+                        Lương cơ bản <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        type="date"
-                        id="nf-birthday"
-                        name="nf-birthday"
-                        placeholder="Nhập ngày sinh"
-                        defaultValue={dataUpdateAccount.birthday}
+                        type="number"
+                        min={0}
+                        step={1000}
+                        id="nf-basicSalary"
+                        name="nf-basicSalary"
+                        placeholder="Nhập lương cơ bản"
+                        defaultValue={dataUpdateAccount.basicSalary}
+                        onChange={(event) =>
+                          setInfoEmployee({
+                            ...infoEmployee,
+                            basicSalary: event.target.value,
+                          })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
                 </CRow>
+                <CRow>
+                  <CCol>
+                    {/* Email */}
+                    <CTooltip
+                      content="Trường này không được phép cập nhật"
+                      placement="right-end"
+                    >
+                      <CFormGroup>
+                        <CLabel htmlFor="nf-email">
+                          Email <span className="text-danger">(*)</span>
+                        </CLabel>
+                        <CInput
+                          disabled
+                          style={{ backgroundColor: COLORS.light }}
+                          type="email"
+                          id="nf-email"
+                          name="nf-email"
+                          placeholder="Nhập email"
+                          defaultValue={dataUpdateAccount.email}
+                        />
+                      </CFormGroup>
+                    </CTooltip>
+                  </CCol>
+
+                  {/* Số điện thoại */}
+                  <CCol>
+                    <CTooltip
+                      content="Trường này không được phép cập nhật"
+                      placement="right-end"
+                    >
+                      <CFormGroup>
+                        <CLabel htmlFor="nf-phone">
+                          Số điện thoại <span className="text-danger">(*)</span>
+                        </CLabel>
+                        <CInput
+                          disabled
+                          style={{ backgroundColor: COLORS.light }}
+                          type="number"
+                          min={0}
+                          id="nf-phone"
+                          name="nf-phone"
+                          placeholder="Nhập số điện thoại"
+                          defaultValue={dataUpdateAccount.phoneNumber}
+                        />
+                      </CFormGroup>
+                    </CTooltip>
+                  </CCol>
+                </CRow>
                 {/* Quê quán */}
                 <CFormGroup>
-                  <CLabel htmlFor="nf-homeTown">Quê quán</CLabel>
+                  <CLabel htmlFor="nf-homeTown">
+                    Quê quán <span className="text-danger">(*)</span>
+                  </CLabel>
                   <CInput
                     type="text"
                     id="nf-homeTown"
                     name="nf-homeTown"
                     placeholder="Nhập tên quê quán"
                     defaultValue={dataUpdateAccount.homeTown}
-                  />
-                </CFormGroup>
-                <CRow>
-                  {/* Số điện thoại */}
-                  <CCol>
-                    <CFormGroup>
-                      <CLabel htmlFor="nf-phone">Số điện thoại</CLabel>
-                      <CInput
-                        type="text"
-                        id="nf-phone"
-                        name="nf-phone"
-                        placeholder="Nhập số điện thoại"
-                        defaultValue={dataUpdateAccount.phoneNumber}
-                      />
-                    </CFormGroup>
-                  </CCol>
-                  {/* Mật khẩu */}
-                  <CCol>
-                    <CFormGroup>
-                      <CLabel htmlFor="nf-pass">Mật khẩu</CLabel>
-                      <CInput
-                        type="text"
-                        id="nf-pass"
-                        name="nf-pass"
-                        placeholder="Nhập mật khẩu"
-                        defaultValue={dataUpdateAccount.password}
-                      />
-                    </CFormGroup>
-                  </CCol>
-                </CRow>
-                {/* Email */}
-                <CFormGroup>
-                  <CLabel htmlFor="nf-email">Email</CLabel>
-                  <CInput
-                    type="email"
-                    id="nf-email"
-                    name="nf-email"
-                    placeholder="Nhập email"
-                    defaultValue={dataUpdateAccount.email}
+                    onChange={(event) =>
+                      setInfoEmployee({
+                        ...infoEmployee,
+                        homeTown: event.target.value,
+                      })
+                    }
                   />
                 </CFormGroup>
                 {/* Địa chỉ */}
                 <CFormGroup>
-                  <CLabel htmlFor="nf-address">Địa chỉ</CLabel>
+                  <CLabel htmlFor="nf-address">
+                    Địa chỉ <span className="text-danger">(*)</span>
+                  </CLabel>
                   <CInput
                     type="text"
                     id="nf-address"
                     name="nf-address"
                     placeholder="Nhập địa chỉ"
                     defaultValue={dataUpdateAccount.address}
+                    onChange={(event) =>
+                      setInfoEmployee({
+                        ...infoEmployee,
+                        address: event.target.value,
+                      })
+                    }
                   />
                 </CFormGroup>
               </CCol>
             </CRow>
           </CForm>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 12,
+              left: 215,
+              color: "red",
+              width: "82%",
+            }}
+          >
+            {validFormText}
+          </div>
         </CModalBody>
         <CModalFooter className="d-flex align-items-center justify-content-between">
           <CButton
@@ -310,6 +538,7 @@ const Employees = () => {
             className="d-flex align-items-center"
             onClick={() => {
               setShowModalUpdateAccount(false);
+              setIdSelectedDelete(infoEmployee.adminId);
               setShowModalConfirm(true);
             }}
           >
@@ -321,7 +550,7 @@ const Employees = () => {
               className="mr-2"
               style={{ color: COLORS.light }}
               shape="pill"
-              onClick={() => setShowModalUpdateAccount(!showModalUpdateAccount)}
+              onClick={handlerUpdateInfo}
             >
               Cập nhật
             </CButton>
@@ -337,14 +566,51 @@ const Employees = () => {
       </CModal>
     );
   };
-  
+
   // Modal xác nhận xóa
   const ConfirmDeleteModal = () => {
+    // Hàm thực hiện xóa nhân viên
+    const handlerDeleteAccount = async () => {
+      try {
+        //thực hiện xóa
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://192.168.1.125:3000/api/admins", {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "x-access-token": token,
+          },
+          body: JSON.stringify({
+            adminId: idSelectedDelete,
+            roleAction: admin.role,
+          }),
+        });
+        setIdSelectedDelete("");
+        setShowModalConfirm(!showModalConfirm);
+        switch (response.status) {
+          case 200:
+            await getEmployees();
+            break;
+          case 401:
+            alert("Bạn không có quyền thực hiện hành động này.");
+            break;
+          default:
+            alert("Lỗi không thể xóa nhân viên này.");
+            break;
+        }
+      } catch (err) {
+        alert("Lỗi không thể xóa nhân viên này: " + err);
+      }
+    };
     return (
       <CModal
         style={{ ...borderCustom }}
         show={showModalConfirm}
-        onClose={() => setShowModalConfirm(!showModalConfirm)}
+        onClose={() => {
+          setIdSelectedDelete("");
+          setShowModalConfirm(!showModalConfirm);
+        }}
         color="info"
       >
         <CModalHeader closeButton>
@@ -358,14 +624,17 @@ const Employees = () => {
             color="info"
             shape="pill"
             className="d-flex align-items-center"
-            onClick={() => console.log("test")}
+            onClick={handlerDeleteAccount}
           >
             Tiếp tục
           </CButton>
           <CButton
             color="secondary"
             shape="pill"
-            onClick={() => setShowModalConfirm(!showModalConfirm)}
+            onClose={() => {
+              setIdSelectedDelete("");
+              setShowModalConfirm(!showModalConfirm);
+            }}
           >
             Hủy
           </CButton>
@@ -374,12 +643,21 @@ const Employees = () => {
     );
   };
 
+  // Trường hợp chưa load được dữ liệu
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center w-100">
+        <CSpinner color="info" />
+      </div>
+    );
+  }
+
   return (
     <>
       <UpdateInfoEmployeeModal />
       <ConfirmDeleteModal />
       <CDataTable
-        items={usersData}
+        items={employees}
         fields={fields}
         columnFilter
         tableFilter
@@ -390,9 +668,13 @@ const Employees = () => {
         sorter
         pagination
         onRowClick={(item) => handlerClickRow(item)}
+        scopedSlots={{
+          gender: (item) => <td>{getGender(item.gender)}</td>,
+          basicSalary: (item) => <td>{addDotToNumber(item.basicSalary)}</td>,
+        }}
       />
     </>
   );
 };
 
-export default Employees;
+export default forwardRef(ListEmployee);

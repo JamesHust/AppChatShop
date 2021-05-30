@@ -9,6 +9,7 @@ const {
   updateOrder,
   cancelOrder,
   deleteOrder,
+  getOrdersForShop,
 } = require("../controllers/orders");
 
 //create router for object: product
@@ -35,7 +36,12 @@ router.delete("/orders/:orderId", deleteOrder);
  * router cho app shipper
  */
 // Lấy đơn hàng nhận cho shipper
- router.get("/receiver/orders", getOrderReceiveByCode);
+router.get("/receiver/orders", getOrderReceiveByCode);
 
+/**
+ * router cho admin
+ */
+// Lấy đơn hàng theo trạng thái của admin
+router.get("/admin/orders", getOrdersForShop);
 
 module.exports = router;

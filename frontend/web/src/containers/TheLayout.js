@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useEffect} from 'react'
 import {
   TheContent,
   TheSidebar,
@@ -10,8 +10,14 @@ import {
  * Bố cục giao diện web chính
  * @returns 
  */
-const TheLayout = () => {
-
+const TheLayout = (props) => {
+  const { history } = props;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if(!token){
+      history.push('/login');
+    }
+  }, [history])
   return (
     <div className="c-app c-default-layout">
       <TheSidebar/>

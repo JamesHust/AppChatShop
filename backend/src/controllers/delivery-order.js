@@ -5,7 +5,6 @@ const DetailProduct = require("../models/detail-product");
 const {
   updateStatusOrder,
   getOrderById,
-  updateAmountOfMutilProduct,
   addReasonForCancelOrder,
   getProductsByOrder,
 } = require("./orders");
@@ -512,7 +511,7 @@ const deleteDeliveryOrder = async (req, res, next) => {
       const result = await db.execute(
         `delete from ${tableName} where OrderId = "${orderId}"`
       );
-      res.send(
+      res.status(200).send(
         new Response(
           (isSuccess = true),
           (errorCode = ""),
@@ -523,7 +522,7 @@ const deleteDeliveryOrder = async (req, res, next) => {
         )
       );
     } catch (err) {
-      res.send(
+      res.status(500).send(
         new Response(
           (isSuccess = false),
           (errorCode = "DB003"),

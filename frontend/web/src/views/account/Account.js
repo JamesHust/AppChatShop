@@ -16,31 +16,39 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
-  CInputFile
+  CInputFile,
+  CTooltip,
+  CSelect,
 } from "@coreui/react";
 import { title, borderCustom } from "../../constants/common";
 import COLORS from "src/constants/colors";
+import { useSelector, useDispatch } from "react-redux";
+import { addDotToNumber, formatDateInput } from "../../utils/Common";
+import * as authActions from "../../redux/actions/auth";
 
 const Account = () => {
-  const [dataPass, setDataPass] = useState({
-    oldPass: "",
-    reOldPass: "",
-    newPass: "",
-  });
+  const admin = useSelector((state) => state.authReducer.admin);
+  const gender = useSelector((state) => state.constantReducer.gender);
+  const role = useSelector((state) => state.constantReducer.role);
   const [account, setAccount] = useState({
-    avatar:
-      "https://scontent-hkg4-2.xx.fbcdn.net/v/t1.6435-9/119774014_1575128779362223_150505934135233007_n.jpg?_nc_cat=110&ccb=1-3&_nc_sid=09cbfe&_nc_ohc=mkNBwQ1OpikAX9HGTUW&_nc_ht=scontent-hkg4-2.xx&oh=4644d61c3c5cf125432dcaee35e27ec9&oe=60C7F31A",
-    adminCode: "038099002000",
-    adminName: "Mai Thế Hưng",
-    phoneNumber: "0966073028",
-    email: "hungjame99@gmail.com",
-    address: "22 ngách 20 Ngõ Trại Cá, Trương Định, Hai Bà Trưng, Hà Nội",
-    homeTown: "Hải Vân, Như Thanh, Thanh Hóa",
-    gender: 1,
-    birthday: "08/12/1999",
-    password: "123456",
+    avatar: admin.avatar,
+    adminId: admin.adminId,
+    adminCode: admin.adminCode,
+    iDCardCode: admin.iDCardCode,
+    adminName: "",
+    role: admin.role,
+    gender: "",
+    birthday: "",
+    phoneNumber: "",
+    email: "",
+    basicSalary: "",
+    address: "",
+    homeTown: "",
+    password: "",
   });
+  const [validUpdateInfo, setValidUpdateInfo] = useState("");
   const [showModalChangePass, setShowModalChangePass] = useState(false);
+  const dispatch = useDispatch();
 
   // Hàm xử lý hiển thị ảnh demo khi chọn ảnh ms
   const previewFile = () => {
@@ -72,84 +80,256 @@ const Account = () => {
     imageFile.click();
   };
 
-  // Hàm lấy tên giới tính
-  const getGender = (numGender) => {
-    switch (numGender) {
-      case 1:
-        return "Nam";
-      case 2:
-        return "Nữ";
-      case 3:
-        return "Khác";
-      default:
-        return "Không xác định";
+  // Hàm check validate cho form
+  const checkValidFormInfo = () => {
+    const adminName = document.getElementById("nf-name").value;
+    const address = document.getElementById("nf-address").value;
+    const homeTown = document.getElementById("nf-homeTown").value;
+    if (
+      adminName &&
+      account.role &&
+      address &&
+      homeTown
+    ) {
+      setValidUpdateInfo("");
+      return true;
+    } else {
+      setValidUpdateInfo(
+        "Vui lòng nhập đầy đủ các trường thay đổi và không được để trống các trường bắt buộc."
+      );
+      return false;
+    }
+  };
+
+  // Hàm thực hiện cập nhật tài khoản admin
+  const handlerUpdateInfo = async () => {
+    if (checkValidFormInfo()) {
+      try {
+        const token = localStorage.getItem("token");
+        const formData = new FormData();
+        const avatarAdmin = document.querySelector("input[type=file]");
+        formData.append("file", avatarAdmin.files[0]);
+        formData.append(
+          "admin",
+          JSON.stringify({
+            adminId: account.adminId,
+            adminName: account.adminName,
+            gender: account.gender,
+            birthday: account.birthday,
+            address: account.address,
+            homeTown: account.homeTown,
+          })
+        );
+        const response = await fetch(`http://192.168.1.125:3000/api/admins`, {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "x-access-token": token,
+          },
+          body: formData,
+        });
+        switch (response.status) {
+          case 200:
+            const data = {
+              token: token,
+              adminId: account.adminId,
+            };
+            dispatch(authActions.getAdmin(data));
+            break;
+          default:
+            alert("Có lỗi xảy ra khi cập nhật thông tin tài khoản.");
+            break;
+        }
+      } catch (err) {
+        alert(`Có lỗi xảy ra khi cập nhật thông tin tài khoản: ${err}.`);
+      }
     }
   };
 
   // Hàm xử lý khi click vào nút thay đổi mật khẩu
   const handlerClickChangePass = () => {
-    console.log("ok");
-    setDataPass({
-      ...dataPass,
-      oldPass: "",
-      reOldPass: "",
-      newPass: "",
-    });
     setShowModalChangePass(true);
   };
 
   // Modal thay đổi mật khẩu
   const ChangePasswordModal = () => {
+    const [passData, setPassData] = useState({
+      oldPass: "",
+      reOldPass: "",
+      newPass: "",
+    });
+    const [validPassText, setValidPassText] = useState("");
+
+    // hàm check validate mật khẩu khi nhập
+    const checkValidPass = (val, nameField) => {
+      if (val.trim().length >= 8) {
+        setValidPassText("");
+        const regex =
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (regex.test(String(val))) {
+          setValidPassText("");
+          return true;
+        } else {
+          setValidPassText(
+            `${nameField} phải có ít nhất một chữ hoa, một chữ thường, một ký tự và một số.`
+          );
+          return false;
+        }
+      } else {
+        setValidPassText(`${nameField} phải có ít nhất 8 ký tự.`);
+        return false;
+      }
+    };
+
+    // Check mật khẩu trước khi yêu cầu thay đổi mật khẩu
+    const checkValidPassOnClick = () => {
+      console.log("checkValidPassOnClick");
+      if (passData.oldPass === passData.reOldPass) {
+        if (passData.newPass === passData.oldPass) {
+          setValidPassText("Mật khẩu mới đang trùng với mật khẩu cũ.");
+          return false;
+        } else {
+          setValidPassText("");
+          return true;
+        }
+      } else {
+        setValidPassText("Mật khẩu cũ và mật khẩu nhập lại không trùng khớp.");
+        return false;
+      }
+    };
+
+    // Hàm thực hiện thay đổi
+    const handlerChangePass = async () => {
+      if (
+        checkValidPassOnClick() &&
+        checkValidPass(passData.oldPass, "Mật khẩu cũ") &&
+        checkValidPass(passData.reOldPass, "Mật khẩu nhập lại") &&
+        checkValidPass(passData.newPass, "Mật khẩu mới")
+      ) {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await fetch(
+            "http://192.168.1.125:3000/api/admins/password",
+            {
+              method: "PUT",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "x-access-token": token,
+              },
+              body: JSON.stringify({
+                adminId: admin.adminId,
+                oldPass: passData.oldPass,
+                newPass: passData.newPass,
+              }),
+            }
+          );
+          switch (response.status) {
+            case 200:
+              const resData = await response.json();
+              if (resData.isSuccess) {
+                setValidPassText("");
+                dispatch(authActions.changePass(resData.data));
+                setShowModalChangePass(false);
+              } else {
+                setValidPassText(
+                  "Mật khẩu cũ của bạn không đúng. Vui lòng nhập lại."
+                );
+              }
+              break;
+            default:
+              break;
+          }
+        } catch (err) {
+          alert(`Lỗi hệ thống : ${err}`);
+        }
+      }
+    };
+
     return (
       <CModal
         style={{ ...borderCustom }}
         show={showModalChangePass}
         onClose={() => setShowModalChangePass(!showModalChangePass)}
-        size="sm"
+        color="warning"
       >
         <CModalHeader closeButton>
           <CModalTitle>Thay đổi mật khẩu</CModalTitle>
         </CModalHeader>
-        <CModalBody>
+        <CModalBody
+          style={{ marginLeft: 30, marginRight: 30 }}
+          className="pb-5"
+        >
           <CForm action="" method="post">
-            <CFormGroup className="mt-2">
-              <CLabel htmlFor="nf-amountImport">Mật khẩu cũ</CLabel>
+            <CFormGroup>
+              <CLabel htmlFor="nf-oldPass">
+                Mật khẩu cũ <span className="text-danger">(*)</span>
+              </CLabel>
               <CInput
-                type="text"
+                type="password"
                 id="nf-oldPass"
                 name="nf-oldPass"
                 placeholder="Nhập mật khẩu cũ"
-                defaultValue={dataPass.oldPass}
+                defaultValue={passData.oldPass}
+                onChange={(event) =>
+                  setPassData({ ...passData, oldPass: event.target.value })
+                }
+                onBlur={() => checkValidPass(passData.oldPass, "Mật khẩu cũ")}
               />
             </CFormGroup>
             <CFormGroup className="mt-2">
-              <CLabel htmlFor="nf-amountImport">Nhập lại mật khẩu cũ</CLabel>
+              <CLabel htmlFor="nf-reOldPass">
+                Nhập lại mật khẩu cũ <span className="text-danger">(*)</span>
+              </CLabel>
               <CInput
-                type="number"
-                id="nf-amountImport"
-                name="nf-amountImport"
+                type="password"
+                id="nf-reOldPass"
+                name="nf-reOldPass"
                 placeholder="Nhập lại mật khẩu cũ"
-                defaultValue={dataPass.reOldPass}
+                defaultValue={passData.reOldPass}
+                onChange={(event) =>
+                  setPassData({ ...passData, reOldPass: event.target.value })
+                }
+                onBlur={() =>
+                  checkValidPass(passData.reOldPass, "Mật khẩu nhập lại")
+                }
               />
             </CFormGroup>
             <CFormGroup className="mt-2">
-              <CLabel htmlFor="nf-amountImport">Mật khẩu mới</CLabel>
+              <CLabel htmlFor="nf-amountImport">
+                Mật khẩu mới <span className="text-danger">(*)</span>
+              </CLabel>
               <CInput
-                type="number"
+                type="password"
                 id="nf-amountImport"
                 name="nf-amountImport"
                 placeholder="Nhập mật khẩu mới"
-                defaultValue={dataPass.newPass}
+                defaultValue={passData.newPass}
+                onChange={(event) =>
+                  setPassData({ ...passData, newPass: event.target.value })
+                }
+                onBlur={() => checkValidPass(passData.newPass, "Mật khẩu mới")}
               />
             </CFormGroup>
           </CForm>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 8,
+              left: 15,
+              color: "red",
+              width: "82%",
+            }}
+          >
+            {validPassText}
+          </div>
         </CModalBody>
         <CModalFooter>
           <CButton
             color="warning"
             style={{ color: COLORS.light }}
             shape="pill"
-            onClick={() => setShowModalChangePass(!showModalChangePass)}
+            onClick={handlerChangePass}
           >
             Cập nhật
           </CButton>{" "}
@@ -186,7 +366,11 @@ const Account = () => {
               {/* Ảnh đại diện*/}
               <div className="w-100 d-flex justify-content-center">
                 <CImg
-                  src={account.avatar}
+                  src={
+                    account.avatar
+                      ? account.avatar
+                      : "https://i.pinimg.com/originals/fe/91/6c/fe916cc5dd145ff1b57b8eb43dbf2234.gif"
+                  }
                   className="border"
                   style={{ padding: 10, borderRadius: 15 }}
                   width="90%"
@@ -214,100 +398,276 @@ const Account = () => {
               {/* Mã nhân viên/CMND */}
               <CRow>
                 <CCol>
-                  <CFormGroup>
-                    <CLabel htmlFor="nf-code">Mã quản trị/CMND</CLabel>
-                    <CInput
-                      type="text"
-                      id="nf-code"
-                      name="nf-code"
-                      defaultValue={account.adminCode}
-                    />
-                  </CFormGroup>
+                  <CTooltip
+                    content="Trường này không được phép thay đổi"
+                    placement="right"
+                  >
+                    <CFormGroup>
+                      <CLabel htmlFor="nf-code">
+                        Mã quản trị <span className="text-danger">(*)</span>
+                      </CLabel>
+
+                      <CInput
+                        disabled
+                        style={{ background: COLORS.light }}
+                        type="text"
+                        id="nf-code"
+                        name="nf-code"
+                        defaultValue={admin.adminCode}
+                        onChange={(event) =>
+                          setAccount({
+                            ...account,
+                            adminCode: event.target.value,
+                          })
+                        }
+                      />
+                    </CFormGroup>
+                  </CTooltip>
                 </CCol>
+                {/* Mã CCCD/CMND */}
+                <CCol>
+                  <CTooltip
+                    content="Trường này không được phép thay đổi"
+                    placement="right"
+                  >
+                    <CFormGroup>
+                      <CLabel htmlFor="nf-idCartCode">
+                        Số CMND/CCCD <span className="text-danger">(*)</span>
+                      </CLabel>
+
+                      <CInput
+                        disabled
+                        style={{ background: COLORS.light }}
+                        type="text"
+                        id="nf-idCartCode"
+                        name="nf-idCartCode"
+                        defaultValue={admin.iDCardCode}
+                      />
+                    </CFormGroup>
+                  </CTooltip>
+                </CCol>
+              </CRow>
+              <CRow>
+                {/* Tên quản trị viên */}
                 <CCol>
                   <CFormGroup>
-                    <CLabel htmlFor="nf-name">Tên quản trị viên</CLabel>
+                    <CLabel htmlFor="nf-name">
+                      Tên quản trị viên <span className="text-danger">(*)</span>
+                    </CLabel>
                     <CInput
                       type="text"
                       id="nf-name"
                       name="nf-name"
-                      defaultValue={account.adminName}
-                    />
-                  </CFormGroup>
-                </CCol>
-              </CRow>
-              {/* Ngày sinh và Giới tính */}
-              <CRow>
-                {/* Ngày sinh */}
-                <CCol>
-                  <CFormGroup>
-                    <CLabel htmlFor="nf-birthday">Ngày sinh</CLabel>
-                    <CInput
-                      type="text"
-                      id="nf-birthday"
-                      name="nf-birthday"
-                      defaultValue={account.birthday}
+                      defaultValue={admin.adminName}
+                      onChange={(event) =>
+                        setAccount({
+                          ...account,
+                          adminName: event.target.value,
+                        })
+                      }
                     />
                   </CFormGroup>
                 </CCol>
                 {/* Giới tính */}
                 <CCol>
                   <CFormGroup>
-                    <CLabel htmlFor="nf-gender">Giới tính</CLabel>
-                    <CInput
-                      type="text"
+                    <CLabel htmlFor="nf-name">Giới tính</CLabel>
+                    <CSelect
                       id="nf-gender"
                       name="nf-gender"
-                      defaultValue={getGender(account.gender)}
+                      aria-label="Chọn giới tính"
+                      defaultValue={admin.gender}
+                      onChange={(event) =>
+                        setAccount({
+                          ...account,
+                          gender: event.target.value,
+                        })
+                      }
+                    >
+                      {gender.map((item) => (
+                        <option value={item.typeGender} key={item.typeGender}>
+                          {item.genderName}
+                        </option>
+                      ))}
+                    </CSelect>
+                  </CFormGroup>
+                </CCol>
+              </CRow>
+              <CRow>
+                {/* Ngày sinh */}
+                <CCol>
+                  <CFormGroup>
+                    <CLabel htmlFor="nf-birthday">Ngày sinh</CLabel>
+                    <CInput
+                      type="date"
+                      id="nf-birthday"
+                      name="nf-birthday"
+                      defaultValue={formatDateInput(admin.birthday)}
+                      onChange={(event) =>
+                        setAccount({
+                          ...account,
+                          birthday: event.target.value,
+                        })
+                      }
                     />
                   </CFormGroup>
+                </CCol>
+                {/* Số điện thoại */}
+                <CCol>
+                  <CTooltip
+                    content="Trường này không được phép thay đổi"
+                    placement="right"
+                  >
+                    <CFormGroup>
+                      <CLabel htmlFor="nf-phone">
+                        Số điện thoại <span className="text-danger">(*)</span>
+                      </CLabel>
+                      <CInput
+                        disabled
+                        style={{ backgroundColor: COLORS.light }}
+                        type="text"
+                        id="nf-phone"
+                        name="nf-phone"
+                        defaultValue={admin.phoneNumber}
+                        onChange={(event) =>
+                          setAccount({
+                            ...account,
+                            phoneNumber: event.target.value,
+                          })
+                        }
+                      />
+                    </CFormGroup>
+                  </CTooltip>
                 </CCol>
               </CRow>
               {/* Số điện thoại và Email*/}
               <CRow>
-                {/* Số điện thoại */}
-                <CCol>
-                  <CFormGroup>
-                    <CLabel htmlFor="nf-phone">Số điện thoại</CLabel>
-                    <CInput
-                      type="text"
-                      id="nf-phone"
-                      name="nf-phone"
-                      defaultValue={account.phoneNumber}
-                    />
-                  </CFormGroup>
-                </CCol>
                 {/* Email */}
                 <CCol>
+                  <CTooltip
+                    content="Trường này không được phép thay đổi"
+                    placement="right"
+                  >
+                    <CFormGroup>
+                      <CLabel htmlFor="nf-email">
+                        Email <span className="text-danger">(*)</span>
+                      </CLabel>
+                      <CInput
+                        disabled
+                        style={{ backgroundColor: COLORS.light }}
+                        type="email"
+                        id="nf-email"
+                        name="nf-email"
+                        defaultValue={admin.email}
+                        onChange={(event) =>
+                          setAccount({
+                            ...account,
+                            email: event.target.value,
+                          })
+                        }
+                      />
+                    </CFormGroup>
+                  </CTooltip>
+                </CCol>
+                {/* Vai trò */}
+                <CCol>
+                  <CTooltip
+                    content="Trường này không được phép thay đổi"
+                    placement="right"
+                  >
+                    <CFormGroup>
+                      <CLabel htmlFor="nf-role">
+                        Vai trò <span className="text-danger">(*)</span>
+                      </CLabel>
+                      <CSelect
+                        disabled
+                        style={{ backgroundColor: COLORS.light }}
+                        id="nf-role"
+                        name="nf-role"
+                        aria-label="Chọn vai trò"
+                        defaultValue={admin.role}
+                        onChange={(event) =>
+                          setAccount({
+                            ...account,
+                            role: event.target.value,
+                          })
+                        }
+                      >
+                        {role.map((item) => (
+                          <option value={item.typeRole} key={item.typeRole}>
+                            {item.roleName}
+                          </option>
+                        ))}
+                      </CSelect>
+                    </CFormGroup>
+                  </CTooltip>
+                </CCol>
+              </CRow>
+              <CRow>
+                <CCol>
+                  {/* Lương cơ bản */}
+                  <CTooltip
+                    content="Trường này không được phép thay đổi"
+                    placement="right"
+                  >
+                    <CFormGroup>
+                      <CLabel htmlFor="nf-basicSalary">
+                        Lương cơ bản <span className="text-danger">(*)</span>
+                      </CLabel>
+                      <CInput
+                        disabled
+                        style={{ backgroundColor: COLORS.light }}
+                        type="text"
+                        id="nf-basicSalary"
+                        name="nf-basicSalary"
+                        defaultValue={addDotToNumber(admin.basicSalary)}
+                        onChange={(event) =>
+                          setAccount({
+                            ...account,
+                            basicSalary: event.target.value,
+                          })
+                        }
+                      />
+                    </CFormGroup>
+                  </CTooltip>
+                </CCol>
+                <CCol>
+                  {/* Quê quán */}
                   <CFormGroup>
-                    <CLabel htmlFor="nf-email">Email</CLabel>
+                    <CLabel htmlFor="nf-homeTown">
+                      Quê quán <span className="text-danger">(*)</span>
+                    </CLabel>
                     <CInput
-                      type="email"
-                      id="nf-email"
-                      name="nf-email"
-                      defaultValue={account.email}
+                      type="text"
+                      id="nf-homeTown"
+                      name="nf-homeTown"
+                      defaultValue={admin.homeTown}
+                      onChange={(event) =>
+                        setAccount({
+                          ...account,
+                          homeTown: event.target.value,
+                        })
+                      }
                     />
                   </CFormGroup>
                 </CCol>
               </CRow>
               {/* Địa chỉ hiện tại */}
               <CFormGroup>
-                <CLabel htmlFor="nf-address">Địa chỉ hiện tại</CLabel>
+                <CLabel htmlFor="nf-address">
+                  Địa chỉ hiện tại <span className="text-danger">(*)</span>
+                </CLabel>
                 <CInput
                   type="text"
                   id="nf-address"
                   name="nf-address"
-                  defaultValue={account.address}
-                />
-              </CFormGroup>
-              {/* Quê quán */}
-              <CFormGroup>
-                <CLabel htmlFor="nf-homeTown">Quê quán</CLabel>
-                <CInput
-                  type="text"
-                  id="nf-homeTown"
-                  name="nf-homeTown"
-                  defaultValue={account.homeTown}
+                  defaultValue={admin.address}
+                  onChange={(event) =>
+                    setAccount({
+                      ...account,
+                      address: event.target.value,
+                    })
+                  }
                 />
               </CFormGroup>
               <div className="d-flex justify-content-end mt-5">
@@ -315,7 +675,7 @@ const Account = () => {
                   color="warning"
                   style={{ color: COLORS.light }}
                   shape="pill"
-                  onClick={() => {}}
+                  onClick={handlerUpdateInfo}
                 >
                   Cập nhật
                 </CButton>
@@ -323,6 +683,17 @@ const Account = () => {
             </CCol>
           </CRow>
         </CForm>
+        <div
+          style={{
+            position: "absolute",
+            bottom: 75,
+            left: 420,
+            color: "red",
+            width: "82%",
+          }}
+        >
+          {validUpdateInfo}
+        </div>
       </CCardBody>
     </CCard>
   );

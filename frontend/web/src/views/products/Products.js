@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   CCard,
   CCardBody,
@@ -20,12 +20,17 @@ import {
   CImg,
   CTooltip,
   CTextarea,
+  CSelect,
+  CSpinner,
 } from "@coreui/react";
 // import COLORS from "../../constants/colors";
 import { title, borderCustom } from "../../constants/common";
 import COLORS from "src/constants/colors";
+import { useSelector } from "react-redux";
+import { fomatMoney } from "../../utils/Common";
 
 const Products = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [showModalConfirm, setShowModalConfirm] = useState(false);
   const [showModalUpdateProd, setShowModalUpdateProd] = useState(false);
   const [dataModal, setDataModal] = useState({
@@ -45,129 +50,9 @@ const Products = () => {
     shopId: "",
     categoryId: "",
     cartId: "",
-    orderId: "",
-    productAmount: "",
-    productPrice: "",
-    shopName: "",
-    categoryName: "",
   });
-  // Dữ liệu demo
-  const usersData = [
-    {
-      productId: "4c9b5b4e-a21a-4608-9dd4-8524e0cee809",
-      productCode: "SP00001",
-      productName: "Dưa hấu không hạt 2.5kg",
-      description:
-        "Dưa hấu không hạt là giống quả mới lạ và độc đáo. Quả dưa tròn, da xanh nhạt có gân xanh đậm, vỏ mỏng, nhiều nước, không có hạt và vị ngọt đậm đà.",
-      unit: "Quả",
-      imageUrl: "http://192.168.1.125:3000/public/products/watermelon.jpg",
-      importPrice: "64750",
-      purchasePrice: "74750",
-      amount: "60",
-      quantitySold: "20",
-      dateOfImport: "2020-12-31T17:00:00.000Z",
-      rating: "4.7",
-      sale: 0,
-      shopId: "37ba18b3-f280-4a1c-86ec-a249f99e3405",
-      categoryId: "27b9f332-45cf-43ca-978b-8e7e03c118b6",
-      categoryName: "Hoa quả",
-    },
-    {
-      productId: "60692e32-f9b7-4b8b-ad31-868c18e1435a",
-      productCode: "SP00002",
-      productName: "Dứa (thơm/khóm) 1 quả",
-      description:
-        "Dứa ( thơm/khóm) được trồng ở nhưng nơi có khí hậu ấm áp quanh năm. Dứa được trồng theo những tiêu chuẩn chất lượng hữu cơ, đảm bảo sản phẩm sạch, an toàn, không có chất kích thích tăng trường hay các hóa chất bảo vệ thực vật.",
-      unit: "Quả",
-      imageUrl: "http://192.168.1.125:3000/public/products/pineapple.jpg",
-      importPrice: "10500",
-      purchasePrice: "13800",
-      amount: "60",
-      quantitySold: "10",
-      dateOfImport: "2021-03-28T10:00:00.000Z",
-      rating: "4.1",
-      sale: 0,
-      shopId: "b6d85673-f0bb-4fd0-aa8c-e8a8c99b880c",
-      categoryId: "27b9f332-45cf-43ca-978b-8e7e03c118b6",
-      categoryName: "Hoa quả",
-    },
-    {
-      productId: "6ce82a73-3bcd-4e8f-a22a-82e8c584d9a9",
-      productCode: "SP00003",
-      productName: "Dưa hấu ruột vàng 2.5kg",
-      description:
-        "Dưa hấu ruột vàng 2.5kg là một đặc sản của đất Long An. Loại dưa này đặc biệt chỉ trồng đc ở 2 nơi duy nhất là Long An và Tiền Giang nước ta, trong đó loại của Long An trái to, vỏ mỏng và đạt độ ngọt cao hơn.",
-      unit: "Quả",
-      imageUrl: "http://192.168.1.125:3000/public/products/cantaloupe.jpg",
-      importPrice: "65000",
-      purchasePrice: "74750",
-      amount: "55",
-      quantitySold: "10",
-      dateOfImport: "2020-12-31T17:00:00.000Z",
-      rating: "4.6",
-      sale: 0,
-      shopId: "37ba18b3-f280-4a1c-86ec-a249f99e3405",
-      categoryId: "27b9f332-45cf-43ca-978b-8e7e03c118b6",
-      categoryName: "Hoa quả",
-    },
-    {
-      productId: "92d58a42-8f41-4ec3-8841-228dc2c46e98",
-      productCode: "SP00004",
-      productName: "Táo Gala size 100 - 125 (XX Mỹ) 1kg",
-      description:
-        "Táo Gala size 100 - 125 (XX Mỹ) chứa nhiều chất pectin, một chất xơ hòa tan làm giảm cholesterol và chất chống oxi hóa, ngăn ngừa bệnh tim. Lượng magiê và kali trong táo giúp điều chỉnh áp suất máu và giữ cho nhịp đập tim ở mức ổn định.",
-      unit: "Quả",
-      imageUrl: "http://192.168.1.125:3000/public/products/apple.jpg",
-      importPrice: "67000",
-      purchasePrice: "75000",
-      amount: "25",
-      quantitySold: "0",
-      dateOfImport: "2020-12-31T17:00:00.000Z",
-      rating: "4.5",
-      sale: 0,
-      shopId: "37ba18b3-f280-4a1c-86ec-a249f99e3405",
-      categoryId: "27b9f332-45cf-43ca-978b-8e7e03c118b6",
-      categoryName: "Hoa quả",
-    },
-    {
-      productId: "9f0a3d41-2b00-4c3c-92bc-57ed94c3879f",
-      productCode: "SP00005",
-      productName: "Bưởi hồng da xanh túi lưới 1.4kg",
-      description:
-        "Bưởi hồng da xanh túi lưới 1.4kg là một loại quả đặc sản của miền Tây Nam Bộ. Với các múi khi chín màu hồng đỏ rất dễ tách, múi bưởi mọng nước, vị ngọt, mùi thơm khi thưởng thức. Trở thành loại quả được sử dụng phổ biến và được nhiều người ưa chuộng!",
-      unit: "Quả",
-      imageUrl: "http://192.168.1.125:3000/public/products/grapefruit.jpg",
-      importPrice: "60000",
-      purchasePrice: "72100",
-      amount: "52",
-      quantitySold: "4",
-      dateOfImport: "2020-12-31T17:00:00.000Z",
-      rating: "5",
-      sale: 0,
-      shopId: "b6d85673-f0bb-4fd0-aa8c-e8a8c99b880c",
-      categoryId: "27b9f332-45cf-43ca-978b-8e7e03c118b6",
-      categoryName: "Hoa quả",
-    },
-    {
-      productId: "e4121319-2067-47a2-a324-24f33ee0ae26",
-      productCode: "SP00006",
-      productName: "Xoài cát chu 1kg",
-      description:
-        "Xoài xanh ngọt với bề ngoài màu xanh mướt bên trong vàng ươm, thịt dày, mùi thơm ngon và vị ngọt bùi.",
-      unit: "Quả",
-      imageUrl: "http://192.168.1.125:3000/public/products/mango.jpg",
-      importPrice: "40000",
-      purchasePrice: "47500",
-      amount: "40",
-      quantitySold: "0",
-      dateOfImport: "2020-12-31T17:00:00.000Z",
-      rating: "5",
-      sale: 0,
-      shopId: "b6d85673-f0bb-4fd0-aa8c-e8a8c99b880c",
-      categoryId: "27b9f332-45cf-43ca-978b-8e7e03c118b6",
-      categoryName: "Hoa quả",
-    },
-  ];
+  const [dataProducts, setDataProducts] = useState([]);
+  const cates = useSelector((state) => state.constantReducer.cates);
 
   // Phần config tên cột, style độ rộng cho từng cột của bảng
   const fields = [
@@ -218,32 +103,174 @@ const Products = () => {
     },
   ];
 
-  // Hàm xử lý hiển thị khi chọn file
-  const previewFile = () => {
-    setDataModal({ ...dataModal, imageUrl: "" });
-    var file = document.querySelector("input[type=file]").files[0];
-    var reader = new FileReader();
-    reader.onloadend = function () {
-      setDataModal({ ...dataModal, imageUrl: reader.result });
-    };
-    if (file) {
-      reader.readAsDataURL(file);
-    } else {
-      setDataModal({
-        ...dataModal,
-        imageUrl: "https://image.flaticon.com/icons/png/512/16/16410.png",
+  // Hàm lấy dữ liệu toàn bộ sản phẩm
+  const getProducts = useCallback(async () => {
+    setIsLoading(true);
+    //fetching data ở đây
+    try {
+      const response = await fetch(`http://192.168.1.125:3000/api/products`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
       });
+      switch (response.status) {
+        case 200:
+          const resData = await response.json();
+          setDataProducts(resData.data);
+          setIsLoading(false);
+          return;
+        default:
+          setIsLoading(false);
+          alert("Lỗi lấy số thông tin sản phẩm");
+          return;
+      }
+    } catch (err) {
+      setIsLoading(false);
+      alert(`Lỗi tải dữ liệu: ${err}`);
     }
-  };
+  }, []);
 
-  // Hàm xử lý mở chọn file ảnh
-  const chooseImgHanler = () => {
-    const imageFile = document.getElementById("imgProd");
-    imageFile.click();
+  // Hàm gọi tới hàm lấy dữ liệu
+  useEffect(() => {
+    getProducts();
+  }, [getProducts]);
+
+  // Hàm lấy tên loại sản phẩm
+  const getCateName = (cateId) => {
+    const cateFinded = cates.find((item) => item.categoryId === cateId);
+    return cateFinded.categoryName;
   };
 
   // Modal cập nhật thông tin sản phẩm
   const UpdateInfoProductModal = () => {
+    const [data, setData] = useState({
+      productId: dataModal.productId,
+      productName: "",
+      description: "",
+      unit: "",
+      imageUrl: dataModal.imageUrl,
+      importPrice: "",
+      purchasePrice: "",
+      amount: "",
+      quantitySold: "",
+      dateOfImport: "",
+      rating: "",
+      sale: 0,
+      shopId: "",
+      categoryId: "",
+      haveImport: false,
+    });
+    const [validFormUpdate, setValidFormUpdate] = useState("");
+
+    // Hàm xử lý hiển thị khi chọn file
+    const previewFile = () => {
+      setData({ ...data, imageUrl: "" });
+      // hiển thị ảnh
+      var file = document.querySelector("input[type=file]").files[0];
+      var reader = new FileReader();
+      reader.onloadend = function () {
+        setData({ ...data, imageUrl: reader.result });
+      };
+      if (file) {
+        reader.readAsDataURL(file);
+      } else {
+        setData({
+          ...data,
+          imageUrl: "https://image.flaticon.com/icons/png/512/16/16410.png",
+        });
+      }
+    };
+
+    // Hàm xử lý mở chọn file ảnh
+    const chooseImgHanler = () => {
+      const imageFile = document.getElementById("imgProd");
+      imageFile.click();
+    };
+
+    // Hàm check validate cho form cập nhật sản phẩm
+    const checkValidFormUpdate = () => {
+      const prodName = document.getElementById("nf-name").value;
+      const cateId = document.getElementById("nf-cate").value;
+      const unit = document.getElementById("nf-unit").value;
+      const amount = document.getElementById("nf-amount").value;
+      const importPrice = document.getElementById("nf-importPrice").value;
+      const purchasePrice = document.getElementById("nf-purchasePrice").value;
+      const sale = document.getElementById("nf-sale").value;
+      if (
+        prodName &&
+        cateId &&
+        unit &&
+        amount &&
+        importPrice &&
+        purchasePrice &&
+        sale
+      ) {
+        if(+importPrice < +purchasePrice){
+          setValidFormUpdate("");
+          return true;
+        }else{
+          setValidFormUpdate("Số tiền nhập phải bé hơn số tiền bán");
+          return false;
+        }
+      } else {
+        setValidFormUpdate("Vui lòng nhập đầy đủ các trường bắt buộc.");
+        return true;
+      }
+    };
+
+    // Hàm cập nhật thông tin sản phẩm
+    const handlerUpdateInfo = async () => {
+      if (checkValidFormUpdate()) {
+        try {
+          const token = localStorage.getItem("token");
+          const formData = new FormData();
+          const productImage = document.querySelector("input[type=file]");
+          formData.append("file", productImage.files[0]);
+          formData.append(
+            "product",
+            JSON.stringify({
+              productId: data.productId,
+              productName: data.productName,
+              description: data.description,
+              unit: data.unit,
+              importPrice: data.importPrice,
+              purchasePrice: data.purchasePrice,
+              amount: data.amount,
+              quantitySold: data.quantitySold,
+              rating: data.rating,
+              categoryId: data.categoryId,
+              sale: data.sale,
+              token: token,
+            })
+          );
+          const response = await fetch(
+            `http://192.168.1.125:3000/api/admin/products`,
+            {
+              method: "PUT",
+              headers: {
+                Accept: "application/json",
+                "x-access-token": token,
+              },
+              body: formData,
+            }
+          );
+          switch (response.status) {
+            case 200:
+              await getProducts();
+              setShowModalUpdateProd(!showModalUpdateProd);
+              return;
+            default:
+              alert("Lỗi không cập nhật được thông tin sản phẩm");
+              return;
+          }
+        } catch (err) {
+          alert(`Lỗi tải dữ liệu: ${err}`);
+        }
+      }
+    };
+
     return (
       <CModal
         style={{ ...borderCustom }}
@@ -255,13 +282,13 @@ const Products = () => {
         <CModalHeader closeButton>
           <CModalTitle>Cập nhật thông tin sản phẩm</CModalTitle>
         </CModalHeader>
-        <CModalBody>
+        <CModalBody className="pb-4">
           <CForm action="" method="post">
             <CRow>
               <CCol md="3">
                 {/* Ảnh sản phẩm */}
                 <CImg
-                  src={dataModal.imageUrl}
+                  src={data.imageUrl}
                   className="border"
                   style={{ borderRadius: 15, width: "100%" }}
                 />
@@ -283,6 +310,22 @@ const Products = () => {
                 />
               </CCol>
               <CCol md="9">
+                {/* Tên sản phẩm */}
+                <CFormGroup>
+                  <CLabel htmlFor="nf-name">
+                    Tên sản phẩm <span className="text-danger">(*)</span>
+                  </CLabel>
+                  <CInput
+                    type="text"
+                    id="nf-name"
+                    name="nf-name"
+                    required
+                    defaultValue={dataModal.productName}
+                    onChange={(event) =>
+                      setData({ ...data, productName: event.target.value })
+                    }
+                  />
+                </CFormGroup>
                 <CRow>
                   {/* Mã SP */}
                   <CCol>
@@ -291,7 +334,9 @@ const Products = () => {
                       placement="right-end"
                     >
                       <CFormGroup>
-                        <CLabel htmlFor="nf-code">Mã SP</CLabel>
+                        <CLabel htmlFor="nf-code">
+                          Mã sản phẩm <span className="text-danger">(*)</span>
+                        </CLabel>
                         <CInput
                           style={{ backgroundColor: COLORS.light }}
                           disabled
@@ -303,16 +348,27 @@ const Products = () => {
                       </CFormGroup>
                     </CTooltip>
                   </CCol>
-                  {/* Tên sản phẩm */}
+                  {/* Loại sản phẩm */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-name">Tên sản phẩm</CLabel>
-                      <CInput
-                        type="text"
-                        id="nf-name"
-                        name="nf-name"
-                        defaultValue={dataModal.productName}
-                      />
+                      <CLabel htmlFor="nf-cate">
+                        Loại sản phẩm <span className="text-danger">(*)</span>
+                      </CLabel>
+                      <CSelect
+                        id="nf-cate"
+                        name="nf-cate"
+                        aria-label="Chọn loại sản phẩm"
+                        defaultValue={dataModal.categoryId}
+                        onChange={(event) =>
+                          setData({ ...data, categoryId: event.target.value })
+                        }
+                      >
+                        {cates.map((item) => (
+                          <option value={item.categoryId} key={item.categoryId}>
+                            {item.categoryName}
+                          </option>
+                        ))}
+                      </CSelect>
                     </CFormGroup>
                   </CCol>
                 </CRow>
@@ -320,24 +376,38 @@ const Products = () => {
                   {/* Đơn vị */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-unit">Đơn vị</CLabel>
+                      <CLabel htmlFor="nf-unit">
+                        Đơn vị <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
                         type="text"
                         id="nf-unit"
                         name="nf-unit"
+                        required
                         defaultValue={dataModal.unit}
+                        onChange={(event) =>
+                          setData({ ...data, unit: event.target.value })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
                   {/* Số lượng còn */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-amount">Số lượng trong kho</CLabel>
+                      <CLabel htmlFor="nf-amount">
+                        Số lượng trong kho{" "}
+                        <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        type="text"
+                        type="number"
+                        min={0}
                         id="nf-amount"
                         name="nf-amount"
+                        required
                         defaultValue={dataModal.amount}
+                        onChange={(event) =>
+                          setData({ ...data, amount: event.target.value })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
@@ -346,24 +416,43 @@ const Products = () => {
                   {/* Giá nhập */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-importPrice">Giá nhập</CLabel>
+                      <CLabel htmlFor="nf-importPrice">
+                        Giá nhập <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        type="text"
+                        type="number"
+                        min={0}
+                        step={1000}
                         id="nf-importPrice"
                         name="nf-importPrice"
+                        required
                         defaultValue={dataModal.importPrice}
+                        onChange={(event) =>
+                          setData({ ...data, importPrice: event.target.value })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
                   {/* Giá bán */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-purchasePrice">Giá bán</CLabel>
+                      <CLabel htmlFor="nf-purchasePrice">
+                        Giá bán <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        type="text"
+                        type="number"
+                        min={0}
+                        step={1000}
                         id="nf-purchasePrice"
                         name="nf-purchasePrice"
+                        required
                         defaultValue={dataModal.purchasePrice}
+                        onChange={(event) =>
+                          setData({
+                            ...data,
+                            purchasePrice: event.target.value,
+                          })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
@@ -376,7 +465,9 @@ const Products = () => {
                       placement="right-end"
                     >
                       <CFormGroup>
-                        <CLabel htmlFor="nf-rating">Đánh giá</CLabel>
+                        <CLabel htmlFor="nf-rating">
+                          Đánh giá <span className="text-danger">(*)</span>
+                        </CLabel>
                         <CInput
                           style={{ backgroundColor: COLORS.light }}
                           disabled
@@ -391,12 +482,19 @@ const Products = () => {
                   {/* Giảm giá */}
                   <CCol>
                     <CFormGroup>
-                      <CLabel htmlFor="nf-sale">Giảm giá</CLabel>
+                      <CLabel htmlFor="nf-sale">
+                        Giảm giá <span className="text-danger">(*)</span>
+                      </CLabel>
                       <CInput
-                        type="text"
+                        type="number"
+                        min={0}
                         id="nf-sale"
                         name="nf-sale"
+                        required
                         defaultValue={dataModal.sale}
+                        onChange={(event) =>
+                          setData({ ...data, sale: event.target.value })
+                        }
                       />
                     </CFormGroup>
                   </CCol>
@@ -409,11 +507,25 @@ const Products = () => {
                     name="nf-description"
                     rows={4}
                     defaultValue={dataModal.description}
+                    onChange={(event) =>
+                      setData({ ...data, description: event.target.value })
+                    }
                   />
                 </CFormGroup>
               </CCol>
             </CRow>
           </CForm>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 12,
+              left: 215,
+              color: "red",
+              width: "82%",
+            }}
+          >
+            {validFormUpdate}
+          </div>
         </CModalBody>
         <CModalFooter className="d-flex align-items-center justify-content-between">
           <CButton
@@ -432,7 +544,7 @@ const Products = () => {
               color="warning"
               shape="pill"
               style={{ color: COLORS.light }}
-              onClick={() => setShowModalUpdateProd(!showModalUpdateProd)}
+              onClick={handlerUpdateInfo}
             >
               Cập nhật
             </CButton>{" "}
@@ -451,6 +563,39 @@ const Products = () => {
 
   // Modal xác nhận xóa
   const ConfirmDeleteModal = () => {
+    // Hàm thực hiện xóa sản phẩm
+    const deleteProduct = async () => {
+      if(dataModal.productId){
+        try {
+          const token = localStorage.getItem("token");
+          const response = await fetch(
+            `http://192.168.1.125:3000/api/products/${dataModal.productId}`,
+            {
+              method: "DELETE",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "x-access-token": token,
+              },
+            }
+          );
+          switch (response.status) {
+            case 200:
+              await getProducts();
+              setShowModalConfirm(!showModalConfirm);
+              return;
+            default:
+              alert("Lỗi không cập nhật được thông tin sản phẩm");
+              return;
+          }
+        } catch (err) {
+          alert(`Lỗi xóa sản phẩm: ${err}`);
+        }
+      }else{
+        alert("Không lấy được id sản phẩm")
+      }
+    }
+
     return (
       <CModal
         style={{ ...borderCustom }}
@@ -467,7 +612,7 @@ const Products = () => {
             color="info"
             shape="pill"
             className="d-flex align-items-center"
-            onClick={() => console.log("test")}
+            onClick={deleteProduct}
           >
             Tiếp tục
           </CButton>
@@ -489,6 +634,15 @@ const Products = () => {
     setShowModalUpdateProd(true);
   };
 
+  // Trường hợp chưa load được dữ liệu
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center w-100">
+        <CSpinner color="info" />
+      </div>
+    );
+  }
+
   return (
     <CCard style={{ ...borderCustom }}>
       <UpdateInfoProductModal />
@@ -498,7 +652,7 @@ const Products = () => {
       </CCardHeader>
       <CCardBody>
         <CDataTable
-          items={usersData}
+          items={dataProducts}
           fields={fields}
           columnFilter
           tableFilter
@@ -509,6 +663,11 @@ const Products = () => {
           sorter
           pagination
           onRowClick={(item) => handlerShowModal(item)}
+          scopedSlots={{
+            categoryName: (item) => <td>{getCateName(item.categoryId)}</td>,
+            importPrice: (item) => <td>{fomatMoney(item.importPrice)}</td>,
+            purchasePrice: (item) => <td>{fomatMoney(item.purchasePrice)}</td>,
+          }}
         />
       </CCardBody>
     </CCard>

@@ -7,7 +7,9 @@ const {
   getMaxCode,
   checkExist,
   deleteRecord,
+  convertPathFile,
 } = require("../util/common");
+const fs = require("fs");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "shop";
@@ -99,7 +101,7 @@ const getShopById = async (req, res, next) => {
           result.ShopId,
           result.ShopCode,
           result.ShopName,
-          result.Avatar,
+          convertPathFile(result.Avatar),
           result.PhoneNumber,
           result.OtherPhoneNumber,
           result.Address,
@@ -328,17 +330,16 @@ const addNewShop = async (req, res, next) => {
  * @param {*} next next sang middleware khác
  */
 const updateInfoShop = async (req, res, next) => {
+  const dataReq = JSON.parse(req.body.shop);
   //lấy các giá trị request
-  let shopId = req.params.shopId;
-  let shopName = req.body.shopName;
-  let avatar = req.body.avatar;
-  let phoneNumber = req.body.phoneNumber;
-  let otherPhoneNumber = req.body.otherPhoneNumber;
-  let email = req.body.email;
-  let address = req.body.address;
-  let openTime = req.body.openTime;
-  let closeTime = req.body.closeTime;
-  let rating = req.body.rating;
+  let shopId = dataReq.shopId;
+  let shopName = dataReq.shopName;
+  let phoneNumber = dataReq.phoneNumber;
+  let otherPhoneNumber = dataReq.otherPhoneNumber;
+  let email = dataReq.email;
+  let address = dataReq.address;
+  let openTime = dataReq.openTime;
+  let closeTime = dataReq.closeTime;
 
   //check id shop truyền vào rỗng
   if (shopId) {
@@ -346,68 +347,84 @@ const updateInfoShop = async (req, res, next) => {
       const existShop = await checkExist(primaryKeyTable, shopId);
       //check tồn tại account admin có id tương ứng
       if (existShop) {
-        shopName = shopName === undefined ? existShop.ShopName : shopName;
-        avatar = avatar === undefined ? existShop.Avatar : avatar;
-        phoneNumber =
-          phoneNumber === undefined ? existShop.PhoneNumber : phoneNumber;
-        otherPhoneNumber =
-          otherPhoneNumber === undefined
-            ? existShop.OtherPhoneNumber
-            : otherPhoneNumber;
-        email = email === undefined ? existShop.Email : email;
-        address = address === undefined ? existShop.Address : address;
-        openTime = openTime === undefined ? existShop.OpenTime : openTime;
-        closeTime = closeTime === undefined ? existShop.CloseTime : closeTime;
-        rating = rating === undefined ? existShop.Rating : rating;
+        // Lấy đường dẫn cho ảnh
+        if (req.file) {
+          avatar = `shops/${req.nameFileImg}`;
+          // thực hiện xóa file cũ
+          const pathImg = `./public/${existShop.Avatar}`;
+          if (existShop.Avatar) {
+            fs.unlinkSync(pathImg);
+          }
+        } else {
+          avatar = existShop.Avatar;
+        }
+
+        shopName = shopName ? shopName : existShop.ShopName;
+        phoneNumber = phoneNumber ? phoneNumber : existShop.PhoneNumber;
+        otherPhoneNumber = otherPhoneNumber
+          ? otherPhoneNumber
+          : existShop.OtherPhoneNumber;
+        email = email ? email : existShop.Email;
+        address = address ? address : existShop.Address;
+        openTime = openTime ? openTime : existShop.OpenTime;
+        closeTime = closeTime ? closeTime : existShop.CloseTime;
         //cập nhật database
         const result = await db.execute(
-          `update ${tableName} set ShopName = "${shopName}", Avatar = "${avatar}" PhoneNumber = "${phoneNumber}", Address = "${address}", Email = "${email}", OpenTime = "${openTime}", CloseTime = ${closeTime}, Rating = ${rating} where ${primaryKeyTable} = "${shopId}"`
+          `update ${tableName} set ShopName = "${shopName}", Avatar = "${avatar}", PhoneNumber = "${phoneNumber}", Address = "${address}", Email = "${email}", OpenTime = "${openTime}", CloseTime = "${closeTime}", OtherPhoneNumber = "${otherPhoneNumber}" where ${primaryKeyTable} = "${shopId}"`
         );
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = ""),
-            (devMsg = ""),
-            (userMsg = ""),
-            (moreInfo = null),
-            (data = result)
-          )
-        );
+        res
+          .status(200)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = ""),
+              (devMsg = ""),
+              (userMsg = ""),
+              (moreInfo = null),
+              (data = result)
+            )
+          );
       } else {
-        res.send(
+        res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = false),
+              (errorCode = ""),
+              (devMsg = `Cannot found account of shop have id='${shopId}' in the database.`),
+              (userMsg = `Không tồn tại cửa hàng có id=${shopId} cần cập nhật.`),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      }
+    } catch (err) {
+      res
+        .status(500)
+        .send(
           new Response(
             (isSuccess = false),
-            (errorCode = ""),
-            (devMsg = `Cannot found account of shop have id='${shopId}' in the database.`),
-            (userMsg = `Không tồn tại cửa hàng có id=${shopId} cần cập nhật.`),
+            (errorCode = "DB002"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi không cập nhật được dữ liệu"),
             (moreInfo = null),
             (data = null)
           )
         );
-      }
-    } catch (err) {
-      res.send(
+    }
+  } else {
+    res
+      .status(400)
+      .send(
         new Response(
           (isSuccess = false),
-          (errorCode = "DB002"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi không cập nhật được dữ liệu"),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
           (moreInfo = null),
           (data = null)
         )
       );
-    }
-  } else {
-    res.send(
-      new Response(
-        (isSuccess = false),
-        (errorCode = ""),
-        (devMsg = "Params in request is null."),
-        (userMsg = "Dữ liệu truyền sang đang để trống."),
-        (moreInfo = null),
-        (data = null)
-      )
-    );
   }
 };
 

@@ -14,8 +14,10 @@ const {
   cancelOrderForShipper,
   getSumDeptForShipper,
   getHistorySuccessDelive,
-  getDetailCancelOrders
+  getDetailCancelOrders,
 } = require("../controllers/delivery-order");
+const { isAuth } = require("../middlewares/auth");
+const { uploadImageShipper } = require("../uploads/multer");
 
 //create router for object: admin
 const router = express.Router();
@@ -26,12 +28,22 @@ router.get("/shippers", getShippers);
 router.get("/shippers/:shipperId", getShipperById);
 //Tìm kiếm tài khoản shipper theo tên hoặc theo mã shipper
 router.get("/search/shippers", searchAccountShipper);
-//Thêm tài khoản shipper mới
-router.post("/shippers", addNewAccountShipper);
 //Cập nhật thông tin tài khoản shipper
-router.put("/shippers/:shipperId", updateInfoAccountShipper);
+router.put(
+  "/shippers",
+  isAuth,
+  uploadImageShipper.single("file"),
+  updateInfoAccountShipper
+);
 //Xóa tài khoản shipper
-router.delete("/shippers/:shipperId", deleteAccountShipper);
+router.delete("/shippers", isAuth, deleteAccountShipper);
+//Thêm tài khoản shipper mới
+router.post(
+  "/shippers",
+  isAuth,
+  uploadImageShipper.single("file"),
+  addNewAccountShipper
+);
 
 /**
  * Route cho các API phục vụ Shipper

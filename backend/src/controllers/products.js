@@ -106,6 +106,104 @@ const getProducts = (req, res, next) => {
 };
 
 /**
+ * Lấy toàn bộ sản phẩm theo khu vực, có tìm kiếm theo tên sản phẩm
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+const getProductsByArea = (req, res, next) => {
+  const productName = req.query.productName;
+  const areaId = req.query.areaId;
+
+  if (areaId) {
+    let sql = `select * from product p, shop s where p.ShopId = s.ShopId and areaId = '${areaId}'`;
+    if (productName) {
+      sql += ` and p.ProductName LIKE '%${productName}%'`;
+    }
+    //thực hiện lấy danh sách sản phẩm
+    db.execute(sql)
+      .then((result) => {
+        if (result[0] && result[0].length > 0) {
+          let products = [];
+          result[0].forEach((item) => {
+            const product = new Product(
+              item.ProductId,
+              item.ProductCode,
+              item.ProductName,
+              item.Description,
+              item.Unit,
+              convertPathFile(item.ImageUrl),
+              item.ImportPrice,
+              item.PurchasePrice,
+              item.Amount,
+              item.QuantitySold,
+              item.DateOfImport,
+              item.Rating,
+              item.Sale,
+              item.ShopId,
+              item.CategoryId
+            );
+            products.push(product);
+          });
+          return res
+            .status(200)
+            .send(
+              new Response(
+                (isSuccess = true),
+                (errorCode = null),
+                (devMsg = null),
+                (userMsg = null),
+                (moreInfo = null),
+                (data = products)
+              )
+            );
+        } else {
+          return res
+            .status(404)
+            .send(
+              new Response(
+                (isSuccess = true),
+                (errorCode = null),
+                (devMsg = "Data is empty."),
+                (userMsg = null),
+                (moreInfo = null),
+                (data = null)
+              )
+            );
+        }
+      })
+      .catch((err) => {
+        console.log("errorr: " + err);
+        return res
+          .status(500)
+          .send(
+            new Response(
+              (isSuccess = false),
+              (errorCode = "DB001"),
+              (devMsg = err.toString()),
+              (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      });
+  } else {
+    res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = null),
+          (devMsg = "Params in request is null"),
+          (userMsg = null),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
+  }
+};
+
+/**
  * Controller lấy random sản phẩm theo loại sản phẩm hoặc theo cửa hàng
  * @param {*} req request
  * @param {*} res response
@@ -1018,7 +1116,7 @@ module.exports = {
   getRandomProducts,
   getProductById,
   searchProduct,
-  // addNewProduct,
+  getProductsByArea,
   updateInfoProduct,
   deleteProduct,
   updateAmountProduct,

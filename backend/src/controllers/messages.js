@@ -23,11 +23,12 @@ const primaryKeyTable = "ChatId";
  * @param {*} next
  */
 const getBoardChat = async (req, res, next) => {
-  const customerId = req.params.customerId;
-  if (customerId) {
+  const customerId = req.query.customerId;
+  const areaId = req.query.areaId;
+  if (customerId && areaId) {
     try {
       // Lấy danh sách các shop hiện tại
-      const listShop = await getInfoShops();
+      const listShop = await getInfoShops(areaId);
       if (listShop && listShop.length > 0) {
         const result = [];
         await Promise.all(

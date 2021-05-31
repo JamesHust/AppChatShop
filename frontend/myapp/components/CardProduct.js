@@ -191,7 +191,7 @@ const CartProduct = (props) => {
                   color: COLORS.dark,
                 }}
               >
-                {product.rating}
+                {Math.round(+product.rating * 10) / 10}
               </Text>
               {/* Số lượng đã bán */}
               <Text style={{ fontWeight: "bold", color: COLORS.grey_6 }}>
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "space-between",
-    width: screenWidth / 2,
+    width: screenWidth / 2 - 5,
     backgroundColor: COLORS.light,
     borderRadius: 15,
     borderColor: COLORS.grey_4,

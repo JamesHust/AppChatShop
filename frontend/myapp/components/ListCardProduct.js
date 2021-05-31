@@ -10,7 +10,11 @@ const ListCardProduct = (props) => {
         numColumns={2}
         data={props.data}
         keyExtractor={(item, index) => index}
-        renderItem={(item) => <CardProduct data={item} />}
+        renderItem={(item) => (
+          <View style={{flex: 1}}>
+            <CardProduct data={item} />
+          </View>
+        )}
       />
     </View>
   );
@@ -19,8 +23,8 @@ const ListCardProduct = (props) => {
 const styles = StyleSheet.create({
   listProduct: {
     flex: 1,
-    marginTop: 10,
-    paddingHorizontal: 8,
+    marginTop: 2,
+    paddingHorizontal: 5,
   },
 });
 

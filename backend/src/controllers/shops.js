@@ -10,6 +10,7 @@ const {
   convertPathFile,
 } = require("../util/common");
 const fs = require("fs");
+const { isBuffer } = require("lodash");
 
 //khai báo các biến toàn cục dùng chung
 const tableName = "shop";
@@ -27,7 +28,7 @@ const codePropName = "ShopCode";
  */
 const getShops = async (req, res, next) => {
   try {
-    const result = getInfoShops();
+    const result = getInfoShops(null);
 
     if (result && result.length > 0) {
       let shops = [];
@@ -480,10 +481,13 @@ const deleteShop = async (req, res, next) => {
 
 //#region Private Function
 // Lấy thông tin tất cả cửa hàng
-const getInfoShops = async () => {
+const getInfoShops = async (areaId) => {
   let result = null;
   //tạo câu lệnh sql tương ứng
-  const sql = `select * from ${tableName} `;
+  let sql = `select * from ${tableName}`;
+  if(areaId){
+    sql += ` where AreaId = '${areaId}'`;
+  }
   const response = await db.execute(sql);
   if (response[0] && response[0].length > 0) {
     result = response[0];

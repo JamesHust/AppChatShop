@@ -12,7 +12,8 @@ const initialState = {
     email: "", //địa chỉ email
     password: "", //mật khẩu
     chatId: "", //id chat
-    avatar: ""
+    avatar: "",
+    areaId: ""//id khu vực
   },
 };
 
@@ -35,6 +36,7 @@ export default (state = initialState, action) => {
           email: customer.email ? customer.email : customer.Email, //địa chỉ email
           password: customer.password ? customer.password : customer.Password, //mật khẩu
           chatId: customer.chatId ? customer.chatId : customer.ChatId, //id chat
+          areaId: customer.areaId ? customer.areaId : customer.AreaId, //id khu vực
         },
       };
     case REMOVE_TOKEN:
@@ -51,6 +53,7 @@ export default (state = initialState, action) => {
           email: "", //địa chỉ email
           password: "", //mật khẩu
           chatId: "", //id chat
+          areaId: "", //id khu vực
         },
       };
   }

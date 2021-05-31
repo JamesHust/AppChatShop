@@ -9,7 +9,7 @@ const {
 const router = express.Router();
 
 //Lấy tất cả bảng chat cho từng khách hàng
-router.get("/board/:customerId", getBoardChat);
+router.get("/board", getBoardChat);
 //Lấy danh sách tin nhắn theo từng phòng chat
 router.get("/room/:roomId", getListMessage);
 // Thêm tin nhắn mới vào cơ sở dữ liệu

@@ -39,7 +39,8 @@ const getCustomers = (req, res, next) => {
             item.Address,
             item.Email,
             item.Password,
-            item.ChatId
+            item.ChatId,
+            item.AreaId,
           );
           customers.push(customer);
         });
@@ -106,7 +107,8 @@ const getCustomerById = async (req, res, next) => {
           result.Address,
           result.Email,
           result.Password,
-          result.ChatId
+          result.ChatId,
+          result.AreaId,
         );
         res.send(
           new Response(
@@ -491,7 +493,8 @@ const getCustomerByEmailOrPhone = async (userName) => {
       customer[0][0].Address,
       customer[0][0].Email,
       customer[0][0].Password,
-      customer[0][0].ChatId
+      customer[0][0].ChatId,
+      customer[0][0].AreaId,
     );
   }
   return result;

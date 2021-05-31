@@ -10,7 +10,8 @@ module.exports = class Customer {
     address, //địa chỉ thường trú
     email, //địa chỉ email
     password, //mật khẩu
-    chatId //id chat
+    chatId, //id chat
+    areaId//id khu vực 
   ) {
     this.customerId = customerId;
     this.customerCode = customerCode;
@@ -22,5 +23,6 @@ module.exports = class Customer {
     this.email = email;
     this.password = password;
     this.chatId = chatId;
+    this.areaId = areaId;
   }
 };

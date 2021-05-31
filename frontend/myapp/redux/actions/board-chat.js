@@ -5,11 +5,11 @@ import RoomChat from "../../models/room-chat";
 //Khai báo các type của boardChatAction
 export const GET_BOARD_CHAT = "GET_BOARD_CHAT";
 
-export const getBoardChat = (customerId, token) => {
+export const getBoardChat = (customerId, areaId, token) => {
   return async (dispatch) => {
     try {
       const response = await fetch(
-        `http://192.168.1.125:3000/api/messages/board/${customerId}`,
+        `http://192.168.1.125:3000/api/messages/board?customerId=${customerId}&areaId=${areaId}`,
         {
           method: "GET",
           headers: {

@@ -12,64 +12,24 @@ import {
 import COLORS from "../constants/color";
 import { Ionicons } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Fontisto } from "@expo/vector-icons";
-import TabCategories from "../components/TabCategories";
+import { useSelector } from "react-redux";
 import ListCardProduct from "../components/ListCardProduct";
 
-const QuickOrderScreen = (props) => {
+const QuickOrderScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
   const [products, setProducts] = useState(null); //danh sách sản phẩm
-  const categories = useMemo(() => [
-    "HOT",
-    "Khuyến mãi",
-    "Gần tôi",
-    "Yêu thích",
-  ]);
-  // component header
-  const Header = () => {
-    return (
-      <View style={styles.boxHeader}>
-        {/* header */}
-        <View style={styles.header}>
-          <View>
-            <Image
-              source={require("../assets/logo/logo3.png")}
-              resizeMode="contain"
-              style={{ width: 120, height: 50 }}
-            />
-          </View>
-          {/* đặt nhanh */}
-          {/* <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={styles.iconWrapper}>
-              <Fontisto name="shopping-bag-1" size={22} color={COLORS.light} />
-            </View>
-          </View> */}
-        </View>
-        {/* search-bar */}
-        <View style={{ marginTop: 10, flexDirection: "row" }}>
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={21} color={COLORS.dark} />
-            <TextInput
-              placeholder="Tìm kiếm mã hoặc tên sản phẩm"
-              style={{ marginLeft: 5 }}
-            />
-          </View>
-          <View style={styles.sortBtn}>
-            <MaterialIcons name="sort" size={23} color={COLORS.light} />
-          </View>
-        </View>
-        {/* Danh muc sản phẩm */}
-        <TabCategories listCategory={categories} />
-      </View>
-    );
-  };
+  const customer = useSelector((state) => state.authReducer.customer);
 
   // Hàm load dữ liệu
-  const loadProducts = useCallback(async () => {
+  const loadProducts = async (textSearch) => {
     setIsLoading(true);
     //fetching data ở đây
     try {
-      const response = await fetch("http://192.168.1.125:3000/api/products", {
+      let api = `http://192.168.1.125:3000/api/area/products?areaId=${customer.areaId}`;
+      if (textSearch) {
+        api += `&productName=${textSearch}`;
+      }
+      const response = await fetch(api, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -83,7 +43,7 @@ const QuickOrderScreen = (props) => {
           setProducts(resData.data);
           return;
         default:
-          Alert.alert("goFAST", `Lỗi tải dữ liệu:`, [
+          Alert.alert("goFAST", `Lỗi lấy danh sách sản phẩm:`, [
             {
               text: "Tải lại",
               onPress: () => loadProducts(),
@@ -108,12 +68,58 @@ const QuickOrderScreen = (props) => {
         },
       ]);
     }
-  }, [setIsLoading]);
+  };
 
-  //check thay đổi khi tải trang
+  // component header
+  const Header = () => {
+    return (
+      <View style={styles.boxHeader}>
+        {/* header */}
+        <View style={styles.header}>
+          <View>
+            <Image
+              source={require("../assets/logo/logo3.png")}
+              resizeMode="contain"
+              style={{ width: 120, height: 50 }}
+            />
+          </View>
+          {/* đặt nhanh */}
+          {/* <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={styles.iconWrapper}>
+              <Fontisto name="shopping-bag-1" size={22} color={COLORS.light} />
+            </View>
+          </View> */}
+        </View>
+        {/* search-bar */}
+        <View
+          style={{ marginTop: 10, flexDirection: "row", paddingBottom: 10 }}
+        >
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={21} color={COLORS.dark} />
+            <TextInput
+              placeholder="Tìm kiếm mã hoặc tên sản phẩm"
+              style={{ marginLeft: 5 }}
+              onEndEditing={(e) => loadProducts(e.nativeEvent.text)}
+              onSubmitEditing={(e) => loadProducts(e.nativeEvent.text)}
+            />
+          </View>
+          <View style={styles.sortBtn}>
+            <MaterialIcons name="sort" size={23} color={COLORS.light} />
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  //check mỗi khi người dùng chọn tab khi tải trang
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts, setIsLoading]);
+    const callFunction = navigation.addListener("focus", async () => {
+      await loadProducts();
+    });
+
+    // Return the function to unsubscribe from the event so it gets removed on unmount
+    return callFunction;
+  }, [navigation]);
 
   // Check trường hợp đang tải dữ liệu
   if (isLoading) {

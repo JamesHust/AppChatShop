@@ -4,12 +4,12 @@ const {
   getProductById,
   getRandomProducts,
   searchProduct,
-  // addNewProduct,
   updateInfoProduct,
   deleteProduct,
   updateInfoProductAdmin,
   importMoreProductAdmin,
   importNewProductAdmin,
+  getProductsByArea
 } = require("../controllers/products");
 const { isAuth } = require("../middlewares/auth");
 const { uploadImageProduct } = require("../uploads/multer");
@@ -19,6 +19,8 @@ const router = express.Router();
 
 //Lấy toàn bộ sản phẩm có theo id cửa hàng và id loại sản phẩm
 router.get("/products", getProducts);
+//Lấy toàn bộ sản phẩm theo khu vực, có tìm kiếm theo tên sản phẩm
+router.get("/area/products", getProductsByArea);
 //Lấy random sản phẩm có theo id cửa hàng và id loại sản phẩm
 router.get("/products/random/:numProducts", getRandomProducts);
 //Lấy chi tiết sản phẩm theo id

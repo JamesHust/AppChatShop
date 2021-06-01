@@ -19,12 +19,18 @@ const primaryKeyTable = "CustomerId";
 //#region API function - service
 /**
  * Controller lấy danh sách toàn bộ khách hàng
+ * Lấy theo khu vực nếu cần
  * @param {*} req request
  * @param {*} res response
  * @param {*} next next sang middleware khác
  */
 const getCustomers = (req, res, next) => {
-  db.execute(`SELECT * FROM ${tableName}`)
+  const areaId = req.query.areaId;
+  let sql = `select * from ${tableName}`;
+  if (areaId) {
+    sql += ` where AreaId = '${areaId}'`;
+  }
+  db.execute(sql)
     .then((result) => {
       if (result && result.length > 0) {
         let customers = [];
@@ -40,7 +46,7 @@ const getCustomers = (req, res, next) => {
             item.Email,
             item.Password,
             item.ChatId,
-            item.AreaId,
+            item.AreaId
           );
           customers.push(customer);
         });
@@ -57,31 +63,124 @@ const getCustomers = (req, res, next) => {
             )
           );
       } else {
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = null),
-            (devMsg = "Data is empty."),
-            (userMsg = null),
-            (moreInfo = null),
-            (data = null)
-          )
-        );
+        res
+          .status(404)
+          .send(
+            new Response(
+              (isSuccess = true),
+              (errorCode = null),
+              (devMsg = "Data is empty."),
+              (userMsg = null),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
       }
     })
     .catch((err) => {
       console.log("errorr: " + err);
-      res.send(
+      res
+        .status(500)
+        .send(
+          new Response(
+            (isSuccess = false),
+            (errorCode = "DB001"),
+            (devMsg = err.toString()),
+            (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
+            (moreInfo = null),
+            (data = null)
+          )
+        );
+    });
+};
+
+/**
+ * Hàm lấy danh sách khách hàng ngoài khu vực theo tên
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+const getCustomerOtherArea = (req, res, next) => {
+  const areaId = req.query.areaId;
+  const customerName = req.query.customerName;
+  if (areaId && customerName) {
+    const sql = `select * from ${tableName} where AreaId <> '${areaId}' and CustomerName like '%${customerName}%'`;
+    db.execute(sql)
+      .then((result) => {
+        if (result && result.length > 0) {
+          let customers = [];
+          result[0].forEach((item) => {
+            const customer = new Customer(
+              item.CustomerId,
+              item.CustomerCode,
+              item.CustomerName,
+              convertPathFile(item.Avatar),
+              item.PhoneNumber,
+              item.OtherPhoneNumber,
+              item.Address,
+              item.Email,
+              item.Password,
+              item.ChatId,
+              item.AreaId
+            );
+            customers.push(customer);
+          });
+          res
+            .status(200)
+            .send(
+              new Response(
+                (isSuccess = true),
+                (errorCode = null),
+                (devMsg = null),
+                (userMsg = null),
+                (moreInfo = null),
+                (data = customers)
+              )
+            );
+        } else {
+          res
+            .status(404)
+            .send(
+              new Response(
+                (isSuccess = true),
+                (errorCode = null),
+                (devMsg = "Data is empty."),
+                (userMsg = null),
+                (moreInfo = null),
+                (data = null)
+              )
+            );
+        }
+      })
+      .catch((err) => {
+        console.log("errorr: " + err);
+        res
+          .status(500)
+          .send(
+            new Response(
+              (isSuccess = false),
+              (errorCode = "DB001"),
+              (devMsg = err.toString()),
+              (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
+              (moreInfo = null),
+              (data = null)
+            )
+          );
+      });
+  } else {
+    return res
+      .status(400)
+      .send(
         new Response(
           (isSuccess = false),
-          (errorCode = "DB001"),
-          (devMsg = err.toString()),
-          (userMsg = "Lỗi lấy được dữ liệu từ cơ sở dữ liệu"),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
           (moreInfo = null),
           (data = null)
         )
       );
-    });
+  }
 };
 
 /**
@@ -108,7 +207,7 @@ const getCustomerById = async (req, res, next) => {
           result.Email,
           result.Password,
           result.ChatId,
-          result.AreaId,
+          result.AreaId
         );
         res.send(
           new Response(
@@ -232,13 +331,14 @@ const createNewCustomer = async (req, res, next) => {
   //lấy các giá trị request
   const customerId = Guid.newGuid().toString();
   let customerCode = null;
-  const customerName = req.body.customerName;
-  const avatar = req.body.avatar;
-  const phoneNumber = req.body.phoneNumber;
-  const otherPhoneNumber = req.body.otherPhoneNumber;
-  const address = req.body.address;
-  const email = req.body.email;
-  const password = req.body.password;
+  const dataReq = JSON.parse(req.body.customer);
+  const customerName = dataReq.customerName;
+  const avatar = `customers/${req.nameFileImg}`;
+  const phoneNumber = dataReq.phoneNumber;
+  const address = dataReq.address;
+  const email = dataReq.email;
+  const password = dataReq.password;
+  const areaId = dataReq.areaId;
   const chatId = Guid.newGuid().toString();
 
   //Lấy mã code lớn nhất và tạo mã code mới khi thêm mới khách hàng
@@ -254,51 +354,78 @@ const createNewCustomer = async (req, res, next) => {
     address &&
     email &&
     password &&
-    chatId
+    chatId &&
+    areaId &&
+    req.file &&
+    avatar
   ) {
-    //Mã hóa mật khẩu
-    var passEncryption = bcrypt.hashSync(password, 8);
+    // Check trùng tài khoản
+    const checkPhoneNumber = await getCustomerByEmailOrPhone(phoneNumber);
+    const checkEmail = await getCustomerByEmailOrPhone(email);
+    if (!checkPhoneNumber && !checkEmail) {
+      //Mã hóa mật khẩu
+      var passEncryption = bcrypt.hashSync(password, 8);
 
-    //thực hiện insert database
-    db.execute(
-      `insert into ${tableName} (CustomerId, CustomerCode, CustomerName, Avatar, PhoneNumber, OtherPhoneNumber, Address, Email, Password, ChatId) values ('${customerId}', '${customerCode}', '${customerName}', '${avatar}', '${phoneNumber}', '${otherPhoneNumber}', '${address}', '${email}', '${passEncryption}', '${chatId}')`
-    )
-      .then((result) => {
-        res.send(
-          new Response(
-            (isSuccess = true),
-            (errorCode = ""),
-            (devMsg = ""),
-            (userMsg = ""),
-            (moreInfo = null),
-            (data = result)
-          )
-        );
-      })
-      .catch((err) => {
-        console.log("errorr: " + err);
-        res.send(
+      //thực hiện insert database
+      db.execute(
+        `insert into ${tableName} (CustomerId, CustomerCode, CustomerName, Avatar, PhoneNumber, Address, Email, Password, ChatId, AreaId) values ('${customerId}', '${customerCode}', '${customerName}', '${avatar}', '${phoneNumber}', '${address}', '${email}', '${passEncryption}', '${chatId}', '${areaId}')`
+      )
+        .then((result) => {
+          return res
+            .status(200)
+            .send(
+              new Response(
+                (isSuccess = true),
+                (errorCode = ""),
+                (devMsg = ""),
+                (userMsg = ""),
+                (moreInfo = null),
+                (data = result)
+              )
+            );
+        })
+        .catch((err) => {
+          return res
+            .status(500)
+            .send(
+              new Response(
+                (isSuccess = false),
+                (errorCode = "DB004"),
+                (devMsg = err.toString()),
+                (userMsg = "Lỗi không thêm mới được dữ liệu"),
+                (moreInfo = null),
+                (data = null)
+              )
+            );
+        });
+    } else {
+      return res
+      .status(403)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "Duplicate account"),
+          (userMsg = "Trùng tài khoản người dùng."),
+          (moreInfo = null),
+          (data = "")
+        )
+      );
+    }
+  } else {
+    
+      return res
+        .status(400)
+        .send(
           new Response(
             (isSuccess = false),
-            (errorCode = "DB004"),
-            (devMsg = err.toString()),
-            (userMsg = "Lỗi không thêm mới được dữ liệu"),
+            (errorCode = ""),
+            (devMsg = "Params in request is null."),
+            (userMsg = "Dữ liệu truyền sang đang để trống."),
             (moreInfo = null),
             (data = null)
           )
         );
-      });
-  } else {
-    res.send(
-      new Response(
-        (isSuccess = false),
-        (errorCode = ""),
-        (devMsg = "Params in request is null."),
-        (userMsg = "Dữ liệu truyền sang đang để trống."),
-        (moreInfo = null),
-        (data = null)
-      )
-    );
   }
 };
 
@@ -424,6 +551,47 @@ const updateInfoCustomer = async (req, res, next) => {
 };
 
 /**
+ * Cập nhật khu vực cho khách hàng
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+const updateAreaForCustomer = async (req, res, next) => {
+  const customerId = req.body.customerId;
+  const areaId = req.body.areaId;
+  if (customerId && areaId) {
+    const sql = `update customer set AreaId = '${areaId}' where CustomerId = '${customerId}'`;
+    const result = await db.execute(sql);
+    return res
+      .status(200)
+      .send(
+        new Response(
+          (isSuccess = true),
+          (errorCode = ""),
+          (devMsg = null),
+          (userMsg = null),
+          (moreInfo = null),
+          (data = "success")
+        )
+      );
+  } else {
+    return res
+      .status(400)
+      .send(
+        new Response(
+          (isSuccess = false),
+          (errorCode = ""),
+          (devMsg = "Params in request is null."),
+          (userMsg = "Dữ liệu truyền sang đang để trống."),
+          (moreInfo = null),
+          (data = null)
+        )
+      );
+  }
+};
+
+/**
  * Xóa tài khoản khách hàng
  * @param {*} req request
  * @param {*} res response
@@ -494,7 +662,7 @@ const getCustomerByEmailOrPhone = async (userName) => {
       customer[0][0].Email,
       customer[0][0].Password,
       customer[0][0].ChatId,
-      customer[0][0].AreaId,
+      customer[0][0].AreaId
     );
   }
   return result;
@@ -504,10 +672,12 @@ const getCustomerByEmailOrPhone = async (userName) => {
 //export controller
 module.exports = {
   getCustomers,
+  getCustomerOtherArea,
   getCustomerById,
   getRateAndOrders,
   createNewCustomer,
   updateInfoCustomer,
+  updateAreaForCustomer,
   deleteAccountCustomer,
   getCustomerByEmailOrPhone,
 };

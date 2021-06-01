@@ -186,7 +186,7 @@ const Employees = () => {
               );
               return;
             default:
-              alert("Lỗi không cập nhật được thông tin sản phẩm");
+              alert("Lỗi không thêm mới được nhân viên");
               return;
           }
         } catch (err) {

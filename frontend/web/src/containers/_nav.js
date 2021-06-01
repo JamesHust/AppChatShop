@@ -61,29 +61,19 @@ const _nav =  [
   },
   {
     _tag: 'CSidebarNavDropdown',
-    name: 'Quản lý nhân sự',
-    to: '/employees',
-    icon: 'cil-group',
+    name: 'Quản lý khách hàng',
+    to: '/customers',
+    icon: 'cil-address-book',
     _children:[
       {
         _tag: 'CSidebarNavItem',
-        name: 'Quyền hệ thống',
-        to: '/employees/permission',
+        name: 'Khách hàng khu vực',
+        to: '/customers/area',
       },
       {
         _tag: 'CSidebarNavItem',
-        name: 'Nhân viên',
-        to: '/employees/account',
-      },
-      {
-        _tag: 'CSidebarNavItem',
-        name: 'Nhân viên giao hàng',
-        to: '/shippers',
-      },
-      {
-        _tag: 'CSidebarNavItem',
-        name: 'Tính công',
-        to: '/salary',
+        name: 'Tra cứu khách hàng',
+        to: '/customers/lookup',
       },
     ]
   },

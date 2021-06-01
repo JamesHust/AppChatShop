@@ -27,6 +27,7 @@ import {
   cilBank,
   cilDialpad,
   cilAccountLogout,
+  cilSearch
 } from "@coreui/icons";
 
 import {
@@ -176,6 +177,7 @@ export const icons = Object.assign(
     cilBank,
     cilDialpad,
     cilAccountLogout,
+    cilSearch
   },
   {
     sygnet,

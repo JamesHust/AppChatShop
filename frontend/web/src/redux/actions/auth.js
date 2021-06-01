@@ -15,6 +15,7 @@ export const storageToken = (data) => {
       const admin = data.admin;
       // Lưu token vào storage
       localStorage.setItem("token", token);
+      localStorage.setItem("createdToken", new Date());
       return dispatch({ type: SAVE_TOKEN, admin: admin, token: token });
     } catch (err) {
       throw err;
@@ -45,7 +46,6 @@ export const getAdmin = (data) => {
       );
       if(response.status === 200){
         const resData = await response.json();
-        console.log(resData.data);
         dispatch({ type: GET_ADMIN, admin: resData.data });
       }else{
         alert("Có lỗi xảy ra khi lấy lại dữ liệu tài khoản.")
@@ -89,6 +89,8 @@ export const logout = () => {
       switch (response.status) {
         case 200:
           localStorage.removeItem("token");
+          localStorage.removeItem("createdToken");
+          localStorage.removeItem("areaId");
           dispatch({ type: REMOVE_TOKEN });
           break;
         case 403:

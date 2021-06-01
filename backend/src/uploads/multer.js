@@ -26,6 +26,18 @@ const storageAdmins = multer.diskStorage({
   },
 });
 
+// Config tên file và vị trí chuyển file ảnh đại diện khách hàng
+const storageCustomers = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.resolve(__dirname, "../../public/customers"));
+  },
+  filename: function (req, file, cb) {
+    const nameFileImg = file.fieldname + "_" + Date.now() + "_" + file.originalname;
+    req.nameFileImg = nameFileImg;
+    cb(null, nameFileImg);
+  },
+});
+
 // Config tên file và vị trí chuyển file ảnh đại diện shipper
 const storageShippers = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -65,6 +77,12 @@ let uploadImageAdmin = multer({
   fileFilter: imageFilter,
 });
 
+//upload chỉ mình ảnh cho khách hàng
+let uploadImageCustomer = multer({
+  storage: storageCustomers,
+  fileFilter: imageFilter,
+});
+
 //upload chỉ mình ảnh cho shipper
 let uploadImageShipper = multer({
   storage: storageShippers,
@@ -81,6 +99,7 @@ module.exports = {
   uploadImageProduct,
   uploadImageShipper,
   uploadImageAdmin,
+  uploadImageCustomer,
   uploadImageShop,
   upload,
 };

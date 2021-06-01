@@ -27,13 +27,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); //bắt buộc phải có, nếu không req.body sẽ luôn trả về {}
 app.use("/public", express.static("public")); //cho phép hiển thị các file public
 app.use("/api", authRoutes);
-app.use("/api", customerRoutes);
 app.use("/api", adminRoutes);
 app.use("/api", productRoutes);
 app.use("/api", categoryRoutes);
 app.use("/api", cartRoutes);
 app.use("/api", orderRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api", isAuth, customerRoutes);
 app.use("/api/reviews", isAuth, reviewRoutes);
 app.use("/api", isAuth, shipperRoutes);
 app.use("/api", isAuth, shopRoutes);

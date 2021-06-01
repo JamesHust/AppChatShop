@@ -333,7 +333,8 @@ const getProductById = async (req, res, next) => {
           shop.OpenTime,
           shop.CloseTime,
           shop.Rating,
-          shop.ChatId
+          shop.ChatId,
+          shop.AreaId,
         );
         const category = await checkExist("CategoryId", result.CategoryId);
         const cate = new Category(

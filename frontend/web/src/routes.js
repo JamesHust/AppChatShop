@@ -9,8 +9,9 @@ const ProcessingOrders = lazy(() => import("./views/orders/ProcessingOrders"));
 const CompleteOrders = lazy(() => import("./views/orders/CompleteOrders"));
 const Employees = lazy(() => import("./views/employees/Employees"));
 const Shippers = lazy(() => import("./views/employees/Shippers"));
+const CustomerArea = lazy(() => import("./views/customers/CustomerArea"));
+const LookupCustomer = lazy(() => import("./views/customers/LookupCustomer"));
 const Salary = lazy(() => import("./views/employees/Salary"));
-const Permission = lazy(() => import("./views/employees/Permission"));
 const Account = lazy(() => import("./views/account/Account"));
 const Setting = lazy(() => import("./views/setting/Setting"));
 
@@ -37,13 +38,20 @@ const routes = [
     component: CompleteOrders,
   },
   {
+    path: "/customers",
+    name: "Quản lý khách hàng",
+    component: CustomerArea,
+    exact: true,
+  },
+  { path: "/customers/area", name: "Khách hàng khu vực", component: CustomerArea },
+  { path: "/customers/lookup", name: "Tra cứu khách hàng", component: LookupCustomer },
+  {
     path: "/employees",
     name: "Quản lý nhân sự",
     component: Employees,
     exact: true,
   },
   { path: "/employees/account", name: "Nhân viên", component: Employees },
-  { path: "/employees/permission", name: "Phân quyền", component: Permission },
   { path: "/salary", name: "Tính công", component: Salary },
   { path: "/shippers", name: "Nhân viên giao hàng", component: Shippers },
   { path: "/account", name: "Quản lý tài khoản", component: Account },

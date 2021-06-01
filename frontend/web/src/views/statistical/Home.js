@@ -56,6 +56,7 @@ const Home = () => {
         case 200:
           const resData = await response.json();
           setShopData(resData.data);
+          localStorage.setItem("areaId", resData.data.areaId);
           setIsLoading(false);
           return;
         default:

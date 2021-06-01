@@ -13,6 +13,7 @@ module.exports = class Shop {
     closeTime, //tThời gian đóng cửa
     rating, //đánh giá chất lượng cửa hàng
     chatId, //id chat
+    areaId, //id khu vực
   ) {
     this.shopId = shopId;
     this.shopCode = shopCode;
@@ -26,5 +27,6 @@ module.exports = class Shop {
     this.closeTime = closeTime;
     this.rating = rating;
     this.chatId = chatId;
+    this.areaId = areaId;
   }
 };

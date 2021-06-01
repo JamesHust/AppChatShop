@@ -646,7 +646,7 @@ const ListEmployee = (props, ref) => {
   // Trường hợp chưa load được dữ liệu
   if (isLoading) {
     return (
-      <div className="d-flex justify-content-center align-items-center w-100">
+      <div className="d-flex justify-content-center align-items-center w-100 pt-5">
         <CSpinner color="info" />
       </div>
     );

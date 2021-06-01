@@ -45,7 +45,8 @@ const getShops = async (req, res, next) => {
           item.OpenTime,
           item.CloseTime,
           item.Rating,
-          item.ChatId
+          item.ChatId,
+          item.AreaId,
         );
         shops.push(shop);
       });
@@ -110,7 +111,8 @@ const getShopById = async (req, res, next) => {
           result.OpenTime,
           result.CloseTime,
           result.Rating,
-          result.ChatId
+          result.ChatId,
+          result.AreaId,
         );
         res.send(
           new Response(
@@ -192,7 +194,8 @@ const searchShop = async (req, res, next) => {
               item.OpenTime,
               item.CloseTime,
               item.Rating,
-              item.ChatId
+              item.ChatId,
+              item.AreaId,
             );
             shops.push(shop);
           });

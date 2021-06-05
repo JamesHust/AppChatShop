@@ -44,11 +44,17 @@ const ChatScreen = ({ navigation }) => {
   };
 
   // Hàm lấy danh sách phòng chat
-  const getBoardRoomChat = useCallback(async () => {
+  const getBoardRoomChat = async () => {
     setIsLoading(true);
     try {
       const token = await AsyncStorage.getItem("userToken");
-      dispatch(boardChatActions.getBoardChat(customer.customerId, token));
+      dispatch(
+        boardChatActions.getBoardChat(
+          customer.customerId,
+          customer.areaId,
+          token
+        )
+      );
       setIsLoading(false);
     } catch (err) {
       setIsLoading(false);
@@ -63,12 +69,16 @@ const ChatScreen = ({ navigation }) => {
         },
       ]);
     }
-  }, [setIsLoading]);
+  };
 
   // Hàm theo dõi sự thay đổi để load lại bảng danh sách phòng chat
   useEffect(() => {
-    getBoardRoomChat();
-  }, [dispatch, getBoardRoomChat, setIsLoading]);
+    const getData = navigation.addListener("focus", async () => {
+      await getBoardRoomChat();
+    });
+
+    return getData;
+  }, [navigation]);
 
   // Check trường hợp đang tải dữ liệu
   if (isLoading) {
@@ -115,7 +125,7 @@ const ChatScreen = ({ navigation }) => {
                 navigation.navigate("Chat", {
                   data: item,
                   customerId: customer.customerId,
-                  shopId: item.shopId
+                  shopId: item.shopId,
                 });
               }}
             >

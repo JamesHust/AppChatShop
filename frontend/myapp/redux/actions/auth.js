@@ -13,7 +13,7 @@ export const storageToken = (data) => {
   return async (dispatch) => {
     try {
       const token = data.accessToken;
-      const customer = data.user;
+      const customer = data.user ? data.user : data.customer;
       // Lưu token vào storage
       await AsyncStorage.setItem("userToken", token);
       return dispatch({ type: SAVE_TOKEN, customer: customer, token: token });

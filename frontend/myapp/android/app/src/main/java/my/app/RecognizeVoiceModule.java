@@ -39,7 +39,7 @@ public class RecognizeVoiceModule extends ReactContextBaseJavaModule implements 
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Nói gì đó");
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Vui lòng nói theo cú pháp để thêm sản phẩm vào giỏ: ĐẶT [Số lượng] [Đơn vị] [Tên sản phẩm].");
         try{
             if (intent.resolveActivity(this.reactContext.getPackageManager()) != null) {
                 this.reactContext.startActivityForResult(intent, RESULT_SPEECH, null);
@@ -50,7 +50,7 @@ public class RecognizeVoiceModule extends ReactContextBaseJavaModule implements 
     }
 
     /**
-     * Hàm
+     * Hàm lấy xuất tên module
      * */
     @NonNull
     @Override

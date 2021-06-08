@@ -90,9 +90,9 @@ const getProcessingOrderByCustomer = async (req, res, next) => {
     try {
       let sql = "";
       if (status == "process") {
-        sql = `select * from \`${tableName}\` where CustomerId='${customerId}' and Status IN (0,1,2) order by ModifyDate`;
+        sql = `select * from \`${tableName}\` where CustomerId='${customerId}' and Status IN (0,1,2) order by ModifyDate DESC`;
       } else {
-        sql = `select * from \`${tableName}\` where CustomerId='${customerId}' and Status IN (3,4,5) order by ModifyDate`;
+        sql = `select * from \`${tableName}\` where CustomerId='${customerId}' and Status IN (3,4,5) order by ModifyDate DESC`;
       }
       const result = await db.execute(sql);
       if (result[0].length > 0) {
@@ -1085,20 +1085,16 @@ const createOrder = async (customerId, shopId, total) => {
   if (!orderCode) {
     orderCode = "OD00001";
   }
-  const createDate = new Date().toISOString().slice(0, 10);
-  const modifyDate = new Date().toISOString().slice(0, 10);
   if (
     orderId &&
     orderCode &&
     customerId &&
     shopId &&
     total &&
-    orderCode &&
-    createDate &&
-    modifyDate
+    orderCode
   ) {
     //tạo câu lệnh sql tương ứngF
-    const sql = `insert into \`${tableName}\` (OrderId, ${codePropName}, CustomerId, Total, Status, CreateDate, ModifyDate, ShopId) values ('${orderId}', '${orderCode}', '${customerId}', '${total}', 0, '${createDate}', '${modifyDate}', '${shopId}')`;
+    const sql = `insert into \`${tableName}\` (OrderId, ${codePropName}, CustomerId, Total, Status, ShopId) values ('${orderId}', '${orderCode}', '${customerId}', '${total}', 0, '${shopId}')`;
     //thực hiện tạo giỏ hàng mới
     const result = await db.execute(sql);
     if (result) {
@@ -1118,9 +1114,8 @@ const updateStatusOrder = async (orderId, status) => {
   if (orderId && status) {
     const existOrder = await getOrderById(orderId);
     if (existOrder) {
-      const modifyDate = formatTimeToInsertDB(new Date());
       //tạo câu lệnh sql tương ứng
-      let sql = `update \`${tableName}\` set Status = ${status}, ModifyDate = '${modifyDate}' where OrderId = '${orderId}';`;
+      let sql = `update \`${tableName}\` set Status = ${status} where OrderId = '${orderId}';`;
       //thực hiện cập nhật đơn hàng
       const result = await db.execute(sql);
       return result;

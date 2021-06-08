@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import COLORS from "../constants/color";
 import { useNavigation } from "@react-navigation/native";
-import { addDotToNumber, formatShowDate } from "../utils/Common";
+import { addDotToNumber, formatDateTime } from "../utils/Common";
 
 const DetailMonitorScreen = (props) => {
   const navigation = useNavigation();
@@ -11,10 +11,10 @@ const DetailMonitorScreen = (props) => {
   if (props.data.status == 5) {
     img = require("../assets/status-order/clipboard.png");
     status = " Hủy đơn hàng";
-  } else if (props.data.status == 4) {
+  } else if (props.data.status == 6) {
     img = require("../assets/status-order/report.png");
     status = "Thất bại";
-  } else if (props.data.status == 3) {
+  } else if (props.data.status == 3 || props.data.status == 4) {
     img = require("../assets/status-order/tick.png");
     status = "Thành công";
   } else if (props.data.status == 2) {
@@ -60,14 +60,14 @@ const DetailMonitorScreen = (props) => {
               <Text>
                 Cập nhật lần cuối:{" "}
                 <Text style={styles.customInfo}>
-                  {formatShowDate(props.data.modifyDate)}
+                  {formatDateTime(props.data.modifyDate)}
                 </Text>
               </Text>
             ) : (
               <Text>
                 Ngày đặt:{" "}
                 <Text style={styles.customInfo}>
-                  {formatShowDate(props.data.createDate)}
+                  {formatDateTime(props.data.createDate)}
                 </Text>
               </Text>
             )}

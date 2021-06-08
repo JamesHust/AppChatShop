@@ -207,7 +207,6 @@ const LoginScreen = ({ navigation }) => {
             borderRadius: 15,
             padding: 15,
             justifyContent: "space-between",
-            width: 343, 
             height: 140
           }}
         >

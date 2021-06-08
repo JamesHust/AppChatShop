@@ -402,7 +402,7 @@ const analysisOfText = async (messageText, shopId, type) => {
         sql = `select * from product where ShopId = '${shopId}' and ProductName like '%${productName}%'`;
       } else {
         result =
-          "Sai cú pháp. Cú pháp đúng: ĐẶT [Số lượng] [Đơn vị] [Tên sản phẩm]";
+          "Gửi tin nhắn thường thành công!";
       }
     }
     // Check câu lệnh sql
@@ -473,7 +473,7 @@ const analysisOfText = async (messageText, shopId, type) => {
         }
       } else {
         result =
-          "Sai mã sản phẩm. Vui lòng nhập lại đúng mã sản phẩm theo cú pháp.";
+          "Cửa hàng không có sản phẩm phù hợp. Vui lòng thực hiện lại.";
       }
     }
     return result;

@@ -15,7 +15,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import COLORS from "../constants/color";
 import StepIndicator from "react-native-step-indicator";
 import { MaterialIcons, AntDesign } from "@expo/vector-icons";
-import { addDotToNumber, formatShowDate } from "../utils/Common";
+import { addDotToNumber, formatDateTime } from "../utils/Common";
 import { screenWidth } from "../utils/Dimentions";
 import Modal from "react-native-modal";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
@@ -89,6 +89,7 @@ const DetailMonitorScreen = ({ route, navigation }) => {
     },
     products: [],
   });
+  console.log(detailOrder.order);
   const [currentPosition, setCurrentPosition] = useState(0); //bước hiện tại
   const [notification, setNotification] = useState(""); // Nội dung thông báo
   const [visibleReasonModal, setVisibleReasonModal] = useState(false); //Ẩn hiện modal lý do hủy đơn hàng
@@ -306,8 +307,8 @@ const DetailMonitorScreen = ({ route, navigation }) => {
               total: resData.data[0].order.Total,
               shopName: resData.data[0].products[0].shopName,
               shopAvatar: resData.data[0].products[0].shopAvatar,
-              createDate: formatShowDate(resData.data[0].order.CreateDate),
-              modifyDate: formatShowDate(resData.data[0].order.ModifyDate),
+              createDate: formatDateTime(resData.data[0].order.CreateDate),
+              modifyDate: formatDateTime(resData.data[0].order.ModifyDate),
             },
             products: resData.data[0].products,
           });

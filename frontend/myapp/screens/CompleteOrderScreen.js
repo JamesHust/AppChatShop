@@ -12,10 +12,8 @@ import {
 } from "react-native";
 import COLORS from "../constants/color";
 import { AntDesign } from "@expo/vector-icons";
-// import orders from "../data/orders";
 import { showToast, screenWidth } from "../utils/Common";
 import ListMonitorOrder from "../components/ListMonitorOrder";
-import Icon from "react-native-vector-icons/MaterialIcons";
 import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 

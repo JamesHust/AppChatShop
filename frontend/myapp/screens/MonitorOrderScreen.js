@@ -126,7 +126,7 @@ const DetailMonitorScreen = ({ route, navigation }) => {
       <View style={{ flex: 1 }}>
         {/* Header */}
         <Header />
-        {/* Danh sách sản phẩm yêu thích trống */}
+        {/* Danh sách đơn hàng theo dõi trống*/}
         <View
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >

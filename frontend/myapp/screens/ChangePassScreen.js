@@ -17,6 +17,7 @@ import { useSelector } from "react-redux";
 import { showToast } from "../utils/Common";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 import Modal from "react-native-modal";
+import configData from "../config/config.json";
 
 const ChangePassScreen = ({ navigation }) => {
   // Khai báo các ref
@@ -99,7 +100,7 @@ const ChangePassScreen = ({ navigation }) => {
         try {
           const token = await AsyncStorage.getItem("userToken");
           const response = await fetch(
-            `http://192.168.1.125:3000/api/customers/${customer.customerId}`,
+            `${configData.SERVER_URL}customers/${customer.customerId}`,
             {
               method: "PUT",
               headers: {

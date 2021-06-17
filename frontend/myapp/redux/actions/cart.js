@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 import { Alert } from "react-native";
+import configData from "../../config/config.json";
 
 //Khai báo các type của cartAction
 export const GET_CART = "GET_CART";
@@ -22,7 +23,7 @@ export const getOldCart = (customerId, token) => {
   return async (dispatch) => {
     try {
       const response = await fetch(
-        `http://192.168.1.125:3000/api/carts?customerId=${customerId}`,
+        `${configData.SERVER_URL}carts?customerId=${customerId}`,
         {
           method: "GET",
           headers: {

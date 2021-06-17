@@ -25,6 +25,7 @@ import COLORS from "src/constants/colors";
 import { useSelector, useDispatch } from "react-redux";
 import { addDotToNumber, formatDateInput } from "../../utils/Common";
 import * as authActions from "../../redux/actions/auth";
+import { SERVER_URL } from "src/config/config";
 
 const Account = () => {
   const admin = useSelector((state) => state.authReducer.admin);
@@ -120,7 +121,7 @@ const Account = () => {
             homeTown: account.homeTown,
           })
         );
-        const response = await fetch(`http://192.168.1.125:3000/api/admins`, {
+        const response = await fetch(`${SERVER_URL}admins`, {
           method: "PUT",
           headers: {
             Accept: "application/json",
@@ -209,7 +210,7 @@ const Account = () => {
         try {
           const token = localStorage.getItem("token");
           const response = await fetch(
-            "http://192.168.1.125:3000/api/admins/password",
+            `${SERVER_URL}admins/password`,
             {
               method: "PUT",
               headers: {

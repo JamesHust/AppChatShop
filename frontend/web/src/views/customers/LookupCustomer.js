@@ -19,6 +19,7 @@ import {
 import { title, borderCustom } from "../../constants/common";
 import COLORS from "src/constants/colors";
 import CIcon from "@coreui/icons-react";
+import { SERVER_URL } from "src/config/config";
 
 const LookupCustomer = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +45,7 @@ const LookupCustomer = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/lookup/customers?areaId=${areaId}&customerName=${textSearch}`,
+        `${SERVER_URL}lookup/customers?areaId=${areaId}&customerName=${textSearch}`,
         {
           method: "GET",
           headers: {
@@ -82,7 +83,7 @@ const LookupCustomer = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/area/customers`,
+        `${SERVER_URL}area/customers`,
         {
           method: "PUT",
           headers: {

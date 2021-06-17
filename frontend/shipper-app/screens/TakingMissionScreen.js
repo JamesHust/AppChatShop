@@ -17,6 +17,7 @@ import QueueOrder from "../components/QueueOrder";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 import { showToast } from "../utils/Common";
 import { useSelector, useDispatch } from "react-redux";
+import configData from "../config/config.json";
 
 const TakingMissionScreen = ({ navigation }) => {
   const [searchText, setSearchText] = useState();
@@ -40,7 +41,7 @@ const TakingMissionScreen = ({ navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/receiver/orders?orderCode=${orderCode}&shopId=${shipper.shopId}`,
+        `${configData.SERVER_URL}receiver/orders?orderCode=${orderCode}&shopId=${shipper.shopId}`,
         {
           method: "GET",
           headers: {
@@ -83,7 +84,7 @@ const TakingMissionScreen = ({ navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/shippers/receive`,
+        `${configData.SERVER_URL}shippers/receive`,
         {
           method: "POST",
           headers: {

@@ -24,6 +24,7 @@ import { title, borderCustom } from "../../constants/common";
 import ListEmployee from "./ListEmployee";
 import COLORS from "src/constants/colors";
 import { useSelector } from "react-redux";
+import { SERVER_URL } from "src/config/config";
 
 const Employees = () => {
   const [showModalAddAccount, setShowModalAddAccount] = useState(false);
@@ -163,7 +164,7 @@ const Employees = () => {
               roleAction: admin.role,
             })
           );
-          const response = await fetch(`http://192.168.1.125:3000/api/admins`, {
+          const response = await fetch(`${SERVER_URL}admins`, {
             method: "POST",
             headers: {
               Accept: "application/json",

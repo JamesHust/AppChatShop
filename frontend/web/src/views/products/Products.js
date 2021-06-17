@@ -28,6 +28,7 @@ import { title, borderCustom } from "../../constants/common";
 import COLORS from "src/constants/colors";
 import { useSelector } from "react-redux";
 import { fomatMoney } from "../../utils/Common";
+import { SERVER_URL } from "src/config/config";
 
 const Products = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -108,7 +109,7 @@ const Products = () => {
     setIsLoading(true);
     //fetching data ở đây
     try {
-      const response = await fetch(`http://192.168.1.125:3000/api/products`, {
+      const response = await fetch(`${SERVER_URL}products`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -246,7 +247,7 @@ const Products = () => {
             })
           );
           const response = await fetch(
-            `http://192.168.1.125:3000/api/admin/products`,
+            `${SERVER_URL}admin/products`,
             {
               method: "PUT",
               headers: {
@@ -569,7 +570,7 @@ const Products = () => {
         try {
           const token = localStorage.getItem("token");
           const response = await fetch(
-            `http://192.168.1.125:3000/api/products/${dataModal.productId}`,
+            `${SERVER_URL}products/${dataModal.productId}`,
             {
               method: "DELETE",
               headers: {

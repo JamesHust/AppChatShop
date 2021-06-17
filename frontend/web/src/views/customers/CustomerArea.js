@@ -23,6 +23,7 @@ import {
 import { title, borderCustom } from "../../constants/common";
 import COLORS from "src/constants/colors";
 import CIcon from "@coreui/icons-react";
+import { SERVER_URL } from "src/config/config";
 
 const CustomerArea = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +47,7 @@ const CustomerArea = () => {
     //fetching data ở đây
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://192.168.1.125:3000/api/customers?areaId=${id}`, {
+      const response = await fetch(`${SERVER_URL}customers?areaId=${id}`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -184,7 +185,7 @@ const CustomerArea = () => {
             })
           );
           const response = await fetch(
-            `http://192.168.1.125:3000/api/customers`,
+            `${SERVER_URL}customers`,
             {
               method: "POST",
               headers: {
@@ -203,7 +204,7 @@ const CustomerArea = () => {
               setValidTextImportNew("Email hoặc Số điện thoại đã bị trùng.");
               return;
             default:
-              alert("Lỗi không cập nhật được thông tin sản phẩm");
+              alert("Lỗi thêm khách hàng mới");
               return;
           }
         } catch (err) {
@@ -557,7 +558,7 @@ const CustomerArea = () => {
           pagination
           onRowClick={(item) => handlerClickRow(item)}
           scopedSlots={{
-            otherPhoneNumber: (item) => <td>{item.otherPhoneNumber ? item.otherPhoneNumber : "Không có"}</td>,
+            otherPhoneNumber: (item) => <td>{item.otherPhoneNumber && item.otherPhoneNumber !== 'null' ? item.otherPhoneNumber : "Không có"}</td>,
           }}
         />
       </CCardBody>

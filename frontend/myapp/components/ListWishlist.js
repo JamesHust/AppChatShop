@@ -6,6 +6,7 @@ import { showToast } from "../utils/Common";
 import * as wishlistActions from "../redux/actions/wishlist";
 import { useDispatch, useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage"; 
+import configData from "../config/config.json";
 
 const ListWishList = (props) => {
   const customer = useSelector((state) => state.authReducer.customer);
@@ -15,7 +16,7 @@ const ListWishList = (props) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/reviews/products`,
+        `${configData.SERVER_URL}reviews/products`,
         {
           method: "POST",
           headers: {

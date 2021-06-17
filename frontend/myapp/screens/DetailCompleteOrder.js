@@ -20,6 +20,7 @@ import { screenWidth } from "../utils/Dimentions";
 import Modal from "react-native-modal";
 import { showToast } from "../utils/Common";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
+import configData from "../config/config.json";
 
 // style cho steps
 const secondIndicatorStyles = {
@@ -174,7 +175,7 @@ const DetailCompleteScreen = ({ route, navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/orders/detail?orderId=${orderId}`,
+        `${configData.SERVER_URL}orders/detail?orderId=${orderId}`,
         {
           method: "GET",
           headers: {

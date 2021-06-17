@@ -26,6 +26,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSelector, useDispatch } from "react-redux";
 import { formatShowDate, addDotToNumber, showToast } from "../utils/Common";
 import Modal from "react-native-modal";
+import configData from "../config/config.json";
 
 const DetailMissonScreen = (props) => {
   const navigation = useNavigation(); //Cho phép truy cập navigation
@@ -43,7 +44,7 @@ const DetailMissonScreen = (props) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/orders/detail?orderId=${data.orderId}`,
+        `${configData.SERVER_URL}orders/detail?orderId=${data.orderId}`,
         {
           method: "GET",
           headers: {
@@ -97,7 +98,7 @@ const DetailMissonScreen = (props) => {
   const deleteDeliveryOrder = async () => {
     const token = await AsyncStorage.getItem("userToken");
     const response = await fetch(
-      `http://192.168.1.125:3000/api/delivery/${data.orderId}`,
+      `${configData.SERVER_URL}delivery/${data.orderId}`,
       {
         method: "DELETE",
         headers: {
@@ -115,7 +116,7 @@ const DetailMissonScreen = (props) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/orders?orderId=${data.orderId}&status=3`,
+        `${configData.SERVER_URL}orders?orderId=${data.orderId}&status=3`,
         {
           method: "PUT",
           headers: {
@@ -197,7 +198,7 @@ const DetailMissonScreen = (props) => {
         const reason = noteCancelModal;
         const token = await AsyncStorage.getItem("userToken");
         const response = await fetch(
-          `http://192.168.1.125:3000/api/delivery/cancel`,
+          `${configData.SERVER_URL}delivery/cancel`,
           {
             method: "PUT",
             headers: {

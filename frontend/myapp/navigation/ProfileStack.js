@@ -7,6 +7,7 @@ import LoginScreen from "../screens/LoginScreen";
 import ChangePassScreen from "../screens/ChangePassScreen";
 import MonitorStack from "./MonitorStack";
 import CompleteOrderStack from "./CompleteOrderStack";
+import SupportScreen from "../screens/SupportScreen";
 
 //tạo stack đường dẫn
 const Stack = createStackNavigator();
@@ -57,6 +58,14 @@ const ProfileTask = () => (
     <Stack.Screen
       name="ChangePassScreen"
       component={ChangePassScreen}
+      options={() => ({
+        headerShown: false,
+      })}
+    />
+    {/* Màn hình hỗ trợ */}
+    <Stack.Screen
+      name="SupportScreen"
+      component={SupportScreen}
       options={() => ({
         headerShown: false,
       })}

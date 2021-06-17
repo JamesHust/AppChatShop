@@ -19,6 +19,7 @@ import { addDotToNumber, formatDateTime } from "../utils/Common";
 import { screenWidth } from "../utils/Dimentions";
 import Modal from "react-native-modal";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
+import configData from "../config/config.json";
 
 // style cho steps
 const secondIndicatorStyles = {
@@ -120,7 +121,7 @@ const DetailMonitorScreen = ({ route, navigation }) => {
         const reason = noteCancelModal;
         const token = await AsyncStorage.getItem("userToken");
         const response = await fetch(
-          `http://192.168.1.125:3000/api/cancel/orders`,
+          `${configData.SERVER_URL}cancel/orders`,
           {
             method: "PUT",
             headers: {
@@ -181,8 +182,8 @@ const DetailMonitorScreen = ({ route, navigation }) => {
             backgroundColor: COLORS.light,
             borderRadius: 15,
             padding: 15,
+            width: '100%',
             justifyContent: "space-between",
-            width: 343,
             height: 160,
           }}
         >
@@ -236,8 +237,8 @@ const DetailMonitorScreen = ({ route, navigation }) => {
             backgroundColor: COLORS.light,
             borderRadius: 15,
             padding: 15,
+            width: '100%',
             justifyContent: "space-between",
-            width: 343,
             height: 140,
           }}
         >
@@ -288,7 +289,7 @@ const DetailMonitorScreen = ({ route, navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/orders/detail?orderId=${orderId}`,
+        `${configData.SERVER_URL}orders/detail?orderId=${orderId}`,
         {
           method: "GET",
           headers: {

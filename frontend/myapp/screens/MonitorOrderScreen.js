@@ -18,6 +18,7 @@ import ListMonitorOrder from "../components/ListMonitorOrder";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
+import configData from "../config/config.json";
 
 const DetailMonitorScreen = ({ route, navigation }) => {
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
@@ -49,7 +50,7 @@ const DetailMonitorScreen = ({ route, navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/process/orders?customerId=${customer.customerId}&status=process`,
+        `${configData.SERVER_URL}process/orders?customerId=${customer.customerId}&status=process`,
         {
           method: "GET",
           headers: {

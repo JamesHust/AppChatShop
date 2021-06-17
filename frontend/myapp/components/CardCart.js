@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"; //thÆ° viá
 import { addDotToNumber, showToast } from "../utils/Common";
 import { useSelector, useDispatch } from "react-redux";
 import * as cartActions from "../redux/actions/cart";
+import configData from "../config/config.json";
 
 const CardCart = ({ data, checkedAll }) => {
   const customer = useSelector((state) => state.authReducer.customer);
@@ -94,7 +95,7 @@ const CardCart = ({ data, checkedAll }) => {
       try {
         const token = await AsyncStorage.getItem("userToken");
         if (token) {
-          const response = await fetch("http://192.168.1.125:3000/api/carts", {
+          const response = await fetch(`${configData.SERVER_URL}carts`, {
             method: "PUT",
             headers: {
               Accept: "application/json",

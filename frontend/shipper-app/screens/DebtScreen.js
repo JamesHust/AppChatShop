@@ -27,6 +27,7 @@ import cancel from "../data/cancel_orders";
 import { useSelector, useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { formatShowDate, addDotToNumber, showToast } from "../utils/Common";
+import configData from "../config/config.json";
 
 const DebtScreen = (props) => {
   const navigation = useNavigation(); //Cho phép truy cập navigation
@@ -45,7 +46,7 @@ const DebtScreen = (props) => {
       const token = await AsyncStorage.getItem("userToken");
       const shipperId = await AsyncStorage.getItem("userId");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/debt/delivery?shopId=${shipper.shopId}&shipperId=${shipperId}`,
+        `${configData.SERVER_URL}debt/delivery?shopId=${shipper.shopId}&shipperId=${shipperId}`,
         {
           method: "GET",
           headers: {
@@ -84,7 +85,7 @@ const DebtScreen = (props) => {
       const token = await AsyncStorage.getItem("userToken");
       const shipperId = await AsyncStorage.getItem("userId");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/detail/delivery?shopId=${shipper.shopId}&shipperId=${shipperId}`,
+        `${configData.SERVER_URL}detail/delivery?shopId=${shipper.shopId}&shipperId=${shipperId}`,
         {
           method: "GET",
           headers: {
@@ -123,7 +124,7 @@ const DebtScreen = (props) => {
       const token = await AsyncStorage.getItem("userToken");
       const shipperId = await AsyncStorage.getItem("userId");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/history/delivery?shopId=${shipper.shopId}&shipperId=${shipperId}`,
+        `${configData.SERVER_URL}history/delivery?shopId=${shipper.shopId}&shipperId=${shipperId}`,
         {
           method: "GET",
           headers: {

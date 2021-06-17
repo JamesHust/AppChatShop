@@ -344,6 +344,9 @@ const createNewCustomer = async (req, res, next) => {
   //Lấy mã code lớn nhất và tạo mã code mới khi thêm mới khách hàng
   const maxCode = await getMaxCode(objName);
   customerCode = generateNewCode(maxCode);
+  if(!customerCode){
+    customerCode = "KH00001"
+  }
 
   //check request có trường rỗng
   if (

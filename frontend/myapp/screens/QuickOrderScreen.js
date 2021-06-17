@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import ListCardProduct from "../components/ListCardProduct";
+import configData from "../config/config.json";
 
 const QuickOrderScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
@@ -25,7 +26,7 @@ const QuickOrderScreen = ({ navigation }) => {
     setIsLoading(true);
     //fetching data ở đây
     try {
-      let api = `http://192.168.1.125:3000/api/area/products?areaId=${customer.areaId}`;
+      let api = `${configData.SERVER_URL}area/products?areaId=${customer.areaId}`;
       if (textSearch) {
         api += `&productName=${textSearch}`;
       }

@@ -27,6 +27,7 @@ import {
 import { borderCustom } from "../../constants/common";
 import COLORS from "src/constants/colors";
 import { useSelector } from "react-redux";
+import { SERVER_URL } from "src/config/config";
 
 const ListShipper = (props, ref) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +58,7 @@ const ListShipper = (props, ref) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/shippers?shopId=${admin.shopId}`,
+        `${SERVER_URL}shippers?shopId=${admin.shopId}`,
         {
           method: "GET",
           headers: {
@@ -175,7 +176,7 @@ const ListShipper = (props, ref) => {
             })
           );
           const response = await fetch(
-            `http://192.168.1.125:3000/api/shippers`,
+            `${SERVER_URL}shippers`,
             {
               method: "PUT",
               headers: {
@@ -484,7 +485,7 @@ const ListShipper = (props, ref) => {
       try {
         //thực hiện xóa
         const token = localStorage.getItem("token");
-        const response = await fetch("http://192.168.1.125:3000/api/shippers", {
+        const response = await fetch(`${SERVER_URL}shippers`, {
           method: "DELETE",
           headers: {
             Accept: "application/json",

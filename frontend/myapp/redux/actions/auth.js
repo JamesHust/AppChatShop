@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 import { Alert } from "react-native";
+import configData from "../../config/config.json";
 
 //Khai báo các type của authAction
 export const SAVE_TOKEN = "SAVE_TOKEN";
@@ -33,7 +34,7 @@ export const logout = () => {
     try {
       const userToken = await AsyncStorage.getItem("userToken");
       // Thực hiện xóa token trong cơ sở dữ liệu
-      const response = await fetch("http://192.168.1.125:3000/api/logout", {
+      const response = await fetch(`${configData.SERVER_URL}logout`, {
         method: "POST",
         headers: {
           Accept: "application/json",

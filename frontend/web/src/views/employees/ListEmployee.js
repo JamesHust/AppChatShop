@@ -29,6 +29,7 @@ import { borderCustom } from "../../constants/common";
 import { addDotToNumber, formatDateInput } from "../../utils/Common";
 import COLORS from "src/constants/colors";
 import { useSelector } from "react-redux";
+import { SERVER_URL } from "src/config/config";
 
 const ListEmployee = (props, ref) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +64,7 @@ const ListEmployee = (props, ref) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/employees?shopId=${admin.shopId}`,
+        `${SERVER_URL}employees?shopId=${admin.shopId}`,
         {
           method: "GET",
           headers: {
@@ -198,7 +199,7 @@ const ListEmployee = (props, ref) => {
               basicSalary: infoEmployee.basicSalary,
             })
           );
-          const response = await fetch(`http://192.168.1.125:3000/api/admins`, {
+          const response = await fetch(`${SERVER_URL}admins`, {
             method: "PUT",
             headers: {
               Accept: "application/json",
@@ -574,7 +575,7 @@ const ListEmployee = (props, ref) => {
       try {
         //thực hiện xóa
         const token = localStorage.getItem("token");
-        const response = await fetch("http://192.168.1.125:3000/api/admins", {
+        const response = await fetch(`${SERVER_URL}admins`, {
           method: "DELETE",
           headers: {
             Accept: "application/json",

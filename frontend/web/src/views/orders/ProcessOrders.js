@@ -14,6 +14,7 @@ import { borderCustom } from "../../constants/common";
 import COLORS from "src/constants/colors";
 import { useSelector } from "react-redux";
 import { formatShowDate, fomatMoney } from "src/utils/Common";
+import { SERVER_URL } from "src/config/config";
 
 const ProcessOrders = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +41,7 @@ const ProcessOrders = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/admin/orders?status=1&shopId=${admin.shopId}`,
+        `${SERVER_URL}admin/orders?status=1&shopId=${admin.shopId}`,
         {
           method: "GET",
           headers: {

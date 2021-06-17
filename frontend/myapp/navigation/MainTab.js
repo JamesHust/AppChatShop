@@ -25,6 +25,7 @@ const MainTab = () => {
       routeName === "MonitorStack" ||
       routeName === "CompleteOrderStack" ||
       routeName === "LoginScreen" ||
+      routeName === "SupportScreen" ||
       routeName === "ChangePassScreen"
     ) {
       return false;

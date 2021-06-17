@@ -1,3 +1,5 @@
+import { SERVER_URL } from "src/config/config";
+
 //Khai báo các type của constantAction
 export const GET_CONSTANTS = "GET_CONSTANTS";
 
@@ -6,11 +8,10 @@ export const GET_CONSTANTS = "GET_CONSTANTS";
  * @returns
  */
 export const getConstants = () => {
-    console.log("ok");
   return async (dispatch) => {
     try {
       //thực hiện đăng nhập, gửi request lên server để check tài khoản
-      const response = await fetch("http://192.168.1.125:3000/api/categories", {
+      const response = await fetch(`${SERVER_URL}categories`, {
         method: "GET",
         headers: {
           Accept: "application/json",

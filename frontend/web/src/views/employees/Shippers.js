@@ -22,6 +22,7 @@ import {
 import { title, borderCustom } from "../../constants/common";
 import ListShipper from "./ListShipper";
 import { useSelector } from "react-redux";
+import { SERVER_URL } from "src/config/config";
 
 const Shippers = () => {
   const [showModalAddAccount, setShowModalAddAccount] = useState(false);
@@ -157,7 +158,7 @@ const Shippers = () => {
               shopId: admin.shopId
             })
           );
-          const response = await fetch(`http://192.168.1.125:3000/api/shippers`, {
+          const response = await fetch(`${SERVER_URL}shippers`, {
             method: "POST",
             headers: {
               Accept: "application/json",

@@ -27,6 +27,7 @@ import { fomatMoney, formatDateTime } from "../../utils/Common";
 import { title, borderCustom } from "../../constants/common";
 import CIcon from "@coreui/icons-react";
 import COLORS from "src/constants/colors";
+import { SERVER_URL } from "src/config/config";
 
 const ImportProducts = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +51,7 @@ const ImportProducts = () => {
     setIsLoading(true);
     //fetching data ở đây
     try {
-      const response = await fetch(`http://192.168.1.125:3000/api/products`, {
+      const response = await fetch(`${SERVER_URL}products`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -238,7 +239,7 @@ const ImportProducts = () => {
             })
           );
           const response = await fetch(
-            `http://192.168.1.125:3000/api/products`,
+            `${SERVER_URL}products`,
             {
               method: "POST",
               headers: {
@@ -524,7 +525,7 @@ const ImportProducts = () => {
           setNotificationValid("");
           const token = localStorage.getItem("token");
           const response = await fetch(
-            `http://192.168.1.125:3000/api/admin/import`,
+            `${SERVER_URL}admin/import`,
             {
               method: "PUT",
               headers: {

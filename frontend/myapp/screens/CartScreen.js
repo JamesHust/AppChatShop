@@ -19,6 +19,7 @@ import ListCartProduct from "../components/ListCartProduct";
 import { addDotToNumber, showToast } from "../utils/Common";
 import * as cartActions from "../redux/actions/cart";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
+import configData from "../config/config.json";
 
 const CartScreen = () => {
   const listProduct = useSelector((state) => state.cartReducer.cart);
@@ -100,7 +101,7 @@ const CartScreen = () => {
 
   // Hàm thực hiện xóa sản phẩm khỏi cửa hàng
   const removeProductInCart = async (listProd, token) => {
-    const response = await fetch("http://192.168.1.125:3000/api/carts", {
+    const response = await fetch(`${configData.SERVER_URL}carts`, {
       method: "DELETE",
       headers: {
         Accept: "application/json",
@@ -183,7 +184,7 @@ const CartScreen = () => {
       listProductForShop.push(listProdInShop);
     });
     // Thực hiện gửi request lên server
-    const response = await fetch("http://192.168.1.125:3000/api/orders", {
+    const response = await fetch(`${configData.SERVER_URL}orders`, {
       method: "POST",
       headers: {
         Accept: "application/json",

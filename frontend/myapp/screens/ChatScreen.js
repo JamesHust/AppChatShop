@@ -36,6 +36,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { showToast, addDotToNumber } from "../utils/Common";
 import * as boardChatActions from "../redux/actions/board-chat";
 import * as cartActions from "../redux/actions/cart";
+import configData from "../config/config.json";
 
 const uuidv4 = require("uuid/v4");
 
@@ -67,7 +68,7 @@ const ChatScreen = ({ route, navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/messages/room/${data.roomId}`,
+        `${configData.SERVER_URL}messages/room/${data.roomId}`,
         {
           method: "GET",
           headers: {
@@ -133,7 +134,7 @@ const ChatScreen = ({ route, navigation }) => {
 
   // Xử lý gửi request lưu tin nhắn lên server. type: là kiểu nhập tin nhắn : enter, voice
   const handleSend = async (type, token, messageSend) => {
-    const response = await fetch(`http://192.168.1.125:3000/api/messages`, {
+    const response = await fetch(`${configData.SERVER_URL}messages`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -429,7 +430,7 @@ const ChatScreen = ({ route, navigation }) => {
         const token = await AsyncStorage.getItem("userToken");
         // Thực hiện gửi request lên server
         const response = await fetch(
-          "http://192.168.1.125:3000/api/quick/orders",
+          `${configData.SERVER_URL}quick/orders`,
           {
             method: "POST",
             headers: {

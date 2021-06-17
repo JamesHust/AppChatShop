@@ -16,25 +16,24 @@ const { isAuth } = require("../middlewares/auth");
 const router = express.Router();
 
 //Thêm tài khoản quản lý cửa hàng mới
-router.post("/admins", isAuth, uploadImageAdmin.single("file"), addNewAccountAdmin);
+router.post("/admins", uploadImageAdmin.single("file"), addNewAccountAdmin);
 //Lấy toàn bộ quản lý cửa hàng hoặc lấy theo Id cửa hàng
-router.get("/admins", isAuth, getAdmins);
+router.get("/admins", getAdmins);
 // lấy danh sách nhân viên theo id cửa hàng
-router.get("/employees", isAuth, getEmployees);
+router.get("/employees", getEmployees);
 //Lấy chi tiết thông tin tài khoản quản lý theo id
-router.get("/admins/:adminId", isAuth, getAdminById);
+router.get("/admins/:adminId", getAdminById);
 //Tìm kiếm tài khoản quản lý theo tên hoặc theo mã quản lý cửa hàng
-router.get("/search/admins", isAuth, searchAccountAdmin);
+router.get("/search/admins", searchAccountAdmin);
 // Cập nhật mật khẩu tài khoản admin
-router.put("/admins/password", isAuth, updatePassAccount);
+router.put("/admins/password", updatePassAccount);
 //Cập nhật thông tin tài khoản quản lý cửa hàng
 router.put(
   "/admins",
-  isAuth,
   uploadImageAdmin.single("file"),
   updateInfoAccountAdmin
 );
 //Xóa tài khoản quản lý cửa hàng
-router.delete("/admins", isAuth, deleteAccountAdmin);
+router.delete("/admins", deleteAccountAdmin);
 
 module.exports = router;

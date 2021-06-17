@@ -17,6 +17,7 @@ import HideWithKeyboard from "react-native-hide-with-keyboard";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 import Modal from "react-native-modal";
 import { AntDesign } from "@expo/vector-icons";
+import configData from "../config/config.json";
 
 // Trang đăng nhập
 const LoginScreen = ({ navigation }) => {
@@ -44,7 +45,7 @@ const LoginScreen = ({ navigation }) => {
     //fetching data ở đây
     try {
       const userToken = await AsyncStorage.getItem("userToken");
-      const res = await fetch("http://192.168.1.125:3000/api/check/token", {
+      const res = await fetch(`${configData.SERVER_URL}check/token`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -97,7 +98,7 @@ const LoginScreen = ({ navigation }) => {
       setNotificationModalVisible(true);
     } else {
       //thực hiện đăng nhập, gửi request lên server để check tài khoản
-      fetch("http://192.168.1.125:3000/api/login", {
+      fetch(`${configData.SERVER_URL}login`, {
         method: "POST",
         headers: {
           Accept: "application/json",

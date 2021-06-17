@@ -17,6 +17,7 @@ import orders from "../data/mission_orders";
 import ListMissionOrder from "../components/ListMissionOrder";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSelector, useDispatch } from "react-redux";
+import configData from "../config/config.json";
 
 const HomeScreen = ({ route, navigation }) => {
   const [isLoading, setIsLoading] = useState(false); //biến check đang tải dữ liệu
@@ -31,7 +32,7 @@ const HomeScreen = ({ route, navigation }) => {
       const token = await AsyncStorage.getItem("userToken");
       const shipperId = await AsyncStorage.getItem("userId");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/delivery/${shipperId}`,
+        `${configData.SERVER_URL}delivery/${shipperId}`,
         {
           method: "GET",
           headers: {

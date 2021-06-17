@@ -20,6 +20,7 @@ import myaccount from "../data/myaccount";
 import { useDispatch, useSelector } from "react-redux";
 import { CommonActions, StackActions } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
+import configData from "../config/config.json";
 
 import Share from "react-native-share";
 
@@ -73,7 +74,7 @@ const ProfileScreen = ({ navigation }) => {
     //fetching data ở đây
     try {
       const token = await AsyncStorage.getItem("userToken");
-      const response = await fetch(`http://192.168.1.125:3000/api/rates/customers?customerId=${customer.customerId}`, {
+      const response = await fetch(`${configData.SERVER_URL}rates/customers?customerId=${customer.customerId}`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -165,7 +166,7 @@ const ProfileScreen = ({ navigation }) => {
               >
                 {customer.customerName}
               </Title>
-              <Caption style={styles.caption}>@admin</Caption>
+              <Caption style={styles.caption}>@customer</Caption>
             </View>
           </View>
           {/* Cập nhật thông tin */}
@@ -312,7 +313,9 @@ const ProfileScreen = ({ navigation }) => {
           </View>
         </TouchableRipple>
         {/* Hỗ trợ */}
-        <TouchableRipple onPress={() => {}}>
+        <TouchableRipple  onPress={() =>
+            navigation.navigate("SupportScreen")
+          }>
           <View style={styles.menuItem}>
             <MaterialCommunityIcons
               name="account-check-outline"

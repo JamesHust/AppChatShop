@@ -21,6 +21,7 @@ import { TouchableOpacity } from "react-native-gesture-handler";
 import { useSelector, useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 import * as cartActions from "../redux/actions/cart";
+import configData from "../config/config.json";
 
 const DetailProductScreen = ({ route, navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -140,7 +141,7 @@ const DetailProductScreen = ({ route, navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/reviews/products?idProduct=${idProduct}&idCustomer=${customer.customerId}`,
+        `${configData.SERVER_URL}reviews/products?idProduct=${idProduct}&idCustomer=${customer.customerId}`,
         {
           method: "GET",
           headers: {
@@ -161,6 +162,9 @@ const DetailProductScreen = ({ route, navigation }) => {
             }
             setRating(resData.data.rating);
           }
+          return;
+        case 404:
+          setRating("0");
           return;
         default:
           return Alert.alert("goFAST", `Lỗi tải đánh giá:`, [
@@ -194,7 +198,7 @@ const DetailProductScreen = ({ route, navigation }) => {
     //fetching data ở đây
     try {
       const response = await fetch(
-        `http://192.168.1.125:3000/api/products/${idProduct}`,
+        `${configData.SERVER_URL}products/${idProduct}`,
         {
           method: "GET",
           headers: {
@@ -243,23 +247,20 @@ const DetailProductScreen = ({ route, navigation }) => {
   const updateReview = async (rating, isFavourite) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
-      const response = await fetch(
-        `http://192.168.1.125:3000/api/reviews/products`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "x-access-token": token,
-          },
-          body: JSON.stringify({
-            idCustomer: customer.customerId,
-            idProduct: idProduct,
-            rating: rating,
-            isFavourite: isFavourite,
-          }),
-        }
-      );
+      const response = await fetch(`${configData.SERVER_URL}reviews/products`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "x-access-token": token,
+        },
+        body: JSON.stringify({
+          idCustomer: customer.customerId,
+          idProduct: idProduct,
+          rating: rating,
+          isFavourite: isFavourite,
+        }),
+      });
       switch (response.status) {
         case 200:
           showToast("Cập nhật đánh giá thành công");
@@ -322,7 +323,7 @@ const DetailProductScreen = ({ route, navigation }) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       if (token) {
-        const response = await fetch("http://192.168.1.125:3000/api/carts", {
+        const response = await fetch(`${configData.SERVER_URL}carts`, {
           method: "POST",
           headers: {
             Accept: "application/json",

@@ -1,3 +1,4 @@
+import { SERVER_URL } from "../../config/config";
 //Khai báo các type của authAction
 export const SAVE_TOKEN = "SAVE_TOKEN";
 export const REMOVE_TOKEN = "REMOVE_TOKEN";
@@ -8,14 +9,16 @@ export const CHANGE_PASS = "CHANGE_PASS";
  * Hàm action lưu token khi đăng nhập
  * @returns
  */
-export const storageToken = (data) => {
+export const storageToken = (data, idArea) => {
   return async (dispatch) => {
     try {
       const token = data.accessToken;
       const admin = data.admin;
+      const areaId = idArea;
       // Lưu token vào storage
       localStorage.setItem("token", token);
       localStorage.setItem("createdToken", new Date());
+      localStorage.setItem("areaId", areaId);
       return dispatch({ type: SAVE_TOKEN, admin: admin, token: token });
     } catch (err) {
       throw err;
@@ -25,30 +28,27 @@ export const storageToken = (data) => {
 
 /**
  * Hàm lấy lại dữ liệu admin
- * @param {*} data 
- * @returns 
+ * @param {*} data
+ * @returns
  */
 export const getAdmin = (data) => {
   return async (dispatch) => {
     try {
       const token = data.token;
       const adminId = data.adminId;
-      const response = await fetch(
-        `http://192.168.1.125:3000/api/admins/${adminId}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "x-access-token": token,
-            "Content-Type": "application/json",
-          }
-        }
-      );
-      if(response.status === 200){
+      const response = await fetch(`${SERVER_URL}admins/${adminId}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "x-access-token": token,
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.status === 200) {
         const resData = await response.json();
         dispatch({ type: GET_ADMIN, admin: resData.data });
-      }else{
-        alert("Có lỗi xảy ra khi lấy lại dữ liệu tài khoản.")
+      } else {
+        alert("Có lỗi xảy ra khi lấy lại dữ liệu tài khoản.");
       }
       return;
     } catch (err) {
@@ -78,7 +78,7 @@ export const logout = () => {
     try {
       const userToken = localStorage.getItem("token");
       // Thực hiện xóa token trong cơ sở dữ liệu
-      const response = await fetch("http://192.168.1.125:3000/api/logout", {
+      const response = await fetch(`${SERVER_URL}logout`, {
         method: "POST",
         headers: {
           Accept: "application/json",

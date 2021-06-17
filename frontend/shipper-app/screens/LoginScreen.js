@@ -17,6 +17,7 @@ import * as authActions from "../redux/actions/auth";
 import Modal from "react-native-modal";
 import COLORS from "../constants/color";
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
+import configData from "../config/config.json";
 
 const SignInScreen = ({ navigation }) => {
   // Khai báo các ref
@@ -72,7 +73,7 @@ const SignInScreen = ({ navigation }) => {
     //fetching data ở đây
     try {
       const userToken = await AsyncStorage.getItem("userToken");
-      const res = await fetch("http://192.168.1.125:3000/api/check/token", {
+      const res = await fetch(`${configData.SERVER_URL}check/token`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -108,7 +109,7 @@ const SignInScreen = ({ navigation }) => {
     if (data.username && data.password) {
       if (data.isValidPassword && data.isValidUser) {
         //thực hiện đăng nhập, gửi request lên server để check tài khoản
-        fetch("http://192.168.1.125:3000/api/login", {
+        fetch(`${configData.SERVER_URL}login`, {
           method: "POST",
           headers: {
             Accept: "application/json",

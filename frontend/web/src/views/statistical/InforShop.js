@@ -23,6 +23,7 @@ import {
 import CIcon from "@coreui/icons-react";
 import COLORS from "../../constants/colors";
 import { borderCustom } from "../../constants/common";
+import { SERVER_URL } from "src/config/config";
 
 // Thông tin cửa hàng
 const InforShop = ({ data, reload }) => {
@@ -111,7 +112,7 @@ const InforShop = ({ data, reload }) => {
               closeTime: infoShop.closeTime,
             })
           );
-          const response = await fetch(`http://192.168.1.125:3000/api/shops`, {
+          const response = await fetch(`${SERVER_URL}shops`, {
             method: "PUT",
             headers: {
               Accept: "application/json",

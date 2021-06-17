@@ -19,6 +19,7 @@ import CIcon from "@coreui/icons-react";
 import * as authActions from "../../../redux/actions/auth";
 import * as constantActions from "../../../redux/actions/constant";
 import { useDispatch } from "react-redux";
+import { SERVER_URL } from "src/config/config";
 
 const Login = () => {
   const [data, setData] = useState({
@@ -77,6 +78,26 @@ const Login = () => {
     }
   };
 
+  // Lấy mã vùng
+  const getArea = async (token, shopId) => {
+    // Lấy mã vùng
+    const response = await fetch(
+      `${SERVER_URL}shops/${shopId}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "x-access-token": token,
+        },
+      }
+    );
+    if (response.status === 200) {
+      const resData = await response.json();
+      return resData.data.areaId;
+    }else return null;
+  }
+
   // Hàm xử lý login
   const handlerLogin = async () => {
     if (!data.isValidUser || !data.isValidPass) {
@@ -86,7 +107,7 @@ const Login = () => {
     } else {
       try {
         //thực hiện đăng nhập, gửi request lên server để check tài khoản
-        const response = await fetch("http://192.168.1.125:3000/api/login", {
+        const response = await fetch(`${SERVER_URL}login`, {
           method: "POST",
           headers: {
             Accept: "application/json",
@@ -103,9 +124,14 @@ const Login = () => {
         switch (response.status) {
           case 200:
             const resData = await response.json();
-            dispatch(authActions.storageToken(resData.data));
-            dispatch(constantActions.getConstants());
-            history.push("/statistical");
+            const shopId = resData.data.admin.shopId ? resData.data.admin.shopId  : resData.data.admin.ShopId;
+            const areaId = await getArea(resData.data.accessToken, shopId);
+            if(areaId){
+              dispatch(authActions.storageToken(resData.data, areaId));
+              dispatch(constantActions.getConstants());
+              console.log(localStorage.getItem("areaId"));
+              history.push("/statistical");
+            }
             break;
           case 400:
             setNotificationValid(

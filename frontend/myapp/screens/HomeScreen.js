@@ -54,7 +54,7 @@ const HomeScreen = (props) => {
             <Image
               source={require("../assets/logo/logo3.png")}
               resizeMode="contain"
-              style={{ height: 50, width: 115 }}
+              style={{ height: 60, width: 115 }}
             />
           </View>
           {/* Địa chỉ khách hàng */}
@@ -82,13 +82,6 @@ const HomeScreen = (props) => {
               </Text>
             </View>
           </View>
-        </View>
-        <View style={styles.searchContainer}>
-          <AntDesign name="search1" size={18} color={COLORS.dark} />
-          <TextInput
-            placeholder="Tìm món ăn, địa chỉ..."
-            style={{ marginLeft: 5 }}
-          />
         </View>
       </View>
     );
@@ -185,13 +178,12 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: COLORS.light,
     padding: 10,
-    borderBottomEndRadius: 15,
-    borderBottomStartRadius: 15,
     borderWidth: 1,
     borderColor: COLORS.grey_4,
   },
   headerTitle: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
   },
   searchContainer: {

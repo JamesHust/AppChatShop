@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"; //thư viện tương tác với Storage
 import { showToast } from "../../utils/Common";
+import configData from "../../config/config.json";
 
 //Khai báo các type của wishlistAction
 export const GET_WISHLIST = "GET_WISHLIST";
@@ -14,7 +15,7 @@ export const getWishlist = (customerId, token) => {
   return async (dispatch) => {
     try {
       const response = await fetch(
-        `http://192.168.1.125:3000/api/reviews/products/${customerId}`,
+        `${configData.SERVER_URL}reviews/products/${customerId}`,
         {
           method: "GET",
           headers: {

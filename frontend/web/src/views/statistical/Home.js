@@ -15,6 +15,7 @@ import RevenueChart from "./RevenueChart";
 import COLORS from "src/constants/colors";
 import InforShop from "./InforShop";
 import { useSelector } from "react-redux";
+import { SERVER_URL } from "../../config/config";
 const Widgets = lazy(() => import("./Widgets"));
 
 const Home = () => {
@@ -42,7 +43,7 @@ const Home = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://192.168.1.125:3000/api/shops/${admin.shopId}`,
+        `${SERVER_URL}shops/${admin.shopId}`,
         {
           method: "GET",
           headers: {
@@ -56,7 +57,6 @@ const Home = () => {
         case 200:
           const resData = await response.json();
           setShopData(resData.data);
-          localStorage.setItem("areaId", resData.data.areaId);
           setIsLoading(false);
           return;
         default:

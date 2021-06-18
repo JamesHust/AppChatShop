@@ -2,24 +2,24 @@
 Quick order application in just 3 steps on smartphone with integrated online chat.
 
 ## Installation Instructions
-**Extract all folders and files**
-**Install environment library**
-## 1.NodeJS
+### Extract all folders and files
+### Install environment library
+#### 1.NodeJS
 Link download: https://nodejs.org/en/download/
 
 Follow the instructions: https://www.youtube.com/watch?v=X-FPCwZFU_8
-## 2.ExpressJS
+#### 2.ExpressJS
 Follow the instructions: http://expressjs.com/en/starter/installing.html
-## 3.Expo
+#### 3.Expo
 Follow the instructions: https://docs.expo.io/get-started/installation/
-## 4.React Native
+#### 4.React Native
 Follow the instructions: https://reactnative.dev/docs/getting-started
-## 5.Android Studio
+#### 5.Android Studio
 Link download: https://developer.android.com/studio?gclid=CjwKCAjwiLGGBhAqEiwAgq3q_hMiVmV6nK_z3OP2PdajV0n05aGK6YfBx6OvQAeHkLYWEorvVEclbxoCDUQQAvD_BwE&gclsrc=aw.ds
 
 Follow the instructions: https://www.youtube.com/watch?v=0zx_eFyHRU0
 
-**Get IPv4 Local**
+### Get IPv4 Local
 
 **Step 1:** Open terminal and run this command
 ```sh
@@ -29,7 +29,7 @@ ipconfig
 
 **Step 2:** Copy IPv4 Address. Ex: 192.168.1.125
 
-**Installation for backend**
+### Installation for backend
 
 **Step 1:** Open folder *app-quick-shop\backend* and open terminal to run this command
 ```sh
@@ -44,9 +44,9 @@ npm install
 npm start
 ```
 
-**Installation for frontend**
+### Installation for frontend
 
-## 1. App GoFAST
+#### 1. App GoFAST
 **Step 1:** Open folder *app-quick-shop\frontend\myapp* and open terminal to run this command
 ```sh
 npm install
@@ -61,7 +61,7 @@ npm install
 ```sh
 react-native run-android
 ```
-## 2. Delivery App
+#### 2. Delivery App
 **Step 1:** Open folder *app-quick-shop\frontend\shipper-app* and open terminal to run this command
 ```sh
 npm install
@@ -74,7 +74,7 @@ npm install
 ```sh
 expo start --android
 ```
-## 3. Web Store Management
+#### 3. Web Store Management
 **Step 1:** Open folder *app-quick-shop\frontend\web* and open terminal to run this command
 ```sh
 npm install
@@ -88,7 +88,10 @@ npm install
 npm start
 ```
 
-## License
+### License
 [MIT](https://github.com/JamesHust)
+
 Copyright (c) 2021-present, MTHUNG
-If you have any questions, please send them to the mailbox with the address : **hungjame99@gmail.com** or **hungmt.0812@gmail.com**. Thank you!
+
+If you have any questions, please send them to the mailbox with the address : **hungjame99@gmail.com** or **hungmt.0812@gmail.com**. 
+Thank you!
